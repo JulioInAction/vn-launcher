@@ -13,10 +13,17 @@ module com.vnlauncher {
     // DriverManager lo encuentre en el module path.
     requires org.xerial.sqlitejdbc;
 
+    // Cliente HTTP del JDK (java.net.http.HttpClient) y Jackson para el JSON.
+    requires java.net.http;
+    requires com.fasterxml.jackson.databind;
+
     // JavaFX crea la clase Application por reflexión: necesita ver el paquete.
     exports com.vnlauncher.app to javafx.graphics;
 
     // FXMLLoader instancia los controladores y rellena los campos @FXML
     // (aunque sean privados) por reflexión. "opens" permite esa reflexión.
     opens com.vnlauncher.ui to javafx.fxml;
+
+    // Jackson también usa reflexión para leer/crear los records de los DTO.
+    opens com.vnlauncher.api.dto to com.fasterxml.jackson.databind;
 }

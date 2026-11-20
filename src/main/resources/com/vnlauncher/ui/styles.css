@@ -1,16 +1,29 @@
-/* Estilos de JavaFX: es CSS pero con propiedades propias prefijadas con -fx- */
+/* Estilos de JavaFX: es CSS pero con propiedades propias prefijadas con -fx-.
+   Colores en "variables" (colores con nombre) definidas en .root para no repetirlos. */
 
 .root {
     -fx-font-size: 14px;
-    -fx-background-color: #1e1f24;
+    -bg: #1e1f24;
+    -bg-dark: #16171b;
+    -bg-light: #2a2c33;
+    -text: #e6e6e6;
+    -text-muted: #9a9ca5;
+    -accent: #6c8cff;
+    -fx-background-color: -bg;
 }
 
 .label {
-    -fx-text-fill: #e6e6e6;
+    -fx-text-fill: -text;
 }
 
+.muted {
+    -fx-text-fill: -text-muted;
+}
+
+/* ---------- Estructura ---------- */
+
 .sidebar {
-    -fx-background-color: #16171b;
+    -fx-background-color: -bg-dark;
     -fx-padding: 16;
     -fx-pref-width: 200;
 }
@@ -28,4 +41,98 @@
 .section-title {
     -fx-font-size: 18px;
     -fx-font-weight: bold;
+}
+
+.status-bar {
+    -fx-background-color: -bg-dark;
+    -fx-padding: 4 12;
+}
+
+.status-bar .label {
+    -fx-font-size: 12px;
+}
+
+/* ---------- Controles ---------- */
+
+.text-field {
+    -fx-background-color: -bg-light;
+    -fx-text-fill: -text;
+    -fx-prompt-text-fill: -text-muted;
+    -fx-background-radius: 4;
+}
+
+.button {
+    -fx-background-color: -bg-light;
+    -fx-text-fill: -text;
+    -fx-background-radius: 4;
+    -fx-padding: 6 14;
+}
+
+.button:hover {
+    -fx-background-color: derive(-bg-light, 20%);
+}
+
+.button:default {
+    -fx-background-color: -accent;
+    -fx-text-fill: white;
+}
+
+.split-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+/* El separador arrastrable entre la lista y el detalle */
+.split-pane > .split-pane-divider {
+    -fx-background-color: -bg;
+    -fx-padding: 0 2;
+}
+
+.list-view {
+    -fx-background-color: -bg-dark;
+    -fx-background-insets: 0;
+}
+
+.list-cell {
+    -fx-background-color: -bg-dark;
+    -fx-padding: 8 12;
+}
+
+.list-cell:filled:hover {
+    -fx-background-color: -bg-light;
+}
+
+.list-cell:filled:selected {
+    -fx-background-color: derive(-accent, -45%);
+}
+
+.result-title {
+    -fx-font-weight: bold;
+}
+
+.result-subtitle {
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 12px;
+}
+
+/* ---------- Detalle ---------- */
+
+.detail-scroll,
+.detail-scroll > .viewport {
+    -fx-background-color: -bg;
+    -fx-background-insets: 0;
+}
+
+.detail-pane {
+    -fx-padding: 16 20;
+}
+
+.detail-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.description {
+    -fx-padding: 12 0 0 0;
+    -fx-line-spacing: 3px;
 }

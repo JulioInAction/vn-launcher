@@ -20,7 +20,7 @@ Los datos se guardan en `%LOCALAPPDATA%\VNLauncher` (`library.db` + carpeta `ima
 ## Estado
 
 - [x] Fase 0: esqueleto (ventana JavaFX + base de datos SQLite con migraciones)
-- [ ] Fase 1: cliente VNDB y búsqueda
+- [x] Fase 1: cliente VNDB y búsqueda
 - [ ] Fase 2: biblioteca local
 - [ ] Fase 3: personajes
 - [ ] Fase 4: rutas

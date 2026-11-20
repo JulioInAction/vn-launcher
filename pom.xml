@@ -17,6 +17,7 @@
 
         <javafx.version>26.0.2</javafx.version>
         <sqlite.version>3.54.1.0</sqlite.version>
+        <jackson.version>2.22.4</jackson.version>
         <junit.version>6.1.3</junit.version>
     </properties>
 
@@ -43,6 +44,14 @@
             <version>${sqlite.version}</version>
         </dependency>
 
+        <!-- Jackson: convierte JSON <-> objetos Java (incluidos records).
+             databind arrastra a jackson-core y jackson-annotations. -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
         <!-- Tests -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -58,15 +67,36 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.15.0</version>
+                <executions>
+                    <!-- Solo al compilar los TESTS: permitir usar jdk.httpserver (ver surefire). -->
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <compilerArgs>
+                                <arg>--add-modules</arg>
+                                <arg>jdk.httpserver</arg>
+                                <arg>--add-reads</arg>
+                                <arg>com.vnlauncher=jdk.httpserver</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.6</version>
                 <configuration>
-                    <!-- Java 24+ avisa cuando una librería carga código nativo (SQLite lo hace).
-                         Le damos permiso explícito para el módulo del driver. -->
-                    <argLine>--enable-native-access=org.xerial.sqlitejdbc</argLine>
+                    <!-- enable-native-access: Java 24+ avisa cuando una librería carga código
+                         nativo (SQLite lo hace); le damos permiso explícito.
+                         add-modules/add-reads: los tests del cliente VNDB levantan un servidor HTTP
+                         falso con jdk.httpserver. Ese módulo solo lo usan los tests, así que no lo
+                         ponemos en module-info.java sino aquí. -->
+                    <argLine>
+                        --enable-native-access=org.xerial.sqlitejdbc
+                        --add-modules jdk.httpserver
+                        --add-reads com.vnlauncher=jdk.httpserver
+                    </argLine>
                 </configuration>
             </plugin>
             <!-- Permite arrancar la app con: mvn javafx:run -->

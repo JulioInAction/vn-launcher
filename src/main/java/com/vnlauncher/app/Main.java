@@ -1,8 +1,8 @@
 package com.vnlauncher.app;
 
 import com.vnlauncher.ui.MainController;
+import com.vnlauncher.ui.Views;
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -16,9 +16,10 @@ public class Main extends Application {
 
     private static final System.Logger LOG = System.getLogger(Main.class.getName());
 
+    private AppContext context;
+
     @Override
     public void start(Stage stage) {
-        AppContext context;
         try {
             context = AppContext.create();
         } catch (Exception e) {
@@ -31,11 +32,7 @@ public class Main extends Application {
         }
 
         try {
-            FXMLLoader loader = new FXMLLoader(MainController.class.getResource("main-view.fxml"));
-            // Por defecto FXMLLoader crea el controlador con su constructor vacío. Con una
-            // "controller factory" lo creamos nosotros y le pasamos el AppContext por constructor.
-            loader.setControllerFactory(type -> new MainController(context));
-            Parent root = loader.load();
+            Parent root = Views.load("main-view.fxml", new MainController(context));
 
             Scene scene = new Scene(root, 1100, 700);
             scene.getStylesheets().add(MainController.class.getResource("styles.css").toExternalForm());
@@ -46,6 +43,14 @@ public class Main extends Application {
         } catch (Exception e) {
             // Un error aquí suele ser un fallo en el FXML (fx:id mal escrito, etc.)
             throw new IllegalStateException("No se pudo cargar la interfaz", e);
+        }
+    }
+
+    /** JavaFX llama a stop() al cerrar la última ventana. */
+    @Override
+    public void stop() {
+        if (context != null) {
+            context.shutdown();
         }
     }
 
