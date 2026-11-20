@@ -18,6 +18,7 @@ import javafx.scene.shape.SVGPath;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.stage.Window;
 
 /**
  * Ventana modal con el aspecto de DISEÑO.md ("Diálogos"): tarjeta con esquinas de 16 px y sombra,
@@ -64,8 +65,14 @@ class ModalDialog {
         footer.setAlignment(Pos.CENTER);
         card.getChildren().addAll(header, body, footer);
 
+        // Sombra en una región propia detrás de la tarjeta (mismo tamaño): así el efecto no toca
+        // al texto, que conserva el suavizado LCD
+        Region shadow = new Region();
+        shadow.getStyleClass().add("modal-shadow");
+        StackPane cardWithShadow = new StackPane(shadow, card);
+        cardWithShadow.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
         // El margen alrededor de la tarjeta deja sitio a la sombra (si no, se recortaría)
-        StackPane root = new StackPane(card);
+        StackPane root = new StackPane(cardWithShadow);
         root.getStyleClass().add("modal-root");
         Scene scene = new Scene(root);
         // Color.TRANSPARENT no es un color del diseño: es "sin fondo", para que solo se vea la tarjeta
@@ -167,9 +174,29 @@ class ModalDialog {
     /** Muestra el diálogo y espera. Devuelve el id del botón pulsado, o null si se cerró sin elegir. */
     String showAndWait() {
         Region backdrop = showBackdrop();
+        centerOnOwner();
         stage.showAndWait();
         hideBackdrop(backdrop);
         return result;
+    }
+
+    /**
+     * Centra el diálogo sobre la ventana de la app. Un Stage, a diferencia de un Dialog de JavaFX,
+     * se centra en la PANTALLA: con la ventana a un lado (o en otro monitor) quedaría descentrado.
+     * El tamaño se calcula antes de mostrarlo (applyCss + prefWidth/prefHeight) para que no "salte".
+     * Coordenadas redondeadas: una ventana a medio píxel podría verse borrosa.
+     */
+    private void centerOnOwner() {
+        if (owner == null || owner.getScene() == null || owner.getScene().getWindow() == null) {
+            return; // sin dueño: que JavaFX la centre en la pantalla
+        }
+        Window window = owner.getScene().getWindow();
+        Parent root = stage.getScene().getRoot();
+        root.applyCss();
+        double width = root.prefWidth(-1);
+        double height = root.prefHeight(width);
+        stage.setX(Math.round(window.getX() + (window.getWidth() - width) / 2));
+        stage.setY(Math.round(window.getY() + (window.getHeight() - height) / 2));
     }
 
     private void close(String id) {

@@ -74,7 +74,7 @@
         <!-- Hueco que crece: empuja lo siguiente hasta abajo del todo -->
         <Region VBox.vgrow="ALWAYS"/>
 
-        <!-- 6. Contador de peticiones a VNDB y botón de tema -->
+        <!-- 6. Contador de peticiones a VNDB (el tema se cambia en Ajustes → Apariencia) -->
         <VBox spacing="8" styleClass="sidebar-block">
             <HBox alignment="CENTER_LEFT">
                 <Label text="VNDB · últimos 5 min" styleClass="muted, small"/>
@@ -82,9 +82,6 @@
                 <Label fx:id="vndbCountLabel" text="0/200" styleClass="counter-value"/>
             </HBox>
             <ProgressBar fx:id="vndbCountBar" progress="0" maxWidth="Infinity" styleClass="thin-bar"/>
-            <Region minHeight="8"/>
-            <Button fx:id="themeButton" maxWidth="Infinity" onAction="#onToggleTheme"
-                    alignment="CENTER_LEFT" graphicTextGap="12"/>
         </VBox>
     </VBox>
 </StackPane>

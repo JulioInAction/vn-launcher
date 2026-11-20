@@ -23,7 +23,6 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
-import javafx.scene.shape.SVGPath;
 import javafx.util.Duration;
 
 import java.nio.file.Path;
@@ -40,7 +39,7 @@ public class SidebarController {
     /** Secciones de la navegación, en orden. */
     public enum Section {
         LIBRARY("01", "Biblioteca"),
-        SEARCH("02", "Buscar en VNDB"),
+        SEARCH("02", "Buscar"),
         SETTINGS("03", "Ajustes");
 
         final String number;
@@ -56,11 +55,6 @@ public class SidebarController {
     private static final int VNDB_LIMIT = 200;
     private static final int RECENT_COUNT = 3;
 
-    // Iconos del botón de tema (caja de 24x24): sol y luna
-    private static final String SUN = "M12 8.5A3.5 3.5 0 1 0 12.01 8.5Z M12 2.5V4.5 M12 19.5V21.5 M2.5 12H4.5 M19.5 12H21.5"
-            + " M5.3 5.3L6.7 6.7 M17.3 17.3L18.7 18.7 M5.3 18.7L6.7 17.3 M17.3 6.7L18.7 5.3";
-    private static final String MOON = "M20 14.5A8 8 0 1 1 9.5 4A6.5 6.5 0 0 0 20 14.5Z";
-
     private final AppContext ctx;
     private final Navigator navigator;
 
@@ -71,9 +65,7 @@ public class SidebarController {
     @FXML private HBox recentBox;
     @FXML private Label vndbCountLabel;
     @FXML private ProgressBar vndbCountBar;
-    @FXML private Button themeButton;
 
-    private ThemeManager themeManager;
     private final Map<Section, Button> navButtons = new EnumMap<>(Section.class);
     private final Map<PlayStatus, Label> shelfCounts = new EnumMap<>(PlayStatus.class);
 
@@ -90,8 +82,10 @@ public class SidebarController {
     private void initialize() {
         // La marca de agua no está "managed": el StackPane no la coloca. La pegamos al borde
         // derecho enlazando su X al ancho de la barra (si la barra cambia de ancho, se recoloca sola).
+        // Math.round: la imagen mide 57,94 px de ancho y, como el padre no coloca este nodo, nadie
+        // redondearía su posición; en una X con decimales se vería borrosa.
         watermark.layoutXProperty().bind(Bindings.createDoubleBinding(
-                () -> sidebarRoot.getWidth() - watermark.getLayoutBounds().getWidth(),
+                () -> (double) Math.round(sidebarRoot.getWidth() - watermark.getLayoutBounds().getWidth()),
                 sidebarRoot.widthProperty(), watermark.layoutBoundsProperty()));
 
         for (Section section : Section.values()) {
@@ -227,37 +221,18 @@ public class SidebarController {
 
     // ------------------------------------------------------------------ tema
 
-    /**
-     * Adapta la barra al tema ACTUAL: marca de agua de ese tema, y texto e icono del botón
-     * (que ofrece cambiar al otro).
-     */
+    /** Adapta la barra al tema ACTUAL: la marca de agua tiene una imagen para cada tema. */
     public void showTheme(Theme current) {
-        boolean dark = current == Theme.DARK;
-        watermark.setImage(dark ? watermarkDark : watermarkLight);
-        SVGPath icon = new SVGPath();
-        icon.setContent(dark ? SUN : MOON);
-        icon.getStyleClass().add("icon-stroke");
-        themeButton.setGraphic(icon);
-        themeButton.setText(dark ? "Tema claro" : "Tema oscuro");
+        watermark.setImage(current == Theme.DARK ? watermarkDark : watermarkLight);
     }
 
     private static Image loadImage(String resource) {
         return new Image(SidebarController.class.getResource(resource).toExternalForm());
     }
 
-    /** Lo conecta MainController; el botón de tema lo usa. */
+    /** Lo conecta MainController. */
     void setThemeManager(ThemeManager themeManager) {
-        this.themeManager = themeManager;
-        // Cada vez que cambie el tema que se ve (botón, Ajustes o Windows), adaptar la barra
+        // Cada vez que cambie el tema que se ve (Ajustes o Windows), adaptar la barra
         themeManager.addListener(this::showTheme);
-    }
-
-    /**
-     * El botón fija el tema contrario al que se ve ahora (claro u oscuro). Si estaba en
-     * "Según Windows", deja de seguir al sistema: es una elección explícita.
-     */
-    @FXML
-    private void onToggleTheme() {
-        themeManager.choose(themeManager.effective().toggled());
     }
 }

@@ -68,6 +68,13 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
 - `src/main/resources/fonts/`: Inter y Zen Kaku Gothic New, con su licencia SIL OFL 1.1.
 - Diálogos (`ModalDialog`), avisos (`Notice`), estados vacíos (`EmptyState`) y controles propios
   (`Segmented`, `Switch`) en `com.vnlauncher.ui`, todos con los colores del tema.
+- **Texto nítido:** `.root` usa `-fx-font-smoothing-type: lcd`. JavaFX vuelve al suavizado gris si
+  el texto (o un contenedor suyo) tiene un efecto (`-fx-effect`, desenfoque), `opacity` menor que 1
+  o caché. Por eso los controles deshabilitados se apagan con colores y no con opacidad, y la
+  sombra de los diálogos va en una región aparte, detrás de la tarjeta. Los `Text` sueltos (dentro
+  de un `TextFlow`) no lo heredan: llevan la propiedad en su clase (`.text-strong`...).
+- La ventana se abre la primera vez al 90 % de la pantalla y después recuerda su posición, tamaño
+  y si estaba maximizada (ajuste `window`).
 
 ## Estado
 

@@ -49,6 +49,10 @@
     /* Variables propias, no están en DISEÑO.md: sombra de los diálogos y fondos de las
        iniciales cuando no hay imagen */
     -vn-shadow: rgba(0, 0, 0, 0.55);
+    /* Botón principal deshabilitado: el rosa mezclado al 50 % con el fondo (antes se hacía con
+       opacity 0.5, pero la opacidad desactiva el suavizado LCD del texto) */
+    -vn-accent-dim: #84606C;
+    -vn-on-accent-dim: #573942;
     -vn-avatar-text: #F3F1F5;
     -vn-avatar-1: #4A4F7A;
     -vn-avatar-2: #6B3A44;
@@ -60,6 +64,11 @@
     -fx-font-family: "Inter";
     -fx-font-size: 14px;
     -fx-background-color: -vn-bg;
+    /* Suavizado LCD (subpíxel): texto más nítido en Windows. Llega a etiquetas, botones y campos;
+       los Text sueltos (los de un TextFlow) lo llevan en su propia clase (.text-strong...).
+       Solo funciona si el texto no tiene encima efectos, opacity < 1 ni caché: por eso los
+       deshabilitados se apagan con colores y la sombra de los diálogos va en un nodo aparte. */
+    -fx-font-smoothing-type: lcd;
 }
 
 .root.tema-claro {
@@ -92,6 +101,8 @@
     -vn-danger-bg: rgba(179, 38, 30, 0.08);
     -vn-backdrop: #DCD5D0;
     -vn-shadow: rgba(60, 40, 30, 0.22);
+    -vn-accent-dim: #F4CAD3;
+    -vn-on-accent-dim: #8F6E76;
 
     /* Las iniciales van sobre colores oscuros también en el tema claro (como en las capturas) */
 }
@@ -156,6 +167,11 @@
     -fx-background-radius: 14;
     -fx-border-color: -vn-border;
     -fx-border-radius: 14;
+}
+
+/* Pista bajo la barra de búsqueda antes de la primera búsqueda */
+.hint-card {
+    -fx-padding: 18 20 18 20;
 }
 
 .divider {
@@ -308,8 +324,42 @@
     -fx-border-color: -vn-accent-ink;
 }
 
-.button:disabled {
-    -fx-opacity: 0.5;
+/* ===================================================================== Deshabilitado
+   Modena (el estilo base de JavaFX) apaga los controles deshabilitados con opacity 0.4, lo que
+   desactiva el suavizado LCD de su texto. Aquí se deja la opacidad en 1 y se apagan con colores. */
+.label:disabled,
+.button:disabled,
+.toggle-button:disabled,
+.radio-button:disabled,
+.check-box:disabled,
+.hyperlink:disabled,
+.text-input:disabled,
+.combo-box-base:disabled,
+.scroll-pane:disabled,
+.progress-bar:disabled,
+.progress-indicator:disabled {
+    -fx-opacity: 1;
+}
+
+.button:disabled,
+.toggle-button:disabled {
+    -fx-background-color: transparent;
+    -fx-border-color: -vn-border;
+    -fx-text-fill: -vn-faint;
+}
+
+.label:disabled,
+.hyperlink:disabled,
+.check-box:disabled,
+.radio-button:disabled {
+    -fx-text-fill: -vn-faint;
+}
+
+.text-input:disabled {
+    -fx-background-color: -vn-surface2;
+    -fx-border-color: -vn-border;
+    -fx-text-fill: -vn-faint;
+    -fx-prompt-text-fill: -vn-faint;
 }
 
 /* Acción principal (Jugar, Buscar, Añadir a la biblioteca): fondo rosa */
@@ -323,6 +373,14 @@
 .primary-button:hover,
 .button:default:hover {
     -fx-background-color: derive(-vn-accent, 8%);
+}
+
+/* Después de .button:disabled: misma especificidad, así que gana la que va detrás */
+.primary-button:disabled,
+.button:default:disabled {
+    -fx-background-color: -vn-accent-dim;
+    -fx-border-color: -vn-accent-dim;
+    -fx-text-fill: -vn-on-accent-dim;
 }
 
 .big-button {
@@ -755,7 +813,7 @@
 /* Mientras se arrastra otra ruta por encima: línea rosa arriba o abajo */
 .route-row.drop-above { -fx-border-color: -vn-accent -vn-border -vn-border -vn-border; -fx-border-width: 3 1 1 1; }
 .route-row.drop-below { -fx-border-color: -vn-border -vn-border -vn-accent -vn-border; -fx-border-width: 1 1 3 1; }
-.route-row.dragging   { -fx-opacity: 0.4; }
+.route-row.dragging   { -fx-background-color: -vn-surface2; -fx-border-style: dashed; } /* sin opacity: ver .root */
 
 .drag-handle {
     -fx-text-fill: -vn-faint;
@@ -820,15 +878,18 @@
 /* ===================================================================== Texto en TextFlow
    (los nodos Text usan -fx-fill, no -fx-text-fill) */
 
+/* Text sueltos dentro de un TextFlow: el suavizado LCD de .root no les llega (no se hereda) */
 .text-strong {
     -fx-font-family: "Inter SemiBold";
     -fx-font-size: 14px;
     -fx-fill: -vn-text;
+    -fx-font-smoothing-type: lcd;
 }
 
 .text-flow-normal {
     -fx-font-size: 14px;
     -fx-fill: -vn-text2;
+    -fx-font-smoothing-type: lcd;
 }
 
 .mono, .mono-text, .mono-box {
@@ -861,6 +922,13 @@
     -fx-border-color: -vn-border;
     -fx-border-radius: 16;
     -fx-padding: 28 28 24 28;
+}
+
+/* La sombra del diálogo va en una región aparte, DETRÁS de la tarjeta (ver ModalDialog): si la
+   llevara la tarjeta, el efecto se aplicaría también a su texto y perdería el suavizado LCD. */
+.modal-shadow {
+    -fx-background-color: -vn-surface;
+    -fx-background-radius: 16;
     -fx-effect: dropshadow(gaussian, -vn-shadow, 30, 0.1, 0, 10);
 }
 
@@ -1150,6 +1218,9 @@
 .settings-text {
     -fx-spacing: 4;
     -fx-padding: 0 24 0 0;
+    /* El VBox se estira a la altura de la fila: sin esto, una etiqueta sola ("Tema") quedaría
+       arriba en vez de a la altura del control de la derecha */
+    -fx-alignment: center-left;
 }
 
 .settings-label {
@@ -1167,9 +1238,12 @@
     -fx-text-fill: -vn-text;
 }
 
-/* Tarjeta de una función que aún no está disponible */
-.settings-disabled {
-    -fx-opacity: 0.6;
+/* Tarjeta de una función que aún no está disponible: textos apagados con color (no con opacity,
+   que estropearía el suavizado LCD). El campo y el botón ya salen apagados por estar deshabilitados. */
+.settings-disabled .settings-card-title,
+.settings-disabled .settings-label,
+.settings-disabled .settings-desc {
+    -fx-text-fill: -vn-faint;
 }
 
 .status-ok {

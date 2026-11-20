@@ -35,6 +35,7 @@ class Segmented<T> extends HBox {
     Segmented(List<T> options, Function<T, String> label) {
         getStyleClass().add("segmented");
         setMinWidth(Region.USE_PREF_SIZE);
+        setMaxHeight(Region.USE_PREF_SIZE); // nunca más alto que sus botones (ver settings-view.fxml)
         for (T option : options) {
             ToggleButton button = new ToggleButton(label.apply(option));
             button.setToggleGroup(group);

@@ -30,7 +30,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Vista "Buscar en VNDB": campo de búsqueda, resultados como tarjetas y vista previa.
+ * Vista "Buscar": campo de búsqueda, resultados como tarjetas y vista previa.
  *
  * <p>Regla de oro de JavaFX: el hilo de la interfaz (FX Application Thread) solo debe hacer
  * trabajo rápido. Si hiciéramos la petición HTTP aquí directamente, la ventana se quedaría
@@ -60,6 +60,7 @@ public class SearchController {
     @FXML private VBox noticeBox;
     @FXML private VBox emptyBox;
     @FXML private HBox resultsRow;
+    @FXML private VBox hintCard;
 
     /** Búsqueda en curso (para poder cancelarla desde el aviso de límite). */
     private Task<SearchResult> searchTask;
@@ -82,6 +83,9 @@ public class SearchController {
     private void initialize() {
         setBusy(false);
         showEmpty(null);
+        // Antes de buscar nada solo se ve la pista bajo la barra (sin la columna de resultados)
+        resultsRow.setVisible(false);
+        resultsRow.setManaged(false);
         renderPreview();
     }
 
@@ -95,6 +99,9 @@ public class SearchController {
             return; // no gastamos una petición de VNDB en una búsqueda vacía
         }
         String query = text.strip();
+        // La pista "Escribe un título y pulsa Enter" ya no hace falta
+        hintCard.setVisible(false);
+        hintCard.setManaged(false);
         setBusy(true);
         clearNotice();
         statusLabel.setText("Buscando \"" + query + "\"...");
@@ -156,7 +163,7 @@ public class SearchController {
     /** Errores de red: aviso naranja dentro de la pantalla con "Reintentar". */
     private void showError(Throwable error) {
         noticeBox.getChildren().setAll(Notice.vndbError(error, this::onSearch));
-        // Sin resultados anteriores que enseñar, el aviso va solo (sin la tarjeta "Escribe un título...")
+        // Sin resultados anteriores que enseñar, el aviso va solo (sin la columna de resultados vacía)
         emptyBox.setVisible(false);
         emptyBox.setManaged(false);
         boolean hasResults = results != null && !results.isEmpty();
@@ -293,9 +300,7 @@ public class SearchController {
     private void renderPreview() {
         previewCard.getChildren().clear();
         if (selected == null) {
-            Label hint = new Label(results.isEmpty() && statusLabel.getText().isEmpty()
-                    ? "Escribe un título y pulsa Enter. Aquí verás los detalles del resultado que elijas."
-                    : "Elige un resultado para ver sus detalles.");
+            Label hint = new Label("Elige un resultado para ver sus detalles.");
             hint.getStyleClass().add("muted");
             hint.setWrapText(true);
             previewCard.getChildren().add(hint);

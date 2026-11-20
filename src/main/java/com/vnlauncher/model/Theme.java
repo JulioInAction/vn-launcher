@@ -36,9 +36,4 @@ public enum Theme {
         }
         return DARK;
     }
-
-    /** El contrario de un tema concreto (para el botón de la barra lateral). */
-    public Theme toggled() {
-        return this == DARK ? LIGHT : DARK;
-    }
 }

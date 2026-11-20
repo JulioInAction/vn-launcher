@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressIndicator?>
@@ -8,7 +9,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<!-- Buscar en VNDB (docs/diseño/capturas/buscar_*.png):
+<!-- Buscar (docs/diseño/capturas/buscar_*.png):
        · título, campo de búsqueda con su botón y una nota sobre el coste en peticiones
        · a la izquierda, los resultados como tarjetas (las crea SearchController)
        · a la derecha, la vista previa del resultado elegido y qué se descarga al añadirlo -->
@@ -17,7 +18,7 @@
       fx:controller="com.vnlauncher.ui.SearchController"
       spacing="24" styleClass="page-content">
 
-    <Label text="Buscar en VNDB" styleClass="page-title"/>
+    <Label text="Buscar" styleClass="page-title"/>
 
     <VBox spacing="8">
         <Label text="Título de la novela" styleClass="field-label"/>
@@ -29,8 +30,14 @@
                     minHeight="46"/>
             <ProgressIndicator fx:id="progress" prefWidth="26" prefHeight="26"/>
         </HBox>
-        <Label text="Se busca al pulsar Enter, no mientras escribes: cada búsqueda gasta 1 petición."
-               styleClass="meta, small"/>
+        <!-- Antes de la primera búsqueda: qué hacer. Mismo ancho que el campo de texto. -->
+        <VBox fx:id="hintCard" styleClass="card, hint-card" maxWidth="600">
+            <VBox.margin>
+                <Insets top="8"/>
+            </VBox.margin>
+            <Label text="Escribe un título y pulsa Enter. Aquí verás los resultados y los detalles del que elijas."
+                   styleClass="muted" wrapText="true"/>
+        </VBox>
     </VBox>
 
     <!-- Avisos (sin conexión, límite de VNDB): los pone SearchController cuando hacen falta -->

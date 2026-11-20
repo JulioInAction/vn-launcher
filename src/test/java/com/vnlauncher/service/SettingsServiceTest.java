@@ -4,6 +4,7 @@ import com.vnlauncher.db.Database;
 import com.vnlauncher.db.repo.SettingsRepository;
 import com.vnlauncher.model.BlurLevel;
 import com.vnlauncher.model.Theme;
+import com.vnlauncher.model.WindowBounds;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -49,6 +50,23 @@ class SettingsServiceTest {
 
         repo.put("theme", "valor-raro");
         assertEquals(Theme.DARK, settings.theme(), "Un valor desconocido no rompe nada");
+    }
+
+    @Test
+    void windowBoundsAreRememberedAndBadValuesIgnored() throws Exception {
+        Database db = new Database(tempDir.resolve("test.db"));
+        db.migrate();
+        SettingsRepository repo = new SettingsRepository(db);
+        SettingsService settings = new SettingsService(repo, ContentFilter.withDefaults());
+
+        assertTrue(settings.windowBounds().isEmpty(), "La primera vez no hay nada guardado");
+
+        settings.setWindowBounds(new WindowBounds(120.4, 52, 1680, 936.6, true));
+        assertEquals("120;52;1680;937;true", repo.get("window").orElseThrow(), "Se guarda redondeado");
+        assertEquals(new WindowBounds(120, 52, 1680, 937, true), settings.windowBounds().orElseThrow());
+
+        repo.put("window", "estropeado");
+        assertTrue(settings.windowBounds().isEmpty(), "Un valor que no se entiende cuenta como 'nada guardado'");
     }
 
     @Test

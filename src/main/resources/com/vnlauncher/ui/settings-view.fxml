@@ -14,7 +14,11 @@
 <!-- Ajustes (docs/diseño/capturas/ajustes.png). Cada bloque es una tarjeta con filas de
      "etiqueta + explicación" a la izquierda y el control a la derecha.
      Los HBox vacíos con fx:id (themeBox, spoilersBox, blurBox) los rellena SettingsController con
-     controles propios (Segmented, Switch). -->
+     controles propios (Segmented, Switch).
+     minWidth="-Infinity" (= USE_PREF_SIZE) en botones y valores: si falta sitio, que se estreche la
+     explicación de la izquierda y no el botón ("Exam...").
+     maxHeight="-Infinity" en los HBox de los controles: si la explicación ocupa varias líneas, la
+     fila es más alta, y sin esto el control se estiraría hasta abajo en vez de quedar centrado. -->
 <ScrollPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.vnlauncher.ui.SettingsController"
@@ -35,7 +39,7 @@
                 </VBox>
                 <TextField fx:id="lePathField" styleClass="mono" prefWidth="340"
                            promptText="C:\Herramientas\Locale Emulator\LEProc.exe"/>
-                <Button text="Examinar..." onAction="#onBrowseLocaleEmulator"/>
+                <Button text="Examinar..." onAction="#onBrowseLocaleEmulator" minWidth="-Infinity"/>
             </HBox>
         </VBox>
 
@@ -45,10 +49,8 @@
             <HBox styleClass="settings-row">
                 <VBox styleClass="settings-text" HBox.hgrow="ALWAYS">
                     <Label text="Tema" styleClass="settings-label"/>
-                    <Label text="Con «Según Windows» cambia solo cuando cambias el modo de color del sistema."
-                           styleClass="settings-desc" wrapText="true"/>
                 </VBox>
-                <HBox fx:id="themeBox"/>
+                <HBox fx:id="themeBox" maxHeight="-Infinity"/>
             </HBox>
         </VBox>
 
@@ -61,7 +63,7 @@
                     <Label text="Personajes que VNDB marca como spoiler. Si está apagado, salen tapados con un botón para verlos."
                            styleClass="settings-desc" wrapText="true"/>
                 </VBox>
-                <HBox fx:id="spoilersBox"/>
+                <HBox fx:id="spoilersBox" maxHeight="-Infinity"/>
             </HBox>
             <Region styleClass="divider"/>
             <HBox styleClass="settings-row">
@@ -70,7 +72,7 @@
                     <Label text="Según la valoración de cada imagen en VNDB. Siempre puedes mostrarlas una a una."
                            styleClass="settings-desc" wrapText="true"/>
                 </VBox>
-                <HBox fx:id="blurBox"/>
+                <HBox fx:id="blurBox" maxHeight="-Infinity"/>
             </HBox>
         </VBox>
 
@@ -82,8 +84,8 @@
                     <Label text="Carpeta de datos" styleClass="settings-label"/>
                     <Label text="Base de datos y todas las imágenes descargadas." styleClass="settings-desc"/>
                 </VBox>
-                <Label fx:id="dataDirLabel" styleClass="mono-text"/>
-                <Button text="Abrir carpeta" onAction="#onOpenDataFolder"/>
+                <Label fx:id="dataDirLabel" styleClass="mono-text" minWidth="-Infinity"/>
+                <Button text="Abrir carpeta" onAction="#onOpenDataFolder" minWidth="-Infinity"/>
             </HBox>
             <Region styleClass="divider"/>
             <HBox styleClass="settings-row">
@@ -92,8 +94,8 @@
                     <Label text="Portadas e imágenes de personajes. Si la vacías, se vuelven a descargar cuando hagan falta."
                            styleClass="settings-desc" wrapText="true"/>
                 </VBox>
-                <Label fx:id="cacheSizeLabel" styleClass="settings-value"/>
-                <Button fx:id="clearCacheButton" text="Vaciar caché" onAction="#onClearCache"/>
+                <Label fx:id="cacheSizeLabel" styleClass="settings-value" minWidth="-Infinity"/>
+                <Button fx:id="clearCacheButton" text="Vaciar caché" onAction="#onClearCache" minWidth="-Infinity"/>
             </HBox>
         </VBox>
 
@@ -109,7 +111,7 @@
                     <Label text="Opcional. Servirá para sincronizar tu lista de VNDB. Se crea en tu perfil de VNDB, en la pestaña Aplicaciones."
                            styleClass="settings-desc" wrapText="true"/>
                 </VBox>
-                <TextField promptText="Pega aquí tu token" prefWidth="280" disable="true"/>
+                <TextField promptText="Pega aquí tu token" prefWidth="280" minWidth="-Infinity" disable="true"/>
                 <Button text="Conectar" disable="true" minWidth="-Infinity"/>
             </HBox>
         </VBox>
