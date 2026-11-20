@@ -1,0 +1,15 @@
+# Salida de Maven
+target/
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Por si alguien crea la BD dentro del proyecto
+*.db
+*.db-wal
+*.db-shm

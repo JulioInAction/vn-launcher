@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Ventana principal: menú lateral a la izquierda y contenido en el centro.
+     fx:controller dice QUÉ clase controla esta vista; CÓMO se crea lo decide la
+     controller factory de Main (para pasarle el AppContext por constructor). -->
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.vnlauncher.ui.MainController">
+
+    <left>
+        <VBox styleClass="sidebar" spacing="8">
+            <Label text="VN Launcher" styleClass="app-title"/>
+            <!-- Desactivados hasta las fases 1 y 2 -->
+            <Button text="Biblioteca" maxWidth="Infinity" disable="true"/>
+            <Button text="Buscar en VNDB" maxWidth="Infinity" disable="true"/>
+        </VBox>
+    </left>
+
+    <center>
+        <VBox spacing="16" styleClass="content">
+            <Label text="Fase 0: esqueleto funcionando" styleClass="section-title"/>
+            <GridPane hgap="12" vgap="8">
+                <Label text="Carpeta de datos:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                <Label fx:id="dataDirLabel" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                <Label text="Versión del esquema:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                <Label fx:id="schemaLabel" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+            </GridPane>
+        </VBox>
+    </center>
+</BorderPane>
