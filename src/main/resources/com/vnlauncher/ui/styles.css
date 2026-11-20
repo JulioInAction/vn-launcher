@@ -62,7 +62,7 @@
     -vn-avatar-6: #533C47;
 
     -fx-font-family: "Inter";
-    -fx-font-size: 15px;
+    -fx-font-size: 17px;
     -fx-background-color: -vn-bg;
     /* Suavizado LCD (subpíxel): texto más nítido en Windows. Llega a etiquetas, botones y campos;
        los Text sueltos (los de un TextFlow) lo llevan en su propia clase (.text-strong...).
@@ -114,22 +114,28 @@
 }
 
 .text2  { -fx-text-fill: -vn-text2; }
+/* Títulos y nombres originales (normalmente en japonés): Inter no tiene esos caracteres y JavaFX
+   tiraría de una fuente de reserva del sistema. Zen Kaku Gothic New sí los tiene (peso 500). */
+.original-text {
+    -fx-font-family: "Zen Kaku Gothic New Medium";
+}
+
 .muted  { -fx-text-fill: -vn-muted; }
 .faint  { -fx-text-fill: -vn-faint; }
-.small  { -fx-font-size: 14px; }
-.meta   { -fx-font-size: 14px; -fx-text-fill: -vn-muted; }
+.small  { -fx-font-size: 16px; }
+.meta   { -fx-font-size: 16px; -fx-text-fill: -vn-muted; }
 
 /* Etiqueta en mayúsculas pequeñas ("ESTANTERÍAS"). JavaFX no tiene letter-spacing en CSS,
    así que el espaciado del diseño no se puede reproducir exactamente. */
 .caps {
     -fx-font-family: "Inter SemiBold";
-    -fx-font-size: 12px;
+    -fx-font-size: 14px;
     -fx-text-fill: -vn-muted;
 }
 
 .field-label {
     -fx-font-family: "Inter Medium";
-    -fx-font-size: 14px;
+    -fx-font-size: 16px;
     -fx-text-fill: -vn-text;
 }
 
@@ -143,11 +149,11 @@
 
 .page-title    { -fx-font-size: 32px; }
 .detail-title  { -fx-font-size: 40px; }
-.section-title { -fx-font-size: 25px; }
-.card-title    { -fx-font-size: 21px; }
-.result-title  { -fx-font-size: 17px; }
-.tile-title    { -fx-font-size: 15px; }
-.logo-text     { -fx-font-size: 19px; }
+.section-title { -fx-font-size: 27px; }
+.card-title    { -fx-font-size: 23px; }
+.result-title  { -fx-font-size: 19px; }
+.tile-title    { -fx-font-size: 17px; }
+.logo-text     { -fx-font-size: 21px; }
 
 .description {
     -fx-text-fill: -vn-text2;
@@ -186,8 +192,8 @@
 .sidebar {
     -fx-background-color: -vn-side;
     -fx-border-color: transparent -vn-border transparent transparent;
-    -fx-pref-width: 230;
-    -fx-min-width: 230;
+    -fx-pref-width: 250;
+    -fx-min-width: 250;
 }
 
 .sidebar-content {
@@ -219,12 +225,12 @@
 
 .nav-number {
     -fx-font-family: "Inter SemiBold";
-    -fx-font-size: 12px;
+    -fx-font-size: 14px;
     -fx-text-fill: -vn-muted;
 }
 
 .nav-text {
-    -fx-font-size: 18px;
+    -fx-font-size: 20px;
     -fx-text-fill: -vn-muted;
 }
 
@@ -267,7 +273,7 @@
 }
 
 .shelf-count {
-    -fx-font-size: 14px;
+    -fx-font-size: 16px;
     -fx-text-fill: -vn-muted;
 }
 
@@ -281,7 +287,7 @@
 
 .counter-value {
     -fx-font-family: "Inter SemiBold";
-    -fx-font-size: 14px;
+    -fx-font-size: 16px;
     -fx-text-fill: -vn-text;
 }
 
@@ -310,7 +316,7 @@
     -fx-border-radius: 10;
     -fx-text-fill: -vn-text;
     -fx-font-family: "Inter SemiBold";
-    -fx-font-size: 15px;
+    -fx-font-size: 17px;
     -fx-padding: 0 18 0 18;
     -fx-min-height: 44;
     -fx-cursor: hand;
@@ -322,6 +328,12 @@
 
 .button:focused {
     -fx-border-color: -vn-accent-ink;
+}
+
+/* Todos los ScrollPane (también el de dentro de cada TextArea) usan un skin propio que no guarda
+   el contenido en caché: con la caché del skin normal, el texto perdía el suavizado LCD. */
+.scroll-pane {
+    -fx-skin: "com.vnlauncher.ui.SharpScrollPaneSkin";
 }
 
 /* ===================================================================== Deshabilitado
@@ -384,7 +396,7 @@
 }
 
 .big-button {
-    -fx-font-size: 17px;
+    -fx-font-size: 19px;
     -fx-padding: 0 30 0 30;
     -fx-min-height: 48;
 }
@@ -424,7 +436,7 @@
 }
 
 .small-button {
-    -fx-font-size: 14px;
+    -fx-font-size: 16px;
     -fx-padding: 0 12 0 12;
 }
 
@@ -438,14 +450,14 @@
 .in-library {
     -fx-text-fill: -vn-blue;
     -fx-font-family: "Inter Medium";
-    -fx-font-size: 14px;
+    -fx-font-size: 16px;
 }
 
 /* ===================================================================== Etiquetas de estado */
 
 .pill {
     -fx-font-family: "Inter SemiBold";
-    -fx-font-size: 12px;
+    -fx-font-size: 14px;
     -fx-padding: 2 9 2 9;
     -fx-background-radius: 999;   /* totalmente redondeada */
 }
@@ -456,7 +468,7 @@
 .pill-spoiler                { -fx-background-color: -vn-orange-bg; -fx-text-fill: -vn-orange; }
 
 .badge {
-    -fx-font-size: 12px;
+    -fx-font-size: 14px;
     -fx-padding: 2 8 2 8;
     -fx-background-radius: 999;
     -fx-border-color: -vn-border2;
@@ -477,7 +489,7 @@
     -fx-highlight-text-fill: -vn-on-accent;
     -fx-padding: 0 14 0 14;
     -fx-min-height: 46;
-    -fx-font-size: 16px;
+    -fx-font-size: 18px;
 }
 
 .text-field:focused {
@@ -593,7 +605,7 @@
 .tooltip {
     -fx-background-color: -vn-surface;
     -fx-text-fill: -vn-text;
-    -fx-font-size: 14px;
+    -fx-font-size: 16px;
     -fx-background-radius: 8;
 }
 
@@ -666,12 +678,12 @@
 }
 
 .initials       { -fx-font-size: 32px; }
-.initials-small { -fx-font-size: 14px; }
+.initials-small { -fx-font-size: 16px; }
 
 .sensitive-badge {
     -fx-background-color: -vn-overlay;
     -fx-text-fill: -vn-text;
-    -fx-font-size: 12px;
+    -fx-font-size: 14px;
     -fx-padding: 2 6 2 6;
 }
 
@@ -761,24 +773,24 @@
 }
 
 .stat-label {
-    -fx-font-size: 14px;
+    -fx-font-size: 16px;
     -fx-text-fill: -vn-muted;
 }
 
 .stat-value {
     -fx-font-family: "Inter SemiBold";
-    -fx-font-size: 18px;
+    -fx-font-size: 20px;
     -fx-text-fill: -vn-text;
 }
 
 .exe-path {
-    -fx-font-size: 14px;
+    -fx-font-size: 16px;
     -fx-text-fill: -vn-muted;
 }
 
 /* Enlaces pequeños junto a .exe-path ("Cambiar", "Quitar", "+ Añadir programa de configuración") */
 .hyperlink.small-link {
-    -fx-font-size: 14px;
+    -fx-font-size: 16px;
 }
 
 /* ===================================================================== Personajes */
@@ -792,7 +804,7 @@
 }
 
 .character-name {
-    -fx-font-size: 15px;
+    -fx-font-size: 17px;
 }
 
 .spoiler-placeholder {
@@ -817,23 +829,23 @@
 
 .drag-handle {
     -fx-text-fill: -vn-faint;
-    -fx-font-size: 17px;
+    -fx-font-size: 19px;
     -fx-cursor: move;
 }
 
 .route-order {
     -fx-font-family: "Inter Medium";
-    -fx-font-size: 19px;
+    -fx-font-size: 21px;
     -fx-text-fill: -vn-faint;
     -fx-min-width: 22;
 }
 
 .route-name {
-    -fx-font-size: 17px;
+    -fx-font-size: 19px;
 }
 
 .route-notes {
-    -fx-font-size: 14px;
+    -fx-font-size: 16px;
     -fx-text-fill: -vn-text2;
 }
 
@@ -846,7 +858,7 @@
 
 .status-box > .list-cell {
     -fx-font-family: "Inter SemiBold";
-    -fx-font-size: 14px;
+    -fx-font-size: 16px;
     -fx-padding: 3 10 3 10;
     -fx-background-radius: 999;
 }
@@ -868,7 +880,7 @@
 .dialog-pane > .header-panel .label {
     -fx-font-family: "Zen Kaku Gothic New";
     -fx-font-weight: bold;
-    -fx-font-size: 18px;
+    -fx-font-size: 20px;
 }
 
 .dialog-pane > .content.label {
@@ -881,20 +893,20 @@
 /* Text sueltos dentro de un TextFlow: el suavizado LCD de .root no les llega (no se hereda) */
 .text-strong {
     -fx-font-family: "Inter SemiBold";
-    -fx-font-size: 15px;
+    -fx-font-size: 17px;
     -fx-fill: -vn-text;
     -fx-font-smoothing-type: lcd;
 }
 
 .text-flow-normal {
-    -fx-font-size: 15px;
+    -fx-font-size: 17px;
     -fx-fill: -vn-text2;
     -fx-font-smoothing-type: lcd;
 }
 
 .mono, .mono-text, .mono-box {
     -fx-font-family: "Monospaced";
-    -fx-font-size: 14px;
+    -fx-font-size: 16px;
 }
 
 .mono-text {
@@ -935,7 +947,7 @@
 .modal-title {
     -fx-font-family: "Zen Kaku Gothic New";
     -fx-font-weight: bold;
-    -fx-font-size: 23px;
+    -fx-font-size: 25px;
     -fx-text-fill: -vn-text;
 }
 
@@ -1067,7 +1079,7 @@
     -fx-border-color: -vn-border;
     -fx-border-radius: 12;
     -fx-padding: 12;
-    -fx-min-height: 64;
+    -fx-min-height: 76;   /* caben dos líneas de nombre ("Fujibayashi / Kyou") a 17 px */
     -fx-text-fill: -vn-text;
     -fx-font-family: "Inter Medium";
     -fx-cursor: hand;
@@ -1117,7 +1129,7 @@
 .empty-title {
     -fx-font-family: "Zen Kaku Gothic New";
     -fx-font-weight: bold;
-    -fx-font-size: 22px;
+    -fx-font-size: 24px;
     -fx-text-fill: -vn-text;
     -fx-text-alignment: center;   /* centra cada línea cuando el texto ocupa varias */
     -fx-alignment: center;        /* centra el bloque de texto dentro de la etiqueta */
@@ -1160,7 +1172,7 @@
 .empty-dashed .empty-title {
     -fx-font-family: "Inter SemiBold";
     -fx-font-weight: normal;
-    -fx-font-size: 16px;
+    -fx-font-size: 18px;
 }
 
 /* ===================================================================== Avisos (Notice) */
@@ -1192,7 +1204,7 @@
 
 .notice-title {
     -fx-font-family: "Inter SemiBold";
-    -fx-font-size: 16px;
+    -fx-font-size: 18px;
     -fx-text-fill: -vn-text;
 }
 
@@ -1206,7 +1218,7 @@
 .settings-card-title {
     -fx-font-family: "Zen Kaku Gothic New";
     -fx-font-weight: bold;
-    -fx-font-size: 20px;
+    -fx-font-size: 22px;
     -fx-text-fill: -vn-text;
 }
 
@@ -1224,13 +1236,14 @@
 }
 
 .settings-label {
+    -fx-wrap-text: true; /* con la ventana estrecha, en dos líneas antes que cortado */
     -fx-font-family: "Inter SemiBold";
     -fx-text-fill: -vn-text;
 }
 
 .settings-desc {
     -fx-text-fill: -vn-text2;
-    -fx-font-size: 14px;
+    -fx-font-size: 16px;
 }
 
 .settings-value {
@@ -1249,11 +1262,11 @@
 .status-ok {
     -fx-text-fill: -vn-blue;
     -fx-font-family: "Inter Medium";
-    -fx-font-size: 14px;
+    -fx-font-size: 16px;
 }
 
 .status-error {
     -fx-text-fill: -vn-danger;
     -fx-font-family: "Inter Medium";
-    -fx-font-size: 14px;
+    -fx-font-size: 16px;
 }

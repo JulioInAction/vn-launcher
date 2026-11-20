@@ -5,6 +5,7 @@ import com.vnlauncher.model.LibraryEntry;
 import com.vnlauncher.model.VisualNovel;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.beans.binding.Bindings;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -83,6 +84,10 @@ public class SearchController {
     private void initialize() {
         setBusy(false);
         showEmpty(null);
+        // La vista previa ocupa como mucho el 42 % de la fila: con la ventana estrecha, la columna
+        // de resultados no se queda tan apretada que cada título ocupe cuatro líneas
+        previewCard.prefWidthProperty().bind(
+                Bindings.min(440, resultsRow.widthProperty().multiply(0.42)));
         // Antes de buscar nada solo se ve la pista bajo la barra (sin la columna de resultados)
         resultsRow.setVisible(false);
         resultsRow.setManaged(false);
@@ -318,10 +323,11 @@ public class SearchController {
         title.setWrapText(true);
         Label meta = new Label(meta(vn));
         meta.getStyleClass().add("meta");
+        meta.setWrapText(true);
         VBox headerTexts = new VBox(6, title, meta);
         if (vn.altTitle() != null) {
             Label alt = new Label(vn.altTitle());
-            alt.getStyleClass().addAll("meta", "small");
+            alt.getStyleClass().addAll("meta", "small", "original-text");
             alt.setWrapText(true);
             headerTexts.getChildren().add(1, alt);
         }

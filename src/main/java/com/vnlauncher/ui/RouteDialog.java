@@ -64,8 +64,8 @@ final class RouteDialog {
         ToggleGroup heroineGroup = new ToggleGroup();
         TilePane heroines = new TilePane(10, 10);
         heroines.setPrefColumns(3);
-        // 3 × 200 + 2 huecos de 10 = 620: el ancho útil del diálogo (680 menos 28 de margen por lado)
-        heroines.setPrefTileWidth(200);
+        // 3 × 214 + 2 huecos de 10 = 662: el ancho útil del diálogo (720 menos 28 de margen por lado)
+        heroines.setPrefTileWidth(214);
         for (VnCharacter vc : characters) {
             GameCharacter c = vc.character();
             Path file = c.imagePath() == null ? null : images.resolve(c.imagePath());
@@ -124,8 +124,8 @@ final class RouteDialog {
         notes.setWrapText(true);
         notes.setPrefRowCount(3);
 
-        // 680: con tres tarjetas de heroína por fila, nombres como "Fujibayashi" caben sin partirse
-        ModalDialog dialog = new ModalDialog(owner, 680)
+        // 720: con tres tarjetas de heroína por fila, nombres como "Fujibayashi" caben sin partirse
+        ModalDialog dialog = new ModalDialog(owner, 720)
                 .titleWithSubtitle(existing == null ? "Nueva ruta" : "Editar ruta", vnTitle)
                 .content(field("Nombre de la ruta", nameField))
                 .content(field("Heroína", heroines, heroineHint))

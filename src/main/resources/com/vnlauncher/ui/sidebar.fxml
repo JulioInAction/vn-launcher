@@ -84,7 +84,7 @@
                     </tooltip>
                 </Label>
                 <Region HBox.hgrow="ALWAYS"/>
-                <Label fx:id="vndbCountLabel" text="0/200" styleClass="counter-value"/>
+                <Label fx:id="vndbCountLabel" text="0/200" styleClass="counter-value" minWidth="-Infinity"/>
             </HBox>
             <ProgressBar fx:id="vndbCountBar" progress="0" maxWidth="Infinity" styleClass="thin-bar"/>
         </VBox>

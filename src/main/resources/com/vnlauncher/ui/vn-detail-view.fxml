@@ -38,7 +38,7 @@
             <VBox spacing="12" HBox.hgrow="ALWAYS">
                 <VBox spacing="4">
                     <Label fx:id="titleLabel" styleClass="detail-title" wrapText="true"/>
-                    <Label fx:id="altTitleLabel" styleClass="muted" wrapText="true"/>
+                    <Label fx:id="altTitleLabel" styleClass="muted, original-text" wrapText="true"/>
                     <HBox spacing="6" alignment="BASELINE_LEFT">
                         <Label fx:id="metaLabel" styleClass="muted"/>
                         <Label text="·" styleClass="muted"/>

@@ -8,6 +8,7 @@ Tipografías de Google Fonts incluidas en la aplicación (ver `docs/DISEÑO.md`)
 | `Inter-Medium.ttf` | `Inter Medium` | etiquetas, botones (500) |
 | `Inter-SemiBold.ttf` | `Inter SemiBold` | énfasis (600) |
 | `ZenKakuGothicNew-Bold.ttf` | `Zen Kaku Gothic New` (bold) | títulos, nombres, navegación; incluye japonés |
+| `ZenKakuGothicNew-Medium.ttf` | `Zen Kaku Gothic New Medium` | títulos y nombres originales en japonés (500) |
 
 Ambas se distribuyen con la **SIL Open Font License 1.1**: `OFL-Inter.txt` y
 `OFL-ZenKakuGothicNew.txt`. La OFL permite incluirlas en un programa siempre que se acompañen

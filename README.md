@@ -75,6 +75,9 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
   de un `TextFlow`) no lo heredan: llevan la propiedad en su clase (`.text-strong`...).
   Además, las fuentes llevan *hinting* añadido con `tools/hint_fonts.py` (las de Google Fonts
   vienen sin él y en Windows se veían borrosas; ver `src/main/resources/fonts/README.md`).
+  Y los `ScrollPane` usan `SharpScrollPaneSkin` (asignado en el CSS con `-fx-skin`): el skin normal
+  guarda el contenido en caché y todo lo que había dentro (la ficha, la biblioteca...) salía en gris.
+- Títulos y nombres originales (japonés): clase `.original-text`, con Zen Kaku Gothic New Medium.
 - La ventana se abre la primera vez al 90 % de la pantalla y después recuerda su posición, tamaño
   y si estaba maximizada (ajuste `window`).
 

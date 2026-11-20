@@ -15,8 +15,8 @@ import java.util.List;
  *
  * <p>Ojo con los pesos: JavaFX registra cada archivo con el nombre de familia que trae dentro.
  * Inter Medium e Inter SemiBold se llaman así ("Inter Medium", "Inter SemiBold"), no "Inter" con
- * otro peso; por eso en el CSS se usan como familias distintas. Zen Kaku Gothic New sí se registra
- * como familia "Zen Kaku Gothic New" con estilo Bold.
+ * otro peso; por eso en el CSS se usan como familias distintas. Zen Kaku Gothic New Bold se registra
+ * como familia "Zen Kaku Gothic New" con estilo Bold, y la Medium como "Zen Kaku Gothic New Medium".
  */
 public final class Fonts {
 
@@ -27,6 +27,7 @@ public final class Fonts {
             "Inter-Medium.ttf",
             "Inter-SemiBold.ttf",
             "ZenKakuGothicNew-Bold.ttf",
+            "ZenKakuGothicNew-Medium.ttf", // títulos y nombres originales en japonés (500)
     };
 
     private Fonts() {

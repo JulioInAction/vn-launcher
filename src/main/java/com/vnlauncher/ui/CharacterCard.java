@@ -23,8 +23,8 @@ import java.nio.file.Path;
 class CharacterCard extends VBox {
 
     /** 5:6, la proporción de las imágenes de personaje de VNDB (250 × 300): la foto llena el marco. */
-    static final double IMAGE_WIDTH = 150;
-    static final double IMAGE_HEIGHT = 180;
+    static final double IMAGE_WIDTH = 160;
+    static final double IMAGE_HEIGHT = 192;
 
     /** Qué se debe mostrar en la tarjeta; lo decide VnDetailController. */
     record Options(boolean hidden, boolean sensitive, boolean revealSensitive, boolean hasRoute) {
@@ -68,7 +68,7 @@ class CharacterCard extends VBox {
             getChildren().addAll(image, nameLabel(c.name()));
             if (c.original() != null) {
                 Label original = new Label(c.original());
-                original.getStyleClass().addAll("muted", "small");
+                original.getStyleClass().addAll("muted", "small", "original-text");
                 original.setMaxWidth(IMAGE_WIDTH);
                 getChildren().add(original);
             }

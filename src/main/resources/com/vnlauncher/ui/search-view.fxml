@@ -55,8 +55,9 @@
             </ScrollPane>
         </VBox>
 
-        <!-- Vista previa: ancho fijo, alto según su contenido (no se estira hasta abajo) -->
+        <!-- Vista previa: alto según su contenido (no se estira hasta abajo). El ancho lo pone
+             SearchController: el 42 % de la fila, entre 300 y 440 px. -->
         <VBox fx:id="previewCard" styleClass="card, preview-card" spacing="16"
-              prefWidth="440" minWidth="400" maxWidth="440" maxHeight="-Infinity"/>
+              minWidth="300" maxWidth="440" maxHeight="-Infinity"/>
     </HBox>
 </VBox>

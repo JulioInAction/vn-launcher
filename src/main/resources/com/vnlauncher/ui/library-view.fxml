@@ -6,6 +6,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.TilePane?>
@@ -42,11 +43,12 @@
         <HBox fx:id="continueCard" styleClass="card, continue-card" spacing="20" alignment="CENTER_LEFT"/>
 
         <HBox fx:id="filtersRow" spacing="8" alignment="CENTER_LEFT">
-            <HBox fx:id="chipsBox" spacing="8" alignment="CENTER_LEFT"/>
-            <Region HBox.hgrow="ALWAYS"/>
+            <!-- FlowPane: si las pastillas no caben en una línea (ventana estrecha), pasan a la de
+                 abajo en vez de empujar y cortar el desplegable de orden -->
+            <FlowPane fx:id="chipsBox" hgap="8" vgap="8" HBox.hgrow="ALWAYS" alignment="CENTER_LEFT"/>
             <!-- minWidth="-Infinity" = Region.USE_PREF_SIZE: no encoger por debajo de su texto -->
             <Label text="Ordenar por" styleClass="meta" minWidth="-Infinity"/>
-            <ComboBox fx:id="sortBox" prefWidth="200"/>
+            <ComboBox fx:id="sortBox" prefWidth="200" minWidth="-Infinity"/>
         </HBox>
 
         <Label fx:id="emptyLabel" styleClass="muted" wrapText="true"/>

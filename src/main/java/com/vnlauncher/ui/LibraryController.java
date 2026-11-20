@@ -62,7 +62,7 @@ public class LibraryController implements PlaytimeAware {
     @FXML private VBox emptyBox;
     @FXML private HBox filtersRow;
     @FXML private HBox continueCard;
-    @FXML private HBox chipsBox;
+    @FXML private FlowPane chipsBox;
     @FXML private CheckBox showSensitiveCheck;
     @FXML private ComboBox<LibrarySort> sortBox;
     @FXML private Label emptyLabel;
@@ -275,12 +275,14 @@ public class LibraryController implements PlaytimeAware {
                 : "última partida " + RelativeTime.format(entry.lastPlayedAt(), Instant.now(), ZoneId.systemDefault()));
         Label meta = new Label(String.join(" · ", parts));
         meta.getStyleClass().add("text2");
+        meta.setWrapText(true); // con la ventana estrecha, en dos líneas mejor que cortado
         VBox texts = new VBox(4, caps, title, meta);
         HBox.setHgrow(texts, Priority.ALWAYS);
         texts.setMinWidth(0);
 
         Button play = new Button(running ? "Jugando..." : "▶  Jugar");
         play.getStyleClass().addAll("primary-button", "big-button");
+        play.setMinWidth(Region.USE_PREF_SIZE); // el botón nunca se corta ("Ju..."); cede el texto
         play.setDisable(running);
         play.setOnAction(event -> {
             play.setDisable(true);
@@ -297,6 +299,7 @@ public class LibraryController implements PlaytimeAware {
         if (entry.useLocaleEmulator()) {
             Label le = new Label("Locale Emulator");
             le.getStyleClass().add("badge");
+            le.setMinWidth(Region.USE_PREF_SIZE);
             continueCard.getChildren().add(le);
         }
         continueCard.getChildren().add(play);

@@ -23,6 +23,9 @@ module com.vnlauncher {
     // FXMLLoader instancia los controladores y rellena los campos @FXML
     // (aunque sean privados) por reflexión. "opens" permite esa reflexión.
     opens com.vnlauncher.ui to javafx.fxml;
+    // styles.css pide un skin propio (-fx-skin: SharpScrollPaneSkin) y javafx.controls lo crea por
+    // reflexión: necesita ver el paquete.
+    exports com.vnlauncher.ui to javafx.controls;
 
     // Jackson también usa reflexión para leer/crear los records de los DTO.
     opens com.vnlauncher.api.dto to com.fasterxml.jackson.databind;
