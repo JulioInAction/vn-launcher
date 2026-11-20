@@ -38,6 +38,8 @@
     -vn-chip-on-bg: #ECEDF2;
     -vn-chip-ontext: #121318;
     -vn-track: #30333E;
+    /* -vn-watermark ya no se usa: la marca de agua es una imagen (images/marca-agua-rosa*.png) con
+       opacidad 0.07, que da este mismo color. Se mantiene porque figura en DISEÑO.md. */
     -vn-watermark: rgba(242, 160, 181, 0.07);
     -vn-overlay: rgba(18, 19, 24, 0.55);
 
@@ -252,14 +254,6 @@
 
 .recent-cover {
     -fx-cursor: hand;
-}
-
-/* Texto japonés decorativo en vertical, al fondo de la barra */
-.watermark {
-    -fx-font-family: "Zen Kaku Gothic New";
-    -fx-font-weight: bold;
-    -fx-font-size: 58px;
-    -fx-text-fill: -vn-watermark;
 }
 
 .counter-value {

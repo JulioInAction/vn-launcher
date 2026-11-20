@@ -8,15 +8,19 @@ import com.vnlauncher.model.Theme;
 import com.vnlauncher.service.LibraryService;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Tooltip;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.SVGPath;
@@ -60,7 +64,8 @@ public class SidebarController {
     private final AppContext ctx;
     private final Navigator navigator;
 
-    @FXML private VBox watermark;
+    @FXML private StackPane sidebarRoot;
+    @FXML private ImageView watermark;
     @FXML private VBox navBox;
     @FXML private VBox shelvesBox;
     @FXML private HBox recentBox;
@@ -71,6 +76,10 @@ public class SidebarController {
     private final Map<Section, Button> navButtons = new EnumMap<>(Section.class);
     private final Map<PlayStatus, Label> shelfCounts = new EnumMap<>(PlayStatus.class);
 
+    // Marca de agua de cada tema (se cargan una vez y se cambian al cambiar de tema)
+    private final Image watermarkDark = loadImage("images/marca-agua-rosa.png");
+    private final Image watermarkLight = loadImage("images/marca-agua-rosa-claro.png");
+
     public SidebarController(AppContext ctx, Navigator navigator) {
         this.ctx = ctx;
         this.navigator = navigator;
@@ -78,16 +87,11 @@ public class SidebarController {
 
     @FXML
     private void initialize() {
-        // Texto en vertical: una etiqueta por letra, cada una de 59 px de alto. (Un solo Label con
-        // saltos de línea dejaba demasiado espacio entre letras y JavaFX no admite interlineado negativo.)
-        for (String letter : "ビジュアルノベル".split("")) {
-            Label l = new Label(letter);
-            l.getStyleClass().add("watermark");
-            l.setMinHeight(59);
-            l.setPrefHeight(59);
-            l.setMaxHeight(59);
-            watermark.getChildren().add(l);
-        }
+        // La marca de agua no está "managed": el StackPane no la coloca. La pegamos al borde
+        // derecho enlazando su X al ancho de la barra (si la barra cambia de ancho, se recoloca sola).
+        watermark.layoutXProperty().bind(Bindings.createDoubleBinding(
+                () -> sidebarRoot.getWidth() - watermark.getLayoutBounds().getWidth(),
+                sidebarRoot.widthProperty(), watermark.layoutBoundsProperty()));
 
         for (Section section : Section.values()) {
             Button button = navItem(section);
@@ -222,14 +226,22 @@ public class SidebarController {
 
     // ------------------------------------------------------------------ tema
 
-    /** Pone el texto y el icono del botón según el tema ACTUAL (ofrece cambiar al otro). */
+    /**
+     * Adapta la barra al tema ACTUAL: marca de agua de ese tema, y texto e icono del botón
+     * (que ofrece cambiar al otro).
+     */
     public void showTheme(Theme current) {
         boolean dark = current == Theme.DARK;
+        watermark.setImage(dark ? watermarkDark : watermarkLight);
         SVGPath icon = new SVGPath();
         icon.setContent(dark ? SUN : MOON);
         icon.getStyleClass().add("icon-stroke");
         themeButton.setGraphic(icon);
         themeButton.setText(dark ? "Tema claro" : "Tema oscuro");
+    }
+
+    private static Image loadImage(String resource) {
+        return new Image(SidebarController.class.getResource(resource).toExternalForm());
     }
 
     @FXML
