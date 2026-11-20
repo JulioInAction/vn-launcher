@@ -8,8 +8,11 @@ import java.util.stream.Collectors;
  * aquí los nombres siguen las convenciones de Java, la descripción ya es texto plano
  * y la lista de desarrolladores nunca es null.
  *
- * @param released     fecha tal como la da VNDB: "2004-04-28", "2004", "TBA"... o null.
- * @param imageSexual  0..2, null si no hay portada.
+ * @param released      fecha tal como la da VNDB: "2004-04-28", "2004", "TBA"... o null.
+ * @param imageUrl      URL de la portada en VNDB; null si no tiene.
+ * @param imagePath     portada descargada, RELATIVA a la carpeta de datos ("images/vn/v4.jpg");
+ *                      null si aún no se ha descargado (p. ej. en resultados de búsqueda).
+ * @param imageSexual   0..2, null si no hay portada.
  * @param imageViolence 0..2, null si no hay portada.
  */
 public record VisualNovel(
@@ -19,6 +22,7 @@ public record VisualNovel(
         String description,
         String released,
         String imageUrl,
+        String imagePath,
         Double imageSexual,
         Double imageViolence,
         List<Developer> developers

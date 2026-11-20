@@ -54,6 +54,30 @@ public class Database {
         return conn;
     }
 
+    /** Trabajo con la BD que puede lanzar SQLException (las lambdas normales no pueden). */
+    @FunctionalInterface
+    public interface SqlWork {
+        void run(Connection conn) throws SQLException;
+    }
+
+    /**
+     * Ejecuta varias sentencias como UNA transacción: o se aplican todas o ninguna.
+     * Ejemplo: guardar una VN y sus desarrolladores; si falla a medias, no queda una VN
+     * sin desarrolladores o con los de antes mezclados.
+     */
+    public void inTransaction(SqlWork work) throws SQLException {
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                work.run(conn);
+                conn.commit();
+            } catch (SQLException | RuntimeException e) {
+                conn.rollback();
+                throw e;
+            }
+        }
+    }
+
     /** Versión actual del esquema, guardada por SQLite en la cabecera del fichero. */
     public int schemaVersion() throws SQLException {
         try (Connection conn = getConnection();

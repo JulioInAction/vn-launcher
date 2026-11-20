@@ -46,6 +46,7 @@ public class CatalogService {
                 VndbMarkup.toPlainText(dto.description()),
                 dto.released(),
                 image == null ? null : image.url(),
+                null, // imagePath: un resultado de búsqueda aún no tiene portada descargada
                 image == null ? null : image.sexual(),
                 image == null ? null : image.violence(),
                 producers.stream().map(p -> new Developer(p.id(), p.name(), p.original())).toList()

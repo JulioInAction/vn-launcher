@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.TilePane?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Biblioteca: cabecera (título, contador, casilla de imágenes sensibles) y una cuadrícula
+     de portadas. TilePane coloca los hijos en filas y salta de línea cuando no caben. -->
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.vnlauncher.ui.LibraryController"
+      spacing="12" styleClass="content">
+
+    <HBox spacing="12" alignment="BASELINE_LEFT">
+        <Label text="Biblioteca" styleClass="section-title"/>
+        <Label fx:id="countLabel" styleClass="muted"/>
+        <!-- Region vacía que crece: empuja la casilla hacia la derecha -->
+        <Region HBox.hgrow="ALWAYS"/>
+        <CheckBox fx:id="showSensitiveCheck" text="Mostrar imágenes sensibles"/>
+    </HBox>
+
+    <Label fx:id="emptyLabel" styleClass="muted" wrapText="true"
+           text="Tu biblioteca está vacía. Ve a &quot;Buscar en VNDB&quot; y añade alguna novela."/>
+
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="plain-scroll">
+        <TilePane fx:id="grid" hgap="18" vgap="18"/>
+    </ScrollPane>
+</VBox>

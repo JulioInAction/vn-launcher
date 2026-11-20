@@ -3,12 +3,18 @@ package com.vnlauncher.app;
 import com.vnlauncher.api.RateLimiter;
 import com.vnlauncher.api.VndbClient;
 import com.vnlauncher.db.Database;
+import com.vnlauncher.db.repo.LibraryRepository;
+import com.vnlauncher.db.repo.VnRepository;
 import com.vnlauncher.service.CatalogService;
+import com.vnlauncher.service.ContentFilter;
+import com.vnlauncher.service.ImageCacheService;
+import com.vnlauncher.service.LibraryService;
 import com.vnlauncher.util.AppPaths;
 import com.vnlauncher.util.Sleeper;
 
 import java.net.http.HttpClient;
 import java.sql.SQLException;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.InstantSource;
 import java.util.concurrent.ExecutorService;
@@ -35,14 +41,23 @@ public final class AppContext {
     private final HttpClient httpClient;
     private final ExecutorService background;
     private final CatalogService catalogService;
+    private final LibraryService libraryService;
+    private final ImageCacheService imageCache;
+    private final ContentFilter contentFilter;
 
-    private AppContext(AppPaths paths, Database database, HttpClient httpClient,
-                       ExecutorService background, CatalogService catalogService) {
+    // Constructor con muchos parámetros: es el precio de la inyección manual. Si crece demasiado,
+    // se podría agrupar (p. ej. un record con los servicios), pero así se ve todo de un vistazo.
+    private AppContext(AppPaths paths, Database database, HttpClient httpClient, ExecutorService background,
+                       CatalogService catalogService, LibraryService libraryService,
+                       ImageCacheService imageCache, ContentFilter contentFilter) {
         this.paths = paths;
         this.database = database;
         this.httpClient = httpClient;
         this.background = background;
         this.catalogService = catalogService;
+        this.libraryService = libraryService;
+        this.imageCache = imageCache;
+        this.contentFilter = contentFilter;
     }
 
     /** Prepara carpetas, base de datos y servicios. Si algo falla aquí la app no puede arrancar. */
@@ -68,7 +83,15 @@ public final class AppContext {
         // casi todo el tiempo esperando (red, disco). Además no impiden que la app se cierre.
         ExecutorService background = Executors.newVirtualThreadPerTaskExecutor();
 
-        return new AppContext(paths, database, httpClient, background, new CatalogService(vndb));
+        // Repositorios (SQL) y servicios (lógica) que los usan.
+        VnRepository vnRepository = new VnRepository(database);
+        LibraryRepository libraryRepository = new LibraryRepository(database);
+        ImageCacheService imageCache = new ImageCacheService(httpClient, paths);
+        LibraryService libraryService = new LibraryService(
+                vnRepository, libraryRepository, imageCache, Clock.systemUTC());
+
+        return new AppContext(paths, database, httpClient, background,
+                new CatalogService(vndb), libraryService, imageCache, ContentFilter.withDefaults());
     }
 
     /** Se llama al cerrar la ventana: corta las tareas y conexiones pendientes. */
@@ -92,5 +115,17 @@ public final class AppContext {
 
     public CatalogService catalogService() {
         return catalogService;
+    }
+
+    public LibraryService libraryService() {
+        return libraryService;
+    }
+
+    public ImageCacheService imageCache() {
+        return imageCache;
+    }
+
+    public ContentFilter contentFilter() {
+        return contentFilter;
     }
 }

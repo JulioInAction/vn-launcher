@@ -18,9 +18,10 @@
     <left>
         <VBox styleClass="sidebar" spacing="8">
             <Label text="VN Launcher" styleClass="app-title"/>
-            <!-- Desactivado hasta la Fase 2 -->
-            <Button text="Biblioteca" maxWidth="Infinity" disable="true"/>
-            <Button text="Buscar en VNDB" maxWidth="Infinity" onAction="#showSearch"/>
+            <Button fx:id="libraryButton" text="Biblioteca" maxWidth="Infinity"
+                    onAction="#showLibrary" styleClass="nav-button"/>
+            <Button fx:id="searchButton" text="Buscar en VNDB" maxWidth="Infinity"
+                    onAction="#showSearch" styleClass="nav-button"/>
         </VBox>
     </left>
 

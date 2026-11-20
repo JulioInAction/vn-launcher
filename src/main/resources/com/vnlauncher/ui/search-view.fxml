@@ -38,6 +38,7 @@
                 <Label fx:id="titleLabel" styleClass="detail-title" wrapText="true"/>
                 <Label fx:id="altTitleLabel" styleClass="muted" wrapText="true"/>
                 <Label fx:id="metaLabel" styleClass="muted" wrapText="true"/>
+                <Button fx:id="addButton" text="Añadir a la biblioteca" onAction="#onAddToLibrary"/>
                 <Label fx:id="descriptionLabel" wrapText="true" styleClass="description"/>
             </VBox>
         </ScrollPane>

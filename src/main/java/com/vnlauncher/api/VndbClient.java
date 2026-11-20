@@ -115,7 +115,9 @@ public class VndbClient {
             LOG.log(System.Logger.Level.INFO, "Petición a VNDB: POST {0}", request.uri());
             return http.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (IOException e) {
-            throw new VndbException("No se pudo conectar con VNDB: " + e.getMessage(), e);
+            // No usamos e.getMessage(): algunas (p. ej. ConnectException) no traen texto y saldría "null".
+            // El detalle técnico se conserva como "causa" de la excepción para el registro.
+            throw new VndbException("No se pudo conectar con VNDB. Comprueba tu conexión a internet.", e);
         } catch (InterruptedException e) {
             // Si alguien interrumpe el hilo (p. ej. al cerrar la app), restauramos la marca de
             // interrupción para que el código de más arriba también se entere.

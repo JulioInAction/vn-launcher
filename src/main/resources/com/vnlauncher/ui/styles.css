@@ -115,6 +115,96 @@
     -fx-font-size: 12px;
 }
 
+/* Menú lateral: botón de la sección actual resaltado */
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-alignment: center-left;
+}
+
+.nav-button:hover {
+    -fx-background-color: -bg-light;
+}
+
+.nav-button.active {
+    -fx-background-color: -bg-light;
+    -fx-border-color: transparent transparent transparent -accent;
+    -fx-border-width: 0 0 0 3;
+}
+
+.link-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -accent;
+    -fx-padding: 0;
+}
+
+.danger-button {
+    -fx-background-color: #5a2a2e;
+}
+
+.danger-button:hover {
+    -fx-background-color: #7a3238;
+}
+
+.check-box {
+    -fx-text-fill: -text;
+}
+
+/* Barras de scroll oscuras y finas (por defecto JavaFX las pinta claras) */
+.scroll-bar {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: -bg-light;
+    -fx-background-radius: 4;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-padding: 0;
+}
+
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+    -fx-shape: " ";
+    -fx-padding: 0;
+}
+
+/* ScrollPane sin fondo blanco ni borde */
+.plain-scroll,
+.plain-scroll > .viewport {
+    -fx-background-color: -bg;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+/* ---------- Biblioteca ---------- */
+
+.tile {
+    -fx-padding: 6;
+    -fx-background-radius: 6;
+}
+
+.tile:hover {
+    -fx-background-color: -bg-light;
+}
+
+.tile-title {
+    -fx-font-size: 13px;
+}
+
+.cover {
+    -fx-background-color: -bg-dark;
+    -fx-background-radius: 4;
+}
+
+.sensitive-badge {
+    -fx-background-color: rgba(0, 0, 0, 0.7);
+    -fx-text-fill: #ffb4b4;
+    -fx-font-size: 11px;
+    -fx-padding: 2 6;
+}
+
 /* ---------- Detalle ---------- */
 
 .detail-scroll,
