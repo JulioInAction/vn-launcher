@@ -22,8 +22,9 @@ import java.nio.file.Path;
  */
 class CharacterCard extends VBox {
 
-    static final double IMAGE_WIDTH = 124;
-    static final double IMAGE_HEIGHT = 170;
+    /** 5:6, la proporción de las imágenes de personaje de VNDB (250 × 300): la foto llena el marco. */
+    static final double IMAGE_WIDTH = 150;
+    static final double IMAGE_HEIGHT = 180;
 
     /** Qué se debe mostrar en la tarjeta; lo decide VnDetailController. */
     record Options(boolean hidden, boolean sensitive, boolean revealSensitive, boolean hasRoute) {

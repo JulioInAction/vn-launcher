@@ -8,6 +8,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.Screen;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -68,7 +69,16 @@ public class CoverView extends StackPane {
         if (imageUrl != null) {
             // Parámetros: url, ancho, alto, conservar proporción, suavizado, cargar en segundo plano.
             // Pedir ya el tamaño final ahorra memoria: no guardamos la imagen original entera.
-            imageView.setImage(new Image(imageUrl, width, height, true, true, true));
+            // Se pide a la resolución REAL de la pantalla (con Windows al 150 %, 1,5 veces más
+            // píxeles) y se muestra al tamaño lógico con fitWidth/fitHeight: así no se amplía una
+            // imagen pequeña, que se vería borrosa. preserveRatio: la imagen se ve ENTERA dentro del
+            // marco; si su proporción no coincide, queda una franja del color de fondo.
+            double scale = outputScale();
+            imageView.setImage(new Image(imageUrl, width * scale, height * scale, true, true, true));
+            imageView.setFitWidth(width);
+            imageView.setFitHeight(height);
+            imageView.setPreserveRatio(true);
+            imageView.setSmooth(true);
             getChildren().add(imageView);
         } else if (name != null && !name.isBlank()) {
             getStyleClass().add(avatarClass(name));
@@ -91,11 +101,24 @@ public class CoverView extends StackPane {
         if (view.imageView.getImage() != null) {
             // Las imágenes de personaje son verticales: cargamos la imagen con el ANCHO del círculo
             // (alto 0 = el que salga) y la alineamos arriba, para que se vea la cara.
-            view.imageView.setImage(new Image(file.toUri().toString(), size, 0, true, true, true));
+            view.imageView.setImage(new Image(file.toUri().toString(), size * outputScale(), 0, true, true, true));
+            view.imageView.setFitHeight(0); // solo manda el ancho; el alto, el que salga
             StackPane.setAlignment(view.imageView, Pos.TOP_CENTER);
         }
         view.setClip(new Circle(size / 2, size / 2, size / 2));
         return view;
+    }
+
+    /**
+     * Escala de la pantalla: 1 al 100 %, 1,25 al 125 %, 1,5 al 150 % (escalado de Windows). Si hay
+     * varias pantallas, la mayor: la ventana se puede mover de una a otra.
+     */
+    private static double outputScale() {
+        double max = 1;
+        for (Screen screen : Screen.getScreens()) {
+            max = Math.max(max, screen.getOutputScaleX());
+        }
+        return max;
     }
 
     /** Mostrar (true) u ocultar (false) la imagen si es sensible. Si no lo es, no cambia nada. */

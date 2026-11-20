@@ -63,7 +63,7 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
 
 - `src/main/resources/com/vnlauncher/ui/styles.css`: todos los colores son variables `-vn-*`
   en `.root` (tema oscuro) y `.root.tema-claro` (tema claro). El tema elegido se guarda en la
-  tabla `setting` (clave `theme`): `oscuro`, `claro` o `sistema` («Según Windows», que sigue el
+  tabla `setting` (clave `theme`): `oscuro`, `claro` o `sistema` («Según el sistema», que sigue el
   modo de color del sistema con `Platform.getPreferences()` de JavaFX, sin librerías extra).
 - `src/main/resources/fonts/`: Inter y Zen Kaku Gothic New, con su licencia SIL OFL 1.1.
 - Diálogos (`ModalDialog`), avisos (`Notice`), estados vacíos (`EmptyState`) y controles propios
@@ -87,7 +87,7 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
 - [x] Diseño: temas claro/oscuro, fuentes, barra lateral común, búsqueda nueva
 - [x] Fase 6: tiempo de juego (+ biblioteca del diseño: Continuar, filtros, orden)
 - [x] Diseño (2.ª parte): Ajustes, diálogo de ruta, diálogos de error al lanzar, estados vacíos,
-  de carga y de error, tema «Según Windows»
+  de carga y de error, tema «Según el sistema»
 - [x] Fase 7: pulido («Actualizar desde VNDB», programa de configuración, instalador)
 - [ ] Fase 8: Discord Rich Presence
 

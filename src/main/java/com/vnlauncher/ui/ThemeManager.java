@@ -13,11 +13,12 @@ import java.util.function.Consumer;
 /**
  * Gestiona el tema de la ventana.
  *
- * <p>El usuario elige entre Oscuro, Claro y "Según Windows" ({@link #chosen()}); lo que se ve en
- * pantalla es siempre oscuro o claro ({@link #effective()}). Con "Según Windows" se pregunta a
+ * <p>El usuario elige entre Oscuro, Claro y "Según el sistema" ({@link #chosen()}); lo que se ve en
+ * pantalla es siempre oscuro o claro ({@link #effective()}). Con "Según el sistema" se pregunta a
  * JavaFX (22 o superior) qué modo de color usa el sistema con
  * {@code Platform.getPreferences().getColorScheme()}, y además se escucha esa propiedad: si
- * cambias el modo de Windows con la app abierta, el tema cambia al momento.
+ * cambias el modo de color del sistema con la app abierta, el tema cambia al momento. Funciona en
+ * Windows y macOS; en Linux, JavaFX lo deduce de los colores del tema de GTK.
  */
 final class ThemeManager {
 
@@ -31,7 +32,7 @@ final class ThemeManager {
         this.sceneRoot = sceneRoot;
         this.ctx = ctx;
         this.chosen = chosen;
-        // Cambios del modo de color del sistema (solo importan si se eligió "Según Windows")
+        // Cambios del modo de color del sistema (solo importan si se eligió "Según el sistema")
         Platform.getPreferences().colorSchemeProperty().addListener((obs, oldScheme, newScheme) -> {
             if (this.chosen == Theme.SYSTEM) {
                 apply();

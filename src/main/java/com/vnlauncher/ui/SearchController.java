@@ -256,6 +256,8 @@ public class SearchController {
 
         Label title = new Label(vn.title());
         title.getStyleClass().add("result-title");
+        // Títulos largos ("CLANNAD - Hikari Mimamoru Sakamichi de"): en varias líneas, sin cortarse
+        title.setWrapText(true);
         Label meta = new Label(meta(vn));
         meta.getStyleClass().add("meta");
         VBox texts = new VBox(4, title, meta);

@@ -1,6 +1,7 @@
 package com.vnlauncher.ui;
 
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -18,6 +19,7 @@ import javafx.scene.shape.SVGPath;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.stage.Screen;
 import javafx.stage.Window;
 
 /**
@@ -195,8 +197,17 @@ class ModalDialog {
         root.applyCss();
         double width = root.prefWidth(-1);
         double height = root.prefHeight(width);
-        stage.setX(Math.round(window.getX() + (window.getWidth() - width) / 2));
-        stage.setY(Math.round(window.getY() + (window.getHeight() - height) / 2));
+        double x = window.getX() + (window.getWidth() - width) / 2;
+        double y = window.getY() + (window.getHeight() - height) / 2;
+        // Si la ventana es más pequeña que el diálogo, centrado se saldría de la pantalla: se mete
+        // dentro de la zona útil de la pantalla donde está la ventana
+        Rectangle2D screen = Screen.getScreensForRectangle(window.getX(), window.getY(),
+                        window.getWidth(), window.getHeight()).stream()
+                .findFirst().orElse(Screen.getPrimary()).getVisualBounds();
+        x = Math.max(screen.getMinX(), Math.min(x, screen.getMaxX() - width));
+        y = Math.max(screen.getMinY(), Math.min(y, screen.getMaxY() - height));
+        stage.setX(Math.round(x));
+        stage.setY(Math.round(y));
     }
 
     private void close(String id) {

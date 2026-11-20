@@ -23,6 +23,7 @@ import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -360,8 +361,11 @@ public class LibraryController implements PlaytimeAware {
         details.add(PlayTime.formatShort(item.playSeconds()));
         Label detailLabel = new Label(String.join(" · ", details));
         detailLabel.getStyleClass().addAll("meta", "small");
-        HBox statusRow = new HBox(8, status, detailLabel);
+        // FlowPane y no HBox: si "Rutas 1/3 · 36 h" no cabe al lado de la pastilla, pasa a la
+        // línea de abajo en vez de cortarse con "..."
+        FlowPane statusRow = new FlowPane(8, 4, status, detailLabel);
         statusRow.setAlignment(Pos.CENTER_LEFT);
+        statusRow.setPrefWrapLength(COVER_WIDTH);
 
         VBox tile = new VBox(4, cover, title, developer, statusRow);
         VBox.setMargin(title, new Insets(8, 0, 0, 0));

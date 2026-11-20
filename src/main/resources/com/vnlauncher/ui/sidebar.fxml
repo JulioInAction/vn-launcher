@@ -6,6 +6,7 @@
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
@@ -76,8 +77,12 @@
 
         <!-- 6. Contador de peticiones a VNDB (el tema se cambia en Ajustes → Apariencia) -->
         <VBox spacing="8" styleClass="sidebar-block">
-            <HBox alignment="CENTER_LEFT">
-                <Label text="VNDB · últimos 5 min" styleClass="muted, small"/>
+            <HBox alignment="CENTER_LEFT" spacing="8">
+                <Label text="Peticiones VNDB" styleClass="muted, small">
+                    <tooltip>
+                        <Tooltip text="Peticiones a VNDB en los últimos 5 minutos. El límite es 200."/>
+                    </tooltip>
+                </Label>
                 <Region HBox.hgrow="ALWAYS"/>
                 <Label fx:id="vndbCountLabel" text="0/200" styleClass="counter-value"/>
             </HBox>
