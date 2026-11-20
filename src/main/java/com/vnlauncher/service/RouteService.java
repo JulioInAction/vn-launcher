@@ -89,6 +89,22 @@ public class RouteService {
         move(routeId, +1);
     }
 
+    /**
+     * Mueve la ruta a la posición {@code newIndex} (0 = la primera) y renumera el resto.
+     * Es lo que usa arrastrar y soltar en la interfaz.
+     */
+    public void moveTo(long routeId, int newIndex) throws SQLException {
+        Route route = repository.findById(routeId).orElse(null);
+        if (route == null) {
+            return;
+        }
+        List<Route> routes = new ArrayList<>(repository.findByVn(route.vnId()));
+        Route moving = routes.remove(indexOf(routes, routeId));
+        // Math.clamp (Java 21): limita el valor al rango [0, tamaño] por si llega fuera de rango.
+        routes.add(Math.clamp(newIndex, 0, routes.size()), moving);
+        renumber(routes);
+    }
+
     /** Intercambia la ruta con su vecina (anterior si delta=-1, siguiente si +1) y renumera. */
     private void move(long routeId, int delta) throws SQLException {
         Route route = repository.findById(routeId).orElse(null);

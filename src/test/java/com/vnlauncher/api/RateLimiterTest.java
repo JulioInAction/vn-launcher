@@ -67,6 +67,17 @@ class RateLimiterTest {
     }
 
     @Test
+    void recentCountOnlyCountsRequestsInsideTheWindow() throws InterruptedException {
+        limiter.acquire();
+        now = now.plusSeconds(200);
+        limiter.acquire();
+        assertEquals(2, limiter.recentCount());
+
+        now = now.plusSeconds(150); // la primera (t=0) ya tiene 350 s: fuera de la ventana
+        assertEquals(1, limiter.recentCount());
+    }
+
+    @Test
     void rejectsInvalidLimit() {
         assertThrows(IllegalArgumentException.class,
                 () -> new RateLimiter(0, Duration.ofMinutes(5), () -> now, d -> { }));

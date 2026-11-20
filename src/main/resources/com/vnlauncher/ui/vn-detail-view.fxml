@@ -2,62 +2,100 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Hyperlink?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.Tab?>
-<?import javafx.scene.control.TabPane?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<!-- Ficha de una VN: cabecera (portada + datos) y debajo pestañas con la descripción, los
-     personajes y las rutas. Todo dentro de un ScrollPane. -->
+<!-- Ficha de una VN (según el prototipo):
+       · cabecera: portada + título, acciones (Jugar, ejecutable, Locale Emulator), datos y descripción
+       · sección Rutas (la crea VnDetailController: RoutesPane)
+       · sección Personajes principales
+     Todo dentro de un ScrollPane porque puede ser largo. -->
 <ScrollPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.vnlauncher.ui.VnDetailController"
             fitToWidth="true" styleClass="plain-scroll">
 
-    <VBox spacing="16" styleClass="content">
-        <Button text="← Biblioteca" onAction="#onBack" styleClass="link-button"/>
+    <VBox spacing="28" styleClass="content">
+        <Button text="‹  Biblioteca" onAction="#onBack" styleClass="link-button"/>
 
-        <HBox spacing="24">
-            <!-- Aquí VnDetailController pone un CoverView cuando carga la VN. -->
-            <StackPane fx:id="coverBox" alignment="TOP_CENTER" minWidth="256" minHeight="360"/>
+        <!-- ================================================= cabecera -->
+        <HBox spacing="28">
+            <!-- Aquí VnDetailController pone un CoverView cuando carga la VN.
+                 alignment TOP_CENTER: el HBox estira este hueco a toda la altura de la fila
+                 y sin esto la portada saldría centrada en vertical. -->
+            <StackPane fx:id="coverBox" alignment="TOP_CENTER" minWidth="220" minHeight="310"/>
 
-            <VBox spacing="8" HBox.hgrow="ALWAYS">
-                <Label fx:id="titleLabel" styleClass="detail-title" wrapText="true"/>
-                <Label fx:id="altTitleLabel" styleClass="muted" wrapText="true"/>
-                <Label fx:id="metaLabel" styleClass="muted" wrapText="true"/>
-                <Label fx:id="addedLabel" styleClass="muted"/>
-                <HBox>
-                    <Button fx:id="removeButton" text="Quitar de la biblioteca"
-                            onAction="#onRemove" styleClass="danger-button"/>
+            <VBox spacing="12" HBox.hgrow="ALWAYS">
+                <VBox spacing="4">
+                    <Label fx:id="titleLabel" styleClass="detail-title" wrapText="true"/>
+                    <Label fx:id="altTitleLabel" styleClass="muted" wrapText="true"/>
+                    <HBox spacing="6" alignment="BASELINE_LEFT">
+                        <Label fx:id="metaLabel" styleClass="muted"/>
+                        <Label text="·" styleClass="muted"/>
+                        <Hyperlink text="Ver en VNDB" onAction="#onOpenVndb"/>
+                    </HBox>
+                </VBox>
+
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Button fx:id="playButton" text="▶  Jugar" onAction="#onPlay"
+                            styleClass="primary-button, big-button"/>
+                    <Button fx:id="exeButton" text="Elegir ejecutable" onAction="#onChooseExecutable"
+                            styleClass="secondary-button"/>
                 </HBox>
+                <Label fx:id="exePathLabel" styleClass="exe-path"/>
+                <CheckBox fx:id="localeEmulatorCheck" text="Lanzar con Locale Emulator (perfil japonés)"/>
+
+                <!-- Tarjetas de datos. En la Fase 6 se añadirá "Tiempo jugado". -->
+                <HBox spacing="10">
+                    <VBox styleClass="stat-card">
+                        <Label text="Última partida" styleClass="stat-label"/>
+                        <Label fx:id="lastPlayedLabel" text="Nunca" styleClass="stat-value"/>
+                    </VBox>
+                    <VBox styleClass="stat-card">
+                        <Label text="Rutas" styleClass="stat-label"/>
+                        <Label fx:id="routesStatLabel" text="Sin rutas" styleClass="stat-value"/>
+                        <ProgressBar fx:id="routesStatBar" progress="0" maxWidth="Infinity" prefHeight="6"/>
+                    </VBox>
+                </HBox>
+
+                <Label fx:id="launchStatusLabel" styleClass="muted" wrapText="true"/>
+
+                <VBox spacing="4">
+                    <Label fx:id="descriptionLabel" wrapText="true" styleClass="description"/>
+                    <Hyperlink fx:id="readMoreLink" text="Leer más" onAction="#onToggleDescription"/>
+                </VBox>
             </VBox>
         </HBox>
 
-        <!-- tabClosingPolicy UNAVAILABLE: las pestañas no tienen la "x" de cerrar -->
-        <TabPane fx:id="tabs" tabClosingPolicy="UNAVAILABLE">
-            <Tab text="Descripción">
-                <Label fx:id="descriptionLabel" wrapText="true" styleClass="description"/>
-            </Tab>
+        <!-- ================================================= rutas (RoutesPane, en código) -->
+        <VBox fx:id="routesContainer"/>
 
-            <Tab fx:id="charactersTab" text="Personajes">
-                <VBox spacing="12">
-                    <HBox spacing="12" alignment="CENTER_LEFT">
-                        <Label fx:id="charactersStatus" styleClass="muted" wrapText="true"/>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <CheckBox fx:id="showSpoilersCheck" text="Mostrar spoilers"/>
-                    </HBox>
-                    <!-- FlowPane: como TilePane pero cada hijo con su propio tamaño -->
-                    <FlowPane fx:id="charactersPane" hgap="16" vgap="16"/>
+        <!-- ================================================= personajes -->
+        <VBox spacing="12">
+            <HBox spacing="16" alignment="CENTER_LEFT">
+                <VBox spacing="2">
+                    <Label text="Personajes principales" styleClass="section-title"/>
+                    <Label text="Rol «primary» en VNDB. Marca cuáles tienen ruta." styleClass="muted"/>
                 </VBox>
-            </Tab>
+                <Region HBox.hgrow="ALWAYS"/>
+                <CheckBox fx:id="showSpoilersCheck" text="Mostrar spoilers"/>
+                <CheckBox fx:id="showSensitiveCheck" text="Mostrar imágenes sensibles"/>
+            </HBox>
+            <Label fx:id="charactersStatus" styleClass="muted" wrapText="true"/>
+            <!-- FlowPane: coloca las tarjetas en fila y salta de línea cuando no caben -->
+            <FlowPane fx:id="charactersPane" hgap="14" vgap="14"/>
+        </VBox>
 
-            <!-- El contenido (RoutesPane) lo crea VnDetailController en código -->
-            <Tab fx:id="routesTab" text="Rutas"/>
-        </TabPane>
+        <HBox>
+            <Button fx:id="removeButton" text="Quitar de la biblioteca"
+                    onAction="#onRemove" styleClass="danger-button"/>
+        </HBox>
     </VBox>
 </ScrollPane>

@@ -6,13 +6,17 @@ import com.vnlauncher.db.Database;
 import com.vnlauncher.db.repo.CharacterRepository;
 import com.vnlauncher.db.repo.LibraryRepository;
 import com.vnlauncher.db.repo.RouteRepository;
+import com.vnlauncher.db.repo.SettingsRepository;
 import com.vnlauncher.db.repo.VnRepository;
 import com.vnlauncher.service.CatalogService;
 import com.vnlauncher.service.CharacterService;
 import com.vnlauncher.service.ContentFilter;
 import com.vnlauncher.service.ImageCacheService;
+import com.vnlauncher.service.LaunchService;
 import com.vnlauncher.service.LibraryService;
+import com.vnlauncher.service.ProcessStarter;
 import com.vnlauncher.service.RouteService;
+import com.vnlauncher.service.SettingsService;
 import com.vnlauncher.util.AppPaths;
 import com.vnlauncher.util.Sleeper;
 
@@ -50,13 +54,17 @@ public final class AppContext {
     private final ContentFilter contentFilter;
     private final CharacterService characterService;
     private final RouteService routeService;
+    private final SettingsService settingsService;
+    private final LaunchService launchService;
+    private final RateLimiter rateLimiter;
 
     // Constructor con muchos parámetros: es el precio de la inyección manual. Si crece demasiado,
     // se podría agrupar (p. ej. un record con los servicios), pero así se ve todo de un vistazo.
     private AppContext(AppPaths paths, Database database, HttpClient httpClient, ExecutorService background,
                        CatalogService catalogService, LibraryService libraryService,
                        ImageCacheService imageCache, ContentFilter contentFilter,
-                       CharacterService characterService, RouteService routeService) {
+                       CharacterService characterService, RouteService routeService,
+                       SettingsService settingsService, LaunchService launchService, RateLimiter rateLimiter) {
         this.paths = paths;
         this.database = database;
         this.httpClient = httpClient;
@@ -67,6 +75,9 @@ public final class AppContext {
         this.contentFilter = contentFilter;
         this.characterService = characterService;
         this.routeService = routeService;
+        this.settingsService = settingsService;
+        this.launchService = launchService;
+        this.rateLimiter = rateLimiter;
     }
 
     /** Prepara carpetas, base de datos y servicios. Si algo falla aquí la app no puede arrancar. */
@@ -100,10 +111,14 @@ public final class AppContext {
         LibraryService libraryService = new LibraryService(vnRepository, libraryRepository, imageCache, clock);
         CharacterService characterService = new CharacterService(
                 vndb, new CharacterRepository(database), imageCache, clock);
+        SettingsService settingsService = new SettingsService(new SettingsRepository(database));
+        LaunchService launchService = new LaunchService(
+                libraryRepository, settingsService, ProcessStarter.system(), clock);
 
         return new AppContext(paths, database, httpClient, background,
                 new CatalogService(vndb), libraryService, imageCache, ContentFilter.withDefaults(),
-                characterService, new RouteService(new RouteRepository(database), clock));
+                characterService, new RouteService(new RouteRepository(database), clock),
+                settingsService, launchService, rateLimiter);
     }
 
     /** Se llama al cerrar la ventana: corta las tareas y conexiones pendientes. */
@@ -147,5 +162,18 @@ public final class AppContext {
 
     public RouteService routeService() {
         return routeService;
+    }
+
+    public SettingsService settingsService() {
+        return settingsService;
+    }
+
+    public LaunchService launchService() {
+        return launchService;
+    }
+
+    /** Para mostrar en el menú lateral cuántas peticiones a VNDB se han hecho en los últimos 5 min. */
+    public RateLimiter rateLimiter() {
+        return rateLimiter;
     }
 }

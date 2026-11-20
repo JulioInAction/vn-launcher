@@ -2,18 +2,23 @@ package com.vnlauncher.ui;
 
 import com.vnlauncher.model.GameCharacter;
 import com.vnlauncher.model.Route;
-import com.vnlauncher.model.RouteProgress;
 import com.vnlauncher.model.RouteStatus;
 import com.vnlauncher.model.VnCharacter;
 import com.vnlauncher.service.ContentFilter;
 import com.vnlauncher.service.ImageCacheService;
 import com.vnlauncher.service.RouteService;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Tooltip;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -29,16 +34,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
 /**
- * Contenido de la pestaña "Rutas": progreso, botón para añadir y la lista de rutas en el orden
- * recomendado, cada una con su estado, notas y botones para reordenar, editar y borrar.
+ * Sección "Rutas" de la ficha: título, botón para añadir y la lista de rutas en el orden
+ * recomendado. Cada fila: asa para arrastrar, número, avatar de la heroína, nombre/notas,
+ * estado (desplegable con aspecto de pastilla) y botón de editar. Clic derecho: más opciones.
  *
  * <p>Es un componente hecho en código (extiende VBox) en vez de FXML: así VnDetailController
  * no crece sin control y este panel se puede entender por separado.
  */
 class RoutesPane extends VBox {
 
-    private static final double THUMB_WIDTH = 48;
-    private static final double THUMB_HEIGHT = 68;
+    private static final double AVATAR_SIZE = 40;
 
     private final RouteService routeService;
     private final ExecutorService background;
@@ -46,8 +51,6 @@ class RoutesPane extends VBox {
     private final ContentFilter contentFilter;
     private final String vnId;
 
-    private final Label progressLabel = new Label();
-    private final ProgressBar progressBar = new ProgressBar(0);
     private final Label messageLabel = new Label();
     private final VBox list = new VBox(8);
 
@@ -66,28 +69,30 @@ class RoutesPane extends VBox {
         this.contentFilter = contentFilter;
         this.vnId = vnId;
 
-        Button addButton = new Button("+ Añadir ruta");
-        addButton.setDefaultButton(false);
-        addButton.setOnAction(event -> openCreateDialog());
-
-        progressBar.setPrefWidth(180);
+        Label title = new Label("Rutas");
+        title.getStyleClass().add("section-title");
+        Label subtitle = new Label("orden recomendado");
+        subtitle.getStyleClass().add("muted");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox header = new HBox(12, progressLabel, progressBar, spacer, addButton);
-        header.setAlignment(Pos.CENTER_LEFT);
+        Button addButton = new Button("+  Añadir ruta");
+        addButton.getStyleClass().add("secondary-button");
+        addButton.setOnAction(event -> openCreateDialog());
+        HBox header = new HBox(10, title, subtitle, spacer, addButton);
+        header.setAlignment(Pos.BASELINE_LEFT);
 
         messageLabel.getStyleClass().add("muted");
         messageLabel.setWrapText(true);
         getChildren().addAll(header, messageLabel, list);
     }
 
-    /** Se avisa cada vez que cambia la lista de rutas (para actualizar personajes y pestaña). */
+    /** Se avisa cada vez que cambia la lista de rutas (para actualizar personajes y progreso). */
     void setOnRoutesChanged(Consumer<List<Route>> listener) {
         this.onRoutesChanged = listener;
     }
 
     /**
-     * Personajes disponibles para elegir como heroína y para las miniaturas.
+     * Personajes disponibles para elegir como heroína y para los avatares.
      *
      * @param showSpoilers si false, los personajes spoiler no se ofrecen en el diálogo
      */
@@ -139,10 +144,15 @@ class RoutesPane extends VBox {
     }
 
     private void openEditDialog(Route route) {
-        new RouteDialog(this, route, selectableCharacters(route)).showAndWait().ifPresent(result ->
+        new RouteDialog(this, route, selectableCharacters(route)).showAndWait().ifPresent(result -> {
+            if (result.delete()) {
+                confirmDelete(route);
+            } else {
                 runThenReload(() -> routeService.updateRoute(new Route(route.id(), vnId, result.characterId(),
                         result.name(), route.recommendedOrder(), result.status(), result.notes(),
-                        route.completedAt()))));
+                        route.completedAt())));
+            }
+        });
     }
 
     private void confirmDelete(Route route) {
@@ -173,46 +183,45 @@ class RoutesPane extends VBox {
     // ---------------------------------------------------------------- dibujo
 
     private void render() {
-        RouteProgress progress = routeService.progressOf(routes);
-        progressLabel.setText(progress + " completadas");
-        progressBar.setProgress(progress.fraction());
-
-        messageLabel.setText(routes.isEmpty()
-                ? "Aún no hay rutas. Márcalas desde la pestaña Personajes (\"+ Tiene ruta\") "
-                  + "o añade una con el botón, también rutas sin heroína como la común o el true end."
-                : "Orden recomendado de arriba abajo. Usa ▲ ▼ para cambiarlo.");
-
+        boolean empty = routes.isEmpty();
+        messageLabel.setText(empty
+                ? "Aún no hay rutas. Márcalas en los personajes (\"Marcar con ruta\") o añade una "
+                  + "con el botón, también rutas sin heroína como la común o el true end."
+                : "Arrastra las rutas para cambiar el orden. Clic derecho para más opciones.");
         list.getChildren().clear();
         for (int i = 0; i < routes.size(); i++) {
-            list.getChildren().add(createRow(routes.get(i), i == 0, i == routes.size() - 1));
+            list.getChildren().add(createRow(routes.get(i), i));
         }
     }
 
-    private HBox createRow(Route route, boolean first, boolean last) {
+    private HBox createRow(Route route, int index) {
+        Label handle = new Label("⠿");
+        handle.getStyleClass().add("drag-handle");
         Label order = new Label(String.valueOf(route.recommendedOrder()));
         order.getStyleClass().add("route-order");
 
-        // Miniatura de la heroína (si tiene y la conocemos)
+        // Avatar de la heroína (con su imagen o sus iniciales)
         VnCharacter vc = route.characterId() == null ? null : charactersById.get(route.characterId());
-        Region thumb;
+        Node avatar;
         if (vc != null) {
             GameCharacter c = vc.character();
             Path file = c.imagePath() == null ? null : images.resolve(c.imagePath());
-            thumb = new CoverView(file, contentFilter.isSensitive(c.imageSexual(), c.imageViolence()),
-                    THUMB_WIDTH, THUMB_HEIGHT);
+            avatar = CoverView.avatar(file, contentFilter.isSensitive(c.imageSexual(), c.imageViolence()),
+                    AVATAR_SIZE, c.name());
         } else {
-            thumb = new Region();
-            thumb.setMinSize(THUMB_WIDTH, THUMB_HEIGHT);
+            Region empty = new Region();
+            empty.setMinSize(AVATAR_SIZE, AVATAR_SIZE);
+            avatar = empty;
         }
 
-        // Textos: nombre, heroína y notas
+        // Textos: nombre, heroína (si se llama distinto que la ruta) y notas
         Label name = new Label(route.name());
         name.getStyleClass().add("route-name");
         VBox texts = new VBox(2, name);
-        String subtitle = route.characterId() == null ? "Sin heroína"
+        String heroine = route.characterId() == null ? "Sin heroína"
                 : vc != null ? vc.character().name() : "Personaje " + route.characterId();
-        if (!subtitle.equals(route.name())) { // no repetir si la ruta se llama como la heroína
-            Label sub = new Label(subtitle);
+        if (!heroine.equals(route.name())) {
+            Label sub = new Label(heroine);
             sub.getStyleClass().add("muted");
             texts.getChildren().add(sub);
         }
@@ -224,12 +233,29 @@ class RoutesPane extends VBox {
         }
         HBox.setHgrow(texts, Priority.ALWAYS);
 
-        // Estado: se cambia directamente desde el desplegable
+        Button edit = new Button("✎");
+        edit.getStyleClass().add("icon-button");
+        edit.setTooltip(new Tooltip("Editar o borrar la ruta"));
+        edit.setOnAction(e -> openEditDialog(route));
+
+        HBox row = new HBox(14, handle, order, avatar, texts, statusBox(route), edit);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.getStyleClass().add("route-row");
+        row.setOnContextMenuRequested(e ->
+                contextMenu(route, index).show(row, e.getScreenX(), e.getScreenY()));
+        enableDragAndDrop(row, route, index);
+        return row;
+    }
+
+    /** Desplegable de estado con aspecto de pastilla del color del estado. */
+    private ComboBox<RouteStatus> statusBox(Route route) {
         ComboBox<RouteStatus> status = new ComboBox<>();
         status.getItems().setAll(RouteStatus.values());
         status.setCellFactory(l -> new RouteDialog.StatusCell());
         status.setButtonCell(new RouteDialog.StatusCell());
         status.setValue(route.status());
+        status.getStyleClass().addAll("status-box", pillClass(route.status()));
+
         // Guardar el estado. Ojo: con el desplegable ABIERTO, las flechas del teclado cambian el
         // valor a cada pulsación. Si guardáramos en cada cambio, la lista se redibujaría a mitad
         // de la elección. Por eso: con la lista abierta, se guarda al cerrarla; con la lista
@@ -249,33 +275,93 @@ class RoutesPane extends VBox {
         status.showingProperty().addListener((obs, wasShowing, isShowing) -> {
             if (!isShowing) commit.run();
         });
+        return status;
+    }
 
-        Button up = iconButton("▲", "Subir en el orden recomendado", first);
+    /** Clase CSS de pastilla para cada estado: pill-pending, pill-in-progress, pill-completed. */
+    static String pillClass(RouteStatus status) {
+        return "pill-" + status.name().toLowerCase().replace('_', '-');
+    }
+
+    private ContextMenu contextMenu(Route route, int index) {
+        MenuItem up = new MenuItem("Subir");
+        up.setDisable(index == 0);
         up.setOnAction(e -> runThenReload(() -> {
             routeService.moveUp(route.id());
             return null;
         }));
-        Button down = iconButton("▼", "Bajar en el orden recomendado", last);
+        MenuItem down = new MenuItem("Bajar");
+        down.setDisable(index == routes.size() - 1);
         down.setOnAction(e -> runThenReload(() -> {
             routeService.moveDown(route.id());
             return null;
         }));
-        Button edit = iconButton("✎", "Editar", false);
+        MenuItem edit = new MenuItem("Editar...");
         edit.setOnAction(e -> openEditDialog(route));
-        Button delete = iconButton("✕", "Borrar", false);
+        MenuItem delete = new MenuItem("Borrar...");
         delete.setOnAction(e -> confirmDelete(route));
-
-        HBox row = new HBox(12, order, thumb, texts, status, up, down, edit, delete);
-        row.setAlignment(Pos.CENTER_LEFT);
-        row.getStyleClass().addAll("route-row", "status-" + route.status().name().toLowerCase().replace('_', '-'));
-        return row;
+        return new ContextMenu(up, down, new SeparatorMenuItem(), edit, delete);
     }
 
-    private static Button iconButton(String text, String tooltip, boolean disabled) {
-        Button button = new Button(text);
-        button.getStyleClass().add("icon-button");
-        button.setTooltip(new Tooltip(tooltip));
-        button.setDisable(disabled);
-        return button;
+    /**
+     * Arrastrar y soltar para reordenar. Funciona con eventos:
+     * <ol>
+     *   <li>DragDetected: el usuario empieza a arrastrar una fila → guardamos su id en el
+     *       "portapapeles" del arrastre (Dragboard).</li>
+     *   <li>DragOver: pasa por encima de otra fila → aceptamos y marcamos con una línea
+     *       si se soltará encima o debajo de ella.</li>
+     *   <li>DragDropped: la suelta → calculamos la nueva posición y se la pedimos al servicio.</li>
+     * </ol>
+     */
+    private void enableDragAndDrop(HBox row, Route route, int index) {
+        row.setOnDragDetected(event -> {
+            Dragboard dragboard = row.startDragAndDrop(TransferMode.MOVE);
+            ClipboardContent content = new ClipboardContent();
+            content.putString(String.valueOf(route.id()));
+            dragboard.setContent(content);
+            // "Fantasma" de la fila bajo el ratón, anclado al punto donde se agarró
+            dragboard.setDragView(row.snapshot(null, null), event.getX(), event.getY());
+            row.getStyleClass().add("dragging");
+            event.consume();
+        });
+        row.setOnDragOver(event -> {
+            if (event.getGestureSource() != row && event.getDragboard().hasString()) {
+                event.acceptTransferModes(TransferMode.MOVE);
+                boolean above = event.getY() < row.getHeight() / 2;
+                row.getStyleClass().removeAll("drop-above", "drop-below");
+                row.getStyleClass().add(above ? "drop-above" : "drop-below");
+            }
+            event.consume();
+        });
+        row.setOnDragExited(event -> row.getStyleClass().removeAll("drop-above", "drop-below"));
+        row.setOnDragDropped(event -> {
+            long draggedId = Long.parseLong(event.getDragboard().getString());
+            int draggedIndex = indexOf(draggedId);
+            boolean above = event.getY() < row.getHeight() / 2;
+            int target = above ? index : index + 1;
+            // Al sacar la fila arrastrada de la lista, las que estaban detrás suben un puesto
+            if (draggedIndex < target) {
+                target--;
+            }
+            int finalTarget = target;
+            if (draggedIndex != finalTarget) {
+                runThenReload(() -> {
+                    routeService.moveTo(draggedId, finalTarget);
+                    return null;
+                });
+            }
+            event.setDropCompleted(true);
+            event.consume();
+        });
+        row.setOnDragDone(event -> row.getStyleClass().remove("dragging"));
+    }
+
+    private int indexOf(long routeId) {
+        for (int i = 0; i < routes.size(); i++) {
+            if (routes.get(i).id() == routeId) {
+                return i;
+            }
+        }
+        return -1;
     }
 }

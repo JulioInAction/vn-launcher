@@ -18,9 +18,10 @@ import java.util.Optional;
 /** Acceso a la biblioteca del usuario: tabla library_entry (unida con vn para leer). */
 public class LibraryRepository {
 
-    /** SELECT común: datos de la VN + fecha en que se añadió. */
+    /** SELECT común: datos de la VN + columnas propias de la biblioteca. */
     private static final String SELECT_ENTRIES =
-            "SELECT " + VnRows.COLUMNS + ", l.added_at "
+            "SELECT " + VnRows.COLUMNS + ", l.added_at, l.exe_path, l.use_locale_emulator, "
+                    + "l.le_profile, l.last_played_at "
                     + "FROM library_entry l JOIN vn v ON v.id = l.vn_id ";
 
     private final Database db;
@@ -95,8 +96,42 @@ public class LibraryRepository {
         }
     }
 
+    /**
+     * Guarda cómo se lanza el juego.
+     *
+     * @param exePath ruta absoluta del ejecutable (o null para olvidarlo)
+     */
+    public void updateLaunchConfig(String vnId, String exePath, boolean useLocaleEmulator) throws SQLException {
+        try (Connection conn = db.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "UPDATE library_entry SET exe_path = ?, use_locale_emulator = ? WHERE vn_id = ?")) {
+            ps.setString(1, exePath);
+            ps.setInt(2, useLocaleEmulator ? 1 : 0); // SQLite no tiene BOOLEAN: 0/1
+            ps.setString(3, vnId);
+            ps.executeUpdate();
+        }
+    }
+
+    public void updateLastPlayed(String vnId, Instant when) throws SQLException {
+        try (Connection conn = db.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "UPDATE library_entry SET last_played_at = ? WHERE vn_id = ?")) {
+            ps.setLong(1, when.getEpochSecond());
+            ps.setString(2, vnId);
+            ps.executeUpdate();
+        }
+    }
+
     private static LibraryEntry mapEntry(ResultSet rs, List<Developer> devs) throws SQLException {
         VisualNovel vn = VnRows.map(rs, devs);
-        return new LibraryEntry(vn, Instant.ofEpochSecond(rs.getLong("added_at")));
+        long lastPlayed = rs.getLong("last_played_at");
+        Instant lastPlayedAt = rs.wasNull() ? null : Instant.ofEpochSecond(lastPlayed);
+        return new LibraryEntry(
+                vn,
+                Instant.ofEpochSecond(rs.getLong("added_at")),
+                rs.getString("exe_path"),
+                rs.getInt("use_locale_emulator") == 1,
+                rs.getString("le_profile"),
+                lastPlayedAt);
     }
 }

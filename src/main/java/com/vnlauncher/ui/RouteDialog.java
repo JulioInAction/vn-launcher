@@ -29,8 +29,11 @@ import java.util.List;
  */
 class RouteDialog extends Dialog<RouteDialog.Result> {
 
-    /** Lo que ha rellenado el usuario. characterId es null si eligió "Sin heroína". */
-    record Result(String name, String characterId, RouteStatus status, String notes) {
+    /**
+     * Lo que ha elegido el usuario. characterId es null si eligió "Sin heroína".
+     * Si delete es true, el usuario pulsó "Borrar ruta" (el resto de campos no importan).
+     */
+    record Result(String name, String characterId, RouteStatus status, String notes, boolean delete) {
     }
 
     private final TextField nameField = new TextField();
@@ -103,17 +106,29 @@ class RouteDialog extends Dialog<RouteDialog.Result> {
 
         ButtonType save = new ButtonType("Guardar", ButtonBar.ButtonData.OK_DONE);
         getDialogPane().getButtonTypes().addAll(save, ButtonType.CANCEL);
+        // Al editar, botón "Borrar ruta" a la izquierda (ButtonData.LEFT lo separa de los demás)
+        ButtonType delete = new ButtonType("Borrar ruta", ButtonBar.ButtonData.LEFT);
+        if (existing != null) {
+            getDialogPane().getButtonTypes().add(delete);
+            getDialogPane().lookupButton(delete).getStyleClass().add("danger-button");
+        }
         // El botón Guardar se desactiva mientras el nombre esté vacío. Es un "binding": JavaFX
         // recalcula la condición automáticamente cada vez que cambia el texto.
         getDialogPane().lookupButton(save).disableProperty().bind(
                 Bindings.createBooleanBinding(() -> nameField.getText().isBlank(), nameField.textProperty()));
 
         // Convierte el botón pulsado en el resultado del diálogo
-        setResultConverter(button -> button == save
-                ? new Result(nameField.getText(),
+        setResultConverter(button -> {
+            if (button == delete) {
+                return new Result(null, null, null, null, true);
+            }
+            if (button == save) {
+                return new Result(nameField.getText(),
                         characterBox.getValue() == null ? null : characterBox.getValue().character().id(),
-                        statusBox.getValue(), notesArea.getText())
-                : null);
+                        statusBox.getValue(), notesArea.getText(), false);
+            }
+            return null; // Cancelar
+        });
 
         setOnShown(event -> nameField.requestFocus());
     }

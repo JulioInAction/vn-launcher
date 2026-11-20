@@ -24,14 +24,23 @@ Los datos se guardan en `%LOCALAPPDATA%\VNLauncher` (`library.db` + carpeta `ima
 - [x] Fase 2: biblioteca local
 - [x] Fase 3: personajes
 - [x] Fase 4: rutas
-- [ ] Fase 5: lanzamiento
+- [x] Fase 5: lanzamiento (+ ficha de VN rediseñada según el prototipo)
 - [ ] Fase 6: tiempo de juego
 - [ ] Fase 7: pulido
 
+## Pendiente para la Fase 6 (del prototipo)
+
+- Tarjeta "Tiempo jugado" en la ficha.
+- Biblioteca: banner "Continuar" con la última VN jugada, filtros por estado
+  (Todas / Jugando / Pendientes / Completadas), orden ("Último jugado"...) y en cada portada
+  su estado y horas jugadas.
+
 ## Pendiente para la Fase 7
 
-- Menú de **Opciones** con los ajustes que hagan falta, entre ellos:
+- Menú de **Ajustes** (entrada "Ajustes" del menú lateral) con, entre otros:
   - desactivar el difuminado ("censura") de imágenes sensibles;
-  - elegir/cambiar la ruta de Locale Emulator (`LEProc.exe`). En la Fase 5 se pedirá con un
-    selector de archivos la primera vez que haga falta; en Opciones se podrá cambiar.
+  - cambiar la ruta de Locale Emulator (`LEProc.exe`), que ahora se pide la primera vez que hace falta;
+  - ver la carpeta de datos.
+- Búsqueda rediseñada según el prototipo (miniaturas, botón "Añadir" en cada resultado, panel lateral).
+- Botón "Actualizar desde VNDB" en la ficha.
 - Ejecutable secundario por VN (p. ej. `config.exe`).

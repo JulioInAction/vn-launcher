@@ -1,13 +1,18 @@
 package com.vnlauncher.ui;
 
 import com.vnlauncher.app.AppContext;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
+import javafx.util.Duration;
 
-import java.sql.SQLException;
+import java.util.function.Consumer;
 
 /**
  * Controlador de la ventana principal (main-view.fxml): menú lateral + zona central
@@ -16,13 +21,19 @@ import java.sql.SQLException;
  */
 public class MainController implements Navigator {
 
+    /** Límite real de VNDB, el que se muestra al usuario (internamente nos quedamos en 190). */
+    private static final int VNDB_LIMIT = 200;
+
     private final AppContext context;
+    /** Abre una URL en el navegador del sistema (viene de Application.getHostServices()). */
+    private final Consumer<String> urlOpener;
 
     // Los campos @FXML los rellena FXMLLoader buscando el fx:id con el mismo nombre en el FXML.
     @FXML private BorderPane root;
-    @FXML private Label statusLabel;
     @FXML private Button libraryButton;
     @FXML private Button searchButton;
+    @FXML private Label vndbCountLabel;
+    @FXML private ProgressBar vndbCountBar;
 
     // Biblioteca y búsqueda se crean una sola vez y se reutilizan (la búsqueda conserva sus
     // resultados al volver). El detalle de una VN se crea nuevo cada vez.
@@ -30,21 +41,34 @@ public class MainController implements Navigator {
     private LibraryController libraryController;
     private Parent searchView;
 
-    public MainController(AppContext context) {
+    public MainController(AppContext context, Consumer<String> urlOpener) {
         this.context = context;
+        this.urlOpener = urlOpener;
     }
 
     /** FXMLLoader llama a initialize() automáticamente cuando ya ha rellenado los campos @FXML. */
     @FXML
     private void initialize() {
-        String schema;
-        try {
-            schema = "v" + context.database().schemaVersion();
-        } catch (SQLException e) {
-            schema = "error: " + e.getMessage();
-        }
-        statusLabel.setText("Datos: " + context.paths().root() + "   ·   Esquema " + schema);
+        Tooltip.install(vndbCountLabel, new Tooltip("Datos guardados en " + context.paths().root()));
+        startVndbCounter();
         showLibrary();
+    }
+
+    /**
+     * Actualiza el contador de peticiones cada 2 segundos. Un Timeline es un temporizador de
+     * JavaFX: sus KeyFrame se ejecutan en el hilo de la interfaz, así que puede tocar los Label.
+     * (recentCount() no bloquea nunca; ver RateLimiter.)
+     */
+    private void startVndbCounter() {
+        Runnable update = () -> {
+            int count = context.rateLimiter().recentCount();
+            vndbCountLabel.setText(count + " de " + VNDB_LIMIT);
+            vndbCountBar.setProgress((double) count / VNDB_LIMIT);
+        };
+        update.run();
+        Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(2), event -> update.run()));
+        timeline.setCycleCount(Timeline.INDEFINITE);
+        timeline.play();
     }
 
     @FXML
@@ -73,9 +97,7 @@ public class MainController implements Navigator {
 
     @Override
     public void showVnDetail(String vnId) {
-        root.setCenter(Views.load("vn-detail-view.fxml", new VnDetailController(
-                context.libraryService(), context.characterService(), context.routeService(),
-                context.contentFilter(), context.imageCache(), context.background(), this, vnId)));
+        root.setCenter(Views.load("vn-detail-view.fxml", new VnDetailController(context, this, urlOpener, vnId)));
         markActive(libraryButton);
     }
 

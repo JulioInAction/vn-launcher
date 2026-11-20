@@ -112,6 +112,21 @@ class RouteServiceTest {
     }
 
     @Test
+    void moveToPlacesRouteAtAnyPosition() throws SQLException {
+        service.addRoute("v4", null, "A", null);
+        service.addRoute("v4", null, "B", null);
+        long c = service.addRoute("v4", null, "C", null).id();
+        long a = service.routesOf("v4").getFirst().id();
+
+        service.moveTo(c, 0);
+        assertEquals(List.of("C", "A", "B"), names());
+
+        service.moveTo(a, 99); // fuera de rango: se queda al final
+        assertEquals(List.of("C", "B", "A"), names());
+        assertEquals(List.of(1, 2, 3), service.routesOf("v4").stream().map(Route::recommendedOrder).toList());
+    }
+
+    @Test
     void deletingRenumbersTheRest() throws SQLException {
         service.addRoute("v4", null, "A", null);
         long b = service.addRoute("v4", null, "B", null).id();

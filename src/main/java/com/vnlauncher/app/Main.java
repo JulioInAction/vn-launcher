@@ -32,9 +32,12 @@ public class Main extends Application {
         }
 
         try {
-            Parent root = Views.load("main-view.fxml", new MainController(context));
+            // getHostServices().showDocument(url) abre una URL en el navegador del sistema.
+            // Se lo pasamos al controlador como una función, para no atarlo a la clase Application.
+            Parent root = Views.load("main-view.fxml",
+                    new MainController(context, url -> getHostServices().showDocument(url)));
 
-            Scene scene = new Scene(root, 1100, 700);
+            Scene scene = new Scene(root, 1180, 780);
             scene.getStylesheets().add(MainController.class.getResource("styles.css").toExternalForm());
 
             stage.setTitle("VN Launcher");

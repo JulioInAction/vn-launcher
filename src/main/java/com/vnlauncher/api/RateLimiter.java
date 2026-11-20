@@ -5,8 +5,8 @@ import com.vnlauncher.util.Sleeper;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.InstantSource;
-import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
  * Limitador de peticiones con "ventana deslizante": como mucho {@code maxRequests}
@@ -28,7 +28,7 @@ public class RateLimiter {
     private final Duration window;
     private final InstantSource clock;   // "dame la hora actual"; en tests, un reloj falso
     private final Sleeper sleeper;
-    private final Deque<Instant> recent = new ArrayDeque<>();
+    private final Deque<Instant> recent = new ConcurrentLinkedDeque<>();
 
     public RateLimiter(int maxRequests, Duration window, InstantSource clock, Sleeper sleeper) {
         if (maxRequests <= 0) {
@@ -38,6 +38,19 @@ public class RateLimiter {
         this.window = window;
         this.clock = clock;
         this.sleeper = sleeper;
+    }
+
+    /**
+     * Peticiones hechas dentro de la ventana actual (p. ej. en los últimos 5 minutos).
+     *
+     * <p>NO es synchronized a propósito: acquire() puede pasar minutos esperando con el candado
+     * cogido, y este método se llama desde la interfaz para el contador del menú lateral. Si
+     * esperara al candado, la ventana se congelaría. Por eso la cola es una ConcurrentLinkedDeque,
+     * que se puede recorrer con seguridad mientras otro hilo la modifica.
+     */
+    public int recentCount() {
+        Instant windowStart = clock.instant().minus(window);
+        return (int) recent.stream().filter(t -> t.isAfter(windowStart)).count();
     }
 
     /**

@@ -1,14 +1,27 @@
-/* Estilos de JavaFX: es CSS pero con propiedades propias prefijadas con -fx-.
-   Colores en "variables" (colores con nombre) definidas en .root para no repetirlos. */
+/* =====================================================================
+   Estilos de VN Launcher (JavaFX CSS: como CSS web, pero con propiedades -fx-).
+   Paleta basada en el prototipo: fondo muy oscuro, tarjetas con borde fino,
+   acento rosa para la acción principal y "pastillas" de color para los estados.
+   Los colores con nombre (-bg, -accent...) se definen en .root y se reutilizan abajo.
+   ===================================================================== */
 
 .root {
     -fx-font-size: 14px;
-    -bg: #1e1f24;
-    -bg-dark: #16171b;
-    -bg-light: #2a2c33;
-    -text: #e6e6e6;
-    -text-muted: #9a9ca5;
-    -accent: #6c8cff;
+
+    -bg: #131419;            /* fondo general */
+    -bg-sidebar: #18191f;    /* menú lateral */
+    -bg-card: #1d1e25;       /* tarjetas y filas */
+    -bg-light: #2a2b34;      /* controles (campos, botones secundarios) */
+    -border: #2c2d36;        /* borde fino de tarjetas */
+    -text: #e8e8ec;
+    -text-muted: #9b9ca6;
+    -accent: #f2a2b8;        /* rosa del prototipo */
+    -accent-text: #2a1520;   /* texto oscuro sobre el rosa */
+    -blue: #8cc0ff;
+    -blue-bg: #22344f;
+    -orange: #ffb37a;
+    -orange-bg: #47311f;
+
     -fx-background-color: -bg;
 }
 
@@ -20,82 +33,283 @@
     -fx-text-fill: -text-muted;
 }
 
-/* ---------- Estructura ---------- */
-
-.sidebar {
-    -fx-background-color: -bg-dark;
-    -fx-padding: 16;
-    -fx-pref-width: 200;
-}
-
-.app-title {
-    -fx-font-size: 20px;
-    -fx-font-weight: bold;
-    -fx-padding: 0 0 12 0;
-}
-
-.content {
-    -fx-padding: 24;
-}
-
-.section-title {
-    -fx-font-size: 18px;
-    -fx-font-weight: bold;
-}
-
-.status-bar {
-    -fx-background-color: -bg-dark;
-    -fx-padding: 4 12;
-}
-
-.status-bar .label {
+.small {
     -fx-font-size: 12px;
 }
 
-/* ---------- Controles ---------- */
+/* ---------------------------------------------------------------- estructura */
 
-.text-field {
+.sidebar {
+    -fx-background-color: -bg-sidebar;
+    -fx-padding: 18 12 12 12;
+    -fx-pref-width: 210;
+    -fx-border-color: transparent -border transparent transparent;
+}
+
+.app-title {
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 14 6;
+    -fx-graphic-text-gap: 10;
+}
+
+.app-logo {
+    -fx-fill: transparent;
+    -fx-stroke: -accent;
+    -fx-stroke-width: 1.8;
+}
+
+.content {
+    -fx-padding: 28 32;
+}
+
+.section-title {
+    -fx-font-size: 19px;
+    -fx-font-weight: bold;
+}
+
+.page-title {
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+}
+
+/* ---------------------------------------------------------------- menú lateral */
+
+/* ".button.nav-button" (dos clases) y no solo ".nav-button": la regla general ".button" está
+   escrita más abajo, y en CSS, a igual especificidad, gana la que va después. Con dos clases
+   esta regla es más específica y gana siempre. */
+.button.nav-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -text-muted;
+    -fx-alignment: center-left;
+    -fx-padding: 9 12;
+    -fx-graphic-text-gap: 10;
+    -fx-background-radius: 8;
+}
+
+.button.nav-button:hover {
+    -fx-background-color: -bg-card;
+    -fx-text-fill: -text;
+}
+
+.button.nav-button.active {
     -fx-background-color: -bg-light;
     -fx-text-fill: -text;
-    -fx-prompt-text-fill: -text-muted;
-    -fx-background-radius: 4;
+    -fx-font-weight: bold;
 }
+
+/* Iconos dibujados con SVGPath: solo contorno, sin relleno */
+.nav-icon {
+    -fx-fill: transparent;
+    -fx-stroke: -text-muted;
+    -fx-stroke-width: 1.6;
+}
+
+.nav-button.active .nav-icon,
+.nav-button:hover .nav-icon {
+    -fx-stroke: -text;
+}
+
+.vndb-counter {
+    -fx-background-color: -bg-card;
+    -fx-background-radius: 10;
+    -fx-border-color: -border;
+    -fx-border-radius: 10;
+    -fx-padding: 12;
+    -fx-spacing: 4;
+}
+
+.vndb-counter-value {
+    -fx-font-weight: bold;
+    -fx-font-size: 15px;
+}
+
+/* ---------------------------------------------------------------- botones */
 
 .button {
     -fx-background-color: -bg-light;
     -fx-text-fill: -text;
-    -fx-background-radius: 4;
-    -fx-padding: 6 14;
+    -fx-background-radius: 8;
+    -fx-padding: 7 14;
+    -fx-cursor: hand;
 }
 
 .button:hover {
-    -fx-background-color: derive(-bg-light, 20%);
+    -fx-background-color: derive(-bg-light, 18%);
 }
 
+.button:disabled {
+    -fx-opacity: 0.45;
+}
+
+/* Acción principal (Jugar, Buscar, Añadir): rosa con texto oscuro */
+.primary-button,
 .button:default {
     -fx-background-color: -accent;
-    -fx-text-fill: white;
+    -fx-text-fill: -accent-text;
+    -fx-font-weight: bold;
 }
+
+.primary-button:hover,
+.button:default:hover {
+    -fx-background-color: derive(-accent, 12%);
+}
+
+.big-button {
+    -fx-font-size: 16px;
+    -fx-padding: 11 30;
+}
+
+/* Botón secundario: transparente con borde */
+.secondary-button {
+    -fx-background-color: transparent;
+    -fx-border-color: -border;
+    -fx-border-radius: 8;
+    -fx-font-weight: bold;
+}
+
+.secondary-button:hover {
+    -fx-background-color: -bg-card;
+}
+
+.link-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -text-muted;
+    -fx-padding: 0;
+}
+
+.link-button:hover {
+    -fx-background-color: transparent;
+    -fx-text-fill: -text;
+}
+
+.hyperlink {
+    -fx-text-fill: -accent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+.danger-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #ff8f8f;
+    -fx-border-color: #5a2a2e;
+    -fx-border-radius: 8;
+}
+
+.danger-button:hover {
+    -fx-background-color: #3a1d20;
+}
+
+.small-button {
+    -fx-font-size: 12px;
+    -fx-padding: 6 10;
+    -fx-background-color: transparent;
+    -fx-border-color: -border;
+    -fx-border-radius: 8;
+}
+
+.small-button:hover {
+    -fx-background-color: -bg-light;
+}
+
+.icon-button {
+    -fx-background-color: transparent;
+    -fx-border-color: -border;
+    -fx-border-radius: 8;
+    -fx-padding: 5 9;
+    -fx-min-width: 32;
+}
+
+.icon-button:hover {
+    -fx-background-color: -bg-light;
+}
+
+/* ---------------------------------------------------------------- pastillas de estado */
+
+.pill {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 2 8;
+    -fx-background-radius: 10;
+}
+
+.pill-completed, .pill-route { -fx-background-color: -blue-bg;   -fx-text-fill: -blue; }
+.pill-in-progress            { -fx-background-color: -orange-bg; -fx-text-fill: -orange; }
+.pill-pending                { -fx-background-color: -bg-light;  -fx-text-fill: #c9cad1; }
+.pill-spoiler                { -fx-background-color: #4a3d1c;    -fx-text-fill: #ffe2a0; }
+
+.badge {
+    -fx-font-size: 11px;
+    -fx-padding: 2 8;
+    -fx-background-radius: 10;
+    -fx-border-color: -border;
+    -fx-border-radius: 10;
+    -fx-text-fill: -text-muted;
+}
+
+/* ---------------------------------------------------------------- campos de texto y casillas */
+
+.text-field {
+    -fx-background-color: -bg-card;
+    -fx-text-fill: -text;
+    -fx-prompt-text-fill: -text-muted;
+    -fx-background-radius: 8;
+    -fx-border-color: -border;
+    -fx-border-radius: 8;
+    -fx-padding: 8 12;
+}
+
+.text-field:focused {
+    -fx-border-color: derive(-accent, -25%);
+}
+
+.text-area {
+    -fx-text-fill: -text;
+    -fx-prompt-text-fill: -text-muted;
+}
+
+.text-area .content {
+    -fx-background-color: -bg-card;
+}
+
+.check-box {
+    -fx-text-fill: -text;
+}
+
+.check-box > .box {
+    -fx-background-color: -bg-light;
+    -fx-background-radius: 4;
+}
+
+.check-box:selected > .box {
+    -fx-background-color: -accent;
+}
+
+.check-box:selected > .box > .mark {
+    -fx-background-color: -accent-text;
+}
+
+/* ---------------------------------------------------------------- listas y scroll */
 
 .split-pane {
     -fx-background-color: transparent;
     -fx-padding: 0;
 }
 
-/* El separador arrastrable entre la lista y el detalle */
 .split-pane > .split-pane-divider {
     -fx-background-color: -bg;
-    -fx-padding: 0 2;
+    -fx-padding: 0 3;
 }
 
 .list-view {
-    -fx-background-color: -bg-dark;
+    -fx-background-color: -bg-card;
     -fx-background-insets: 0;
+    -fx-background-radius: 10;
 }
 
 .list-cell {
-    -fx-background-color: -bg-dark;
-    -fx-padding: 8 12;
+    -fx-background-color: -bg-card;
+    -fx-padding: 9 12;
 }
 
 .list-cell:filled:hover {
@@ -103,7 +317,7 @@
 }
 
 .list-cell:filled:selected {
-    -fx-background-color: derive(-accent, -45%);
+    -fx-background-color: derive(-accent, -62%);
 }
 
 .result-title {
@@ -115,41 +329,6 @@
     -fx-font-size: 12px;
 }
 
-/* Menú lateral: botón de la sección actual resaltado */
-.nav-button {
-    -fx-background-color: transparent;
-    -fx-alignment: center-left;
-}
-
-.nav-button:hover {
-    -fx-background-color: -bg-light;
-}
-
-.nav-button.active {
-    -fx-background-color: -bg-light;
-    -fx-border-color: transparent transparent transparent -accent;
-    -fx-border-width: 0 0 0 3;
-}
-
-.link-button {
-    -fx-background-color: transparent;
-    -fx-text-fill: -accent;
-    -fx-padding: 0;
-}
-
-.danger-button {
-    -fx-background-color: #5a2a2e;
-}
-
-.danger-button:hover {
-    -fx-background-color: #7a3238;
-}
-
-.check-box {
-    -fx-text-fill: -text;
-}
-
-/* Barras de scroll oscuras y finas (por defecto JavaFX las pinta claras) */
 .scroll-bar {
     -fx-background-color: transparent;
 }
@@ -178,24 +357,48 @@
     -fx-padding: 0;
 }
 
-/* ---------- Biblioteca ---------- */
+.detail-scroll,
+.detail-scroll > .viewport {
+    -fx-background-color: -bg-card;
+    -fx-background-insets: 0;
+}
+
+.detail-pane {
+    -fx-padding: 16 20;
+}
+
+.progress-bar > .track {
+    -fx-background-color: -bg-light;
+    -fx-background-insets: 0;
+    -fx-background-radius: 3;
+}
+
+.progress-bar > .bar {
+    -fx-background-color: -blue;
+    -fx-background-insets: 0;
+    -fx-background-radius: 3;
+    -fx-padding: 2;
+}
+
+/* ---------------------------------------------------------------- biblioteca */
 
 .tile {
     -fx-padding: 6;
-    -fx-background-radius: 6;
+    -fx-background-radius: 10;
 }
 
 .tile:hover {
-    -fx-background-color: -bg-light;
+    -fx-background-color: -bg-card;
 }
 
 .tile-title {
     -fx-font-size: 13px;
+    -fx-font-weight: bold;
 }
 
 .cover {
-    -fx-background-color: -bg-dark;
-    -fx-background-radius: 4;
+    -fx-background-color: -bg-card;
+    -fx-background-radius: 8;
 }
 
 .sensitive-badge {
@@ -205,68 +408,64 @@
     -fx-padding: 2 6;
 }
 
-/* ---------- Detalle ---------- */
-
-.detail-scroll,
-.detail-scroll > .viewport {
-    -fx-background-color: -bg;
-    -fx-background-insets: 0;
+/* Iniciales ("Sa") cuando no hay imagen; el color de fondo lo pone el código */
+.initials {
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+    -fx-text-fill: rgba(255, 255, 255, 0.85);
 }
 
-.detail-pane {
-    -fx-padding: 16 20;
+.initials-small {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: rgba(255, 255, 255, 0.9);
 }
+
+/* ---------------------------------------------------------------- ficha de VN */
 
 .detail-title {
-    -fx-font-size: 20px;
+    -fx-font-size: 30px;
     -fx-font-weight: bold;
 }
 
 .description {
-    -fx-padding: 12 0 0 0;
     -fx-line-spacing: 3px;
+    -fx-text-fill: #c9cad1;
 }
 
-/* ---------- Pestañas ---------- */
-
-.tab-pane > .tab-header-area > .headers-region > .tab {
-    -fx-background-color: -bg-light;
-    -fx-background-radius: 4 4 0 0;
-    -fx-padding: 4 12;
+.stat-card {
+    -fx-background-color: -bg-card;
+    -fx-background-radius: 10;
+    -fx-border-color: -border;
+    -fx-border-radius: 10;
+    -fx-padding: 10 14;
+    -fx-spacing: 4;
+    -fx-min-width: 160;
 }
 
-.tab-pane > .tab-header-area > .headers-region > .tab:selected {
-    -fx-background-color: derive(-accent, -45%);
+.stat-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-muted;
 }
 
-.tab-pane > .tab-header-area > .headers-region > .tab .tab-label {
-    -fx-text-fill: -text;
+.stat-value {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
 }
 
-.tab-pane > .tab-header-area > .tab-header-background {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent transparent -bg-light transparent;
+.exe-path {
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-muted;
 }
 
-/* Quitar el borde azul de "foco" alrededor de la pestaña seleccionada */
-.tab-pane:focused > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
-    -fx-border-color: transparent;
-}
-
-.tab-pane > .tab-content-area {
-    -fx-background-color: transparent;
-    -fx-padding: 16 0 0 0;
-}
-
-/* ---------- Personajes ---------- */
+/* ---------------------------------------------------------------- personajes */
 
 .character-card {
-    -fx-padding: 6;
-    -fx-background-radius: 6;
-}
-
-.character-card:hover {
-    -fx-background-color: -bg-light;
+    -fx-background-color: -bg-card;
+    -fx-background-radius: 10;
+    -fx-border-color: -border;
+    -fx-border-radius: 10;
+    -fx-padding: 8;
 }
 
 .character-name {
@@ -274,50 +473,43 @@
     -fx-font-size: 13px;
 }
 
-.spoiler-badge {
-    -fx-background-color: #5a4a1e;
-    -fx-text-fill: #ffe2a0;
-    -fx-font-size: 11px;
-    -fx-padding: 1 6;
-    -fx-background-radius: 3;
+.spoiler-placeholder {
+    -fx-background-color: #24252d;
+    -fx-background-radius: 8;
 }
 
 .tooltip {
     -fx-font-size: 13px;
-    -fx-background-color: -bg-dark;
+    -fx-background-color: #0d0e12;
     -fx-text-fill: -text;
 }
 
-.small-button {
-    -fx-font-size: 12px;
-    -fx-padding: 3 8;
-}
-
-.route-badge {
-    -fx-text-fill: #9be29b;
-    -fx-font-size: 12px;
-}
-
-/* ---------- Rutas ---------- */
+/* ---------------------------------------------------------------- rutas */
 
 .route-row {
-    -fx-background-color: -bg-dark;
-    -fx-background-radius: 6;
-    -fx-padding: 8 12;
-    /* Borde izquierdo de color según el estado (se define en las clases status-*) */
-    -fx-border-width: 0 0 0 4;
-    -fx-border-radius: 6 0 0 6;
+    -fx-background-color: -bg-card;
+    -fx-background-radius: 10;
+    -fx-border-color: -border;
+    -fx-border-radius: 10;
+    -fx-padding: 10 14;
 }
 
-.route-row.status-pending     { -fx-border-color: #6b6e78; }
-.route-row.status-in-progress { -fx-border-color: #e0b04a; }
-.route-row.status-completed   { -fx-border-color: #5cc46a; }
+/* Mientras se arrastra otra ruta por encima: línea rosa arriba o abajo */
+.route-row.drop-above { -fx-border-color: -accent -border -border -border; -fx-border-width: 3 1 1 1; }
+.route-row.drop-below { -fx-border-color: -border -border -accent -border; -fx-border-width: 1 1 3 1; }
+.route-row.dragging   { -fx-opacity: 0.4; }
+
+.drag-handle {
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 16px;
+    -fx-cursor: move;
+}
 
 .route-order {
     -fx-font-size: 18px;
     -fx-font-weight: bold;
     -fx-text-fill: -text-muted;
-    -fx-min-width: 24;
+    -fx-min-width: 22;
 }
 
 .route-name {
@@ -327,36 +519,31 @@
 
 .route-notes {
     -fx-font-size: 12px;
-    -fx-text-fill: #c8c9cf;
+    -fx-text-fill: #b9bac3;
 }
 
-.icon-button {
-    -fx-padding: 4 8;
-    -fx-min-width: 30;
+/* Desplegable de estado de cada ruta, con aspecto de pastilla */
+.status-box {
+    -fx-background-radius: 12;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
 }
 
-.progress-bar > .track {
-    -fx-background-color: -bg-light;
-    -fx-background-insets: 0;
-}
+.status-box.pill-completed   > .list-cell { -fx-text-fill: -blue; }
+.status-box.pill-in-progress > .list-cell { -fx-text-fill: -orange; }
+.status-box.pill-pending     > .list-cell { -fx-text-fill: #c9cad1; }
 
-.progress-bar > .bar {
-    -fx-background-color: #5cc46a;
-    -fx-background-insets: 0;
-    -fx-padding: 4;
-}
-
-/* ---------- Desplegables, áreas de texto y diálogos ---------- */
+/* ---------------------------------------------------------------- desplegables */
 
 .combo-box-base {
     -fx-background-color: -bg-light;
-    -fx-background-radius: 4;
+    -fx-background-radius: 8;
 }
 
 .combo-box > .list-cell {
     -fx-background-color: transparent;
     -fx-text-fill: -text;
-    -fx-padding: 3 6;
+    -fx-padding: 3 8;
 }
 
 .combo-box > .arrow-button > .arrow {
@@ -368,21 +555,14 @@
     -fx-padding: 6 10;
 }
 
-.text-area {
-    -fx-text-fill: -text;
-    -fx-prompt-text-fill: -text-muted;
-}
-
-.text-area .content {
-    -fx-background-color: -bg-light;
-}
+/* ---------------------------------------------------------------- diálogos */
 
 .dialog-pane {
     -fx-background-color: -bg;
 }
 
 .dialog-pane > .header-panel {
-    -fx-background-color: -bg-dark;
+    -fx-background-color: -bg-sidebar;
 }
 
 .dialog-pane > .header-panel .label {
