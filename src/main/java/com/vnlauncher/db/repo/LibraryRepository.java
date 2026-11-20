@@ -20,7 +20,7 @@ public class LibraryRepository {
 
     /** SELECT común: datos de la VN + columnas propias de la biblioteca. */
     private static final String SELECT_ENTRIES =
-            "SELECT " + VnRows.COLUMNS + ", l.added_at, l.exe_path, l.use_locale_emulator, "
+            "SELECT " + VnRows.COLUMNS + ", l.added_at, l.exe_path, l.config_exe_path, l.use_locale_emulator, "
                     + "l.le_profile, l.last_played_at "
                     + "FROM library_entry l JOIN vn v ON v.id = l.vn_id ";
 
@@ -122,6 +122,21 @@ public class LibraryRepository {
         }
     }
 
+    /**
+     * Guarda el programa de configuración de la VN (config.exe...).
+     *
+     * @param configExePath ruta absoluta, o null para quitarlo
+     */
+    public void updateConfigExePath(String vnId, String configExePath) throws SQLException {
+        try (Connection conn = db.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "UPDATE library_entry SET config_exe_path = ? WHERE vn_id = ?")) {
+            ps.setString(1, configExePath);
+            ps.setString(2, vnId);
+            ps.executeUpdate();
+        }
+    }
+
     /** Cambia solo la opción de Locale Emulator (conserva el ejecutable). */
     public void updateUseLocaleEmulator(String vnId, boolean use) throws SQLException {
         try (Connection conn = db.getConnection();
@@ -151,6 +166,7 @@ public class LibraryRepository {
                 vn,
                 Instant.ofEpochSecond(rs.getLong("added_at")),
                 rs.getString("exe_path"),
+                rs.getString("config_exe_path"),
                 rs.getInt("use_locale_emulator") == 1,
                 rs.getString("le_profile"),
                 lastPlayedAt);

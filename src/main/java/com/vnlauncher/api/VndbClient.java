@@ -19,6 +19,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Cliente de la API v2 (Kana) de VNDB. Solo sabe hablar HTTP + JSON: no toca la base de datos
@@ -82,6 +83,15 @@ public class VndbClient {
         VndbQuery query = new VndbQuery(
                 List.of("search", "=", text), VN_FIELDS, "searchrank", maxResults, null);
         return post("vn", query, VnDto.class).results();
+    }
+
+    /**
+     * Una VN concreta por su id ("v4"), con los mismos campos que la búsqueda.
+     * Vacío si VNDB ya no la tiene (borrada o fusionada con otra). Gasta 1 petición.
+     */
+    public Optional<VnDto> vnById(String id) throws VndbException {
+        VndbQuery query = new VndbQuery(List.of("id", "=", id), VN_FIELDS, null, 1, null);
+        return post("vn", query, VnDto.class).results().stream().findFirst();
     }
 
     /**

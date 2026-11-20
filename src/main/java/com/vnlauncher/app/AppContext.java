@@ -18,6 +18,7 @@ import com.vnlauncher.service.LibraryService;
 import com.vnlauncher.service.PlaytimeTracker;
 import com.vnlauncher.service.ProcessScanner;
 import com.vnlauncher.service.ProcessStarter;
+import com.vnlauncher.service.RefreshService;
 import com.vnlauncher.service.RouteService;
 import com.vnlauncher.service.SettingsService;
 import com.vnlauncher.util.AppPaths;
@@ -63,6 +64,7 @@ public final class AppContext {
     private final LaunchService launchService;
     private final RateLimiter rateLimiter;
     private final PlaytimeTracker playtimeTracker;
+    private final RefreshService refreshService;
 
     // Constructor con muchos parámetros: es el precio de la inyección manual. Si crece demasiado,
     // se podría agrupar (p. ej. un record con los servicios), pero así se ve todo de un vistazo.
@@ -86,6 +88,8 @@ public final class AppContext {
         this.launchService = launchService;
         this.rateLimiter = rateLimiter;
         this.playtimeTracker = playtimeTracker;
+        // Solo combina servicios que ya existen: se crea aquí y no hace falta otro parámetro más
+        this.refreshService = new RefreshService(catalogService, libraryService, characterService);
     }
 
     /** Prepara carpetas, base de datos y servicios. Si algo falla aquí la app no puede arrancar. */
@@ -193,6 +197,11 @@ public final class AppContext {
 
     public LaunchService launchService() {
         return launchService;
+    }
+
+    /** "Actualizar desde VNDB" en la ficha. */
+    public RefreshService refreshService() {
+        return refreshService;
     }
 
     public PlaytimeTracker playtimeTracker() {

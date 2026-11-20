@@ -14,11 +14,47 @@ lanzamiento (con Locale Emulator opcional) y registro de tiempo de juego.
 ## Comandos
 
 ```bash
-mvn test          # ejecutar los tests
-mvn javafx:run    # arrancar la aplicación
+mvn test                            # ejecutar los tests
+mvn javafx:run                      # arrancar la aplicación
+mvn clean package -P instalador     # crear el instalador (ver abajo)
 ```
 
-Los datos se guardan en `%LOCALAPPDATA%\VNLauncher` (`library.db` + carpeta `images`).
+Los datos se guardan en `%LOCALAPPDATA%\VNLauncher` (`library.db` + carpeta `images`). Desinstalar la
+aplicación no los borra.
+
+## Instalador para Windows
+
+`mvn clean package -P instalador` deja en `target/instalador` un instalador
+`VN Launcher-0.1.0.exe`. Lleva su propio Java reducido, así que en el PC donde se instale no hace
+falta tener Java. Lo que hace el perfil (comentado en el `pom.xml`):
+
+1. Copia el `.jar` de la aplicación y sus dependencias a `target/jpackage/mods`.
+2. `jlink` crea un Java con solo los módulos del JDK que se usan (`target/jpackage/runtime`).
+3. `jpackage` junta las dos cosas y crea el instalador con las opciones de
+   `src/packaging/windows/instalador.txt`: menú Inicio, acceso directo en el escritorio (pregunta
+   antes), elegir carpeta, instalación solo para tu usuario (sin permisos de administrador).
+
+Necesita **WiX Toolset 3**, que es lo que usa `jpackage` para crear instaladores en Windows:
+
+```bash
+winget install --id WiXToolset.WiXToolset
+```
+
+Sin WiX se puede crear la versión **portable** (una carpeta con `VN Launcher.exe` que se copia donde
+quieras):
+
+```bash
+mvn clean package -P instalador -Djpackage.options=src/packaging/windows/portable.txt
+```
+
+Notas:
+- Antes de crear un instalador nuevo, sube la `<version>` del `pom.xml` (solo números, p. ej.
+  `0.2.0`): Windows solo sustituye una instalación por otra de versión mayor. La misma versión sale
+  en Ajustes → Acerca de.
+- El instalador no está firmado, así que Windows SmartScreen avisará la primera vez
+  («Más información» → «Ejecutar de todas formas»).
+- El icono es `src/packaging/windows/vn-launcher.ico` (de 16 a 256 px), generado a partir de
+  `vn-launcher-app.png`.
 
 ## Diseño
 
@@ -45,7 +81,7 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
 - [x] Fase 6: tiempo de juego (+ biblioteca del diseño: Continuar, filtros, orden)
 - [x] Diseño (2.ª parte): Ajustes, diálogo de ruta, diálogos de error al lanzar, estados vacíos,
   de carga y de error, tema «Según Windows»
-- [ ] Fase 7: pulido
+- [x] Fase 7: pulido («Actualizar desde VNDB», programa de configuración, instalador)
 - [ ] Fase 8: Discord Rich Presence
 
 ## Cómo se mide el tiempo de juego
@@ -60,14 +96,17 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
   abrirlo la sesión se cierra con el último latido.
 - Limitación: si cierras el launcher con el juego abierto, el tiempo posterior no se cuenta.
 
-## Pendiente para la Fase 7
+## Ficha de una VN
 
-Los Ajustes ya están hechos (Locale Emulator, tema, spoilers, nivel de difuminado, carpeta de
-datos y caché). Queda:
+- **Actualizar desde VNDB:** vuelve a pedir la ficha y los personajes principales (2 peticiones) y
+  descarga la portada si ha cambiado. Las rutas, el tiempo de juego y el ejecutable no se tocan. El
+  resto del tiempo la aplicación no vuelve a preguntar a VNDB por algo que ya tiene.
+- **Programa de configuración:** además del juego, cada VN puede tener su `config.exe` (o como se
+  llame). Se abre con el botón «Configuración», desde su carpeta y con Locale Emulator si la VN lo
+  usa. No cuenta como partida.
 
-- Botón «Actualizar desde VNDB» en la ficha (vuelve a pedir datos y personajes).
-- Ejecutable secundario por VN (p. ej. `config.exe`).
-- Empaquetar con `jpackage` para Windows, con el icono `vn-launcher.ico`.
+## Pendiente
+
 - La tarjeta «Cuenta de VNDB» de Ajustes está desactivada («Próximamente»): servirá para
   sincronizar la lista de VNDB con un token, más adelante.
 

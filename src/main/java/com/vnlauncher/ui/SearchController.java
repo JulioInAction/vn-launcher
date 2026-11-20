@@ -1,6 +1,5 @@
 package com.vnlauncher.ui;
 
-import com.vnlauncher.api.VndbException;
 import com.vnlauncher.app.AppContext;
 import com.vnlauncher.model.LibraryEntry;
 import com.vnlauncher.model.VisualNovel;
@@ -156,17 +155,7 @@ public class SearchController {
 
     /** Errores de red: aviso naranja dentro de la pantalla con "Reintentar". */
     private void showError(Throwable error) {
-        Notice notice = new Notice(Notice.Kind.WARNING);
-        if (error instanceof VndbException ve && ve.statusCode() == 0) {
-            // statusCode 0 = ni siquiera hubo respuesta: sin conexión
-            notice.title("No se puede conectar con VNDB")
-                    .text("Tu biblioteca sigue funcionando sin conexión. Solo la búsqueda y "
-                            + "«Actualizar desde VNDB» necesitan internet.");
-        } else {
-            notice.title("VNDB ha respondido con un error").text(error.getMessage());
-        }
-        notice.action("Reintentar", this::onSearch);
-        noticeBox.getChildren().setAll(notice);
+        noticeBox.getChildren().setAll(Notice.vndbError(error, this::onSearch));
         // Sin resultados anteriores que enseñar, el aviso va solo (sin la tarjeta "Escribe un título...")
         emptyBox.setVisible(false);
         emptyBox.setManaged(false);

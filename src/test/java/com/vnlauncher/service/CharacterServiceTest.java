@@ -112,6 +112,18 @@ class CharacterServiceTest {
     }
 
     @Test
+    void refreshAsksVndbAgainEvenIfAlreadyCached() throws Exception {
+        server.enqueue(clannadResponse());
+        server.enqueue("{\"results\": [], \"more\": false}");
+        service.getPrimaryCharacters("v4");
+
+        List<VnCharacter> refreshed = service.refresh("v4");
+
+        assertEquals(2, server.apiRequests().size(), "Actualizar sí vuelve a preguntar a VNDB");
+        assertTrue(refreshed.isEmpty(), "Y guarda lo que VNDB tenga ahora");
+    }
+
+    @Test
     void emptyResultIsCachedToo() throws Exception {
         server.enqueue("{\"results\": [], \"more\": false}");
 

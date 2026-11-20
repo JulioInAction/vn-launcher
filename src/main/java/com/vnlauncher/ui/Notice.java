@@ -1,5 +1,6 @@
 package com.vnlauncher.ui;
 
+import com.vnlauncher.api.VndbException;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -46,6 +47,23 @@ class Notice extends HBox {
         HBox.setHgrow(texts, Priority.ALWAYS);
         setAlignment(Pos.TOP_LEFT);
         getChildren().addAll(icon, texts);
+    }
+
+    /**
+     * Aviso naranja para un error al hablar con VNDB, con un botón "Reintentar".
+     * Lo usan la búsqueda y "Actualizar desde VNDB" de la ficha.
+     */
+    static Notice vndbError(Throwable error, Runnable retry) {
+        Notice notice = new Notice(Kind.WARNING);
+        if (error instanceof VndbException ve && ve.statusCode() == 0) {
+            // statusCode 0 = ni siquiera hubo respuesta: sin conexión
+            notice.title("No se puede conectar con VNDB")
+                    .text("Tu biblioteca sigue funcionando sin conexión. Solo la búsqueda y "
+                            + "«Actualizar desde VNDB» necesitan internet.");
+        } else {
+            notice.title("VNDB ha respondido con un error").text(error.getMessage());
+        }
+        return notice.action("Reintentar", retry);
     }
 
     Notice title(String value) {

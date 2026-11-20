@@ -1,0 +1,3 @@
+# Opciones de jpackage en Linux (el entorno de pruebas): carpeta con el ejecutable "VN Launcher".
+--type app-image
+--icon src/main/resources/com/vnlauncher/ui/images/vn-launcher-app.png

@@ -57,6 +57,15 @@ public class LaunchService {
         library.updateExePath(vnId, exePath.toAbsolutePath().toString());
     }
 
+    /**
+     * Guarda el programa de configuración de la VN (config.exe...).
+     *
+     * @param configExe su ruta, o null para quitarlo
+     */
+    public void setConfigExecutable(String vnId, Path configExe) throws SQLException {
+        library.updateConfigExePath(vnId, configExe == null ? null : configExe.toAbsolutePath().toString());
+    }
+
     public void setUseLocaleEmulator(String vnId, boolean use) throws SQLException {
         library.updateUseLocaleEmulator(vnId, use);
     }
@@ -103,6 +112,33 @@ public class LaunchService {
         library.updateLastPlayed(vnId, now);
         tracker.track(launched);
         return launched;
+    }
+
+    /**
+     * Abre el programa de configuración de la VN (config.exe...) desde su carpeta.
+     *
+     * <p>Usa Locale Emulator si la VN lo usa: estos programas suelen estar en japonés, igual que
+     * el juego, y sin el idioma correcto se ven caracteres extraños. NO cuenta como partida: ni
+     * tiempo de juego ni "última partida", y se puede abrir aunque el juego esté abierto.
+     *
+     * @param withoutLocaleEmulator true = esta vez sin Locale Emulator (si falta LEProc.exe)
+     */
+    public void launchConfig(String vnId, boolean withoutLocaleEmulator) throws LaunchException, SQLException {
+        LibraryEntry entry = library.findByVnId(vnId)
+                .orElseThrow(() -> new IllegalArgumentException(vnId + " no está en la biblioteca"));
+        if (!entry.hasConfigExecutable()) {
+            throw new LaunchException(LaunchException.Reason.NO_EXECUTABLE,
+                    "Elige primero el programa de configuración.");
+        }
+        Path exe = Path.of(entry.configExePath());
+        if (!Files.isRegularFile(exe)) {
+            throw new LaunchException(LaunchException.Reason.EXECUTABLE_NOT_FOUND,
+                    "No se encuentra el programa de configuración:\n" + exe, exe);
+        }
+        boolean useLe = entry.useLocaleEmulator() && !withoutLocaleEmulator;
+        List<String> command = buildCommand(useLe, entry.leProfile(), exe);
+        // Se descarta el LaunchedGame: no se le pasa al tracker, así que no se mide nada
+        start(vnId, command, exe, exe.toAbsolutePath().getParent(), clock.instant(), !useLe);
     }
 
     /** Construye el comando según la configuración (con o sin Locale Emulator). */

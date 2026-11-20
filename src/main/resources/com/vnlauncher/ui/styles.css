@@ -718,6 +718,11 @@
     -fx-text-fill: -vn-muted;
 }
 
+/* Enlaces pequeños junto a .exe-path ("Cambiar", "Quitar", "+ Añadir programa de configuración") */
+.hyperlink.small-link {
+    -fx-font-size: 12px;
+}
+
 /* ===================================================================== Personajes */
 
 .character-card {

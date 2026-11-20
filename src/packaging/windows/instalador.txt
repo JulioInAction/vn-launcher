@@ -1,0 +1,17 @@
+# Opciones de jpackage para el INSTALADOR de Windows (.exe). Las comunes están en el pom.xml.
+# Necesita WiX Toolset instalado (ver README). Cada línea es una opción; # = comentario.
+--type exe
+--icon src/packaging/windows/vn-launcher.ico
+# Se instala para el usuario actual (en su AppData), sin pedir permisos de administrador
+--win-per-user-install
+# Entrada en el menú Inicio, dentro de la carpeta "VN Launcher"
+--win-menu
+--win-menu-group "VN Launcher"
+# Acceso directo en el escritorio, preguntando antes al usuario
+--win-shortcut
+--win-shortcut-prompt
+# Permite elegir la carpeta de instalación
+--win-dir-chooser
+# Identificador FIJO del programa: así un instalador con una versión mayor sustituye al anterior
+# en vez de instalarse al lado. No cambiarlo nunca.
+--win-upgrade-uuid 1ee7f435-83be-4ac3-97cb-e248c39c94e8

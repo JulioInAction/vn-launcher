@@ -6,7 +6,10 @@
 
     <groupId>com.vnlauncher</groupId>
     <artifactId>vn-launcher</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <!-- Versión de la aplicación: sale en Ajustes → Acerca de y en el instalador. Solo números
+         (jpackage no admite "-SNAPSHOT"). Súbela antes de generar un instalador nuevo: Windows
+         solo sustituye una instalación por otra de versión MAYOR. -->
+    <version>0.1.0</version>
     <name>VN Launcher</name>
 
     <properties>
@@ -62,6 +65,25 @@
     </dependencies>
 
     <build>
+        <!-- Recursos: se copian tal cual, salvo app.properties, donde Maven sustituye
+             ${project.version} por la versión de arriba ("filtrado"). Así la versión se escribe en
+             un único sitio. No se filtra todo: estropearía las fuentes y las imágenes. -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>com/vnlauncher/app/app.properties</exclude>
+                </excludes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>com/vnlauncher/app/app.properties</include>
+                </includes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -115,4 +137,154 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- =============================================================== instalador
+             mvn clean package -P instalador
+             Genera en target/instalador el instalador de Windows (o, en Linux, una carpeta con el
+             ejecutable). Pasos, todos en la fase "package":
+               1. el .jar de la app y sus dependencias se copian a target/jpackage/mods
+               2. jlink crea un Java reducido (target/jpackage/runtime) con solo los módulos del JDK
+                  que hacen falta: así no hace falta tener Java instalado para usar la app
+               3. jpackage junta las dos cosas y crea el instalador
+             El "clean" es necesario: jlink y jpackage no sobrescriben carpetas que ya existen. -->
+        <profile>
+            <id>instalador</id>
+            <properties>
+                <jpackage.dir>${project.build.directory}/jpackage</jpackage.dir>
+                <!-- Módulos del JDK que necesitan la app y sus librerías. Se sacaron con las
+                     herramientas jdeps (opción print-module-deps) y java (opción describe-module)
+                     sobre cada .jar: p. ej. sqlite-jdbc pide java.sql.rowset y JavaFX java.desktop.
+                     (Las opciones van sin sus dos guiones porque en XML no se pueden escribir
+                     dos guiones seguidos dentro de un comentario.) -->
+                <jlink.modules>java.base,java.desktop,java.logging,java.net.http,java.scripting,java.sql,java.sql.rowset,java.xml,jdk.unsupported</jlink.modules>
+            </properties>
+            <build>
+                <plugins>
+                    <!-- 1a. El .jar de la app, directamente a la carpeta de módulos -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <version>3.4.2</version>
+                        <configuration>
+                            <outputDirectory>${jpackage.dir}/mods</outputDirectory>
+                        </configuration>
+                    </plugin>
+                    <!-- 1b. Las dependencias (JavaFX, SQLite, Jackson) a la misma carpeta.
+                         De JavaFX llegan dos .jar por módulo: el del sistema (con los nativos) y uno
+                         "vacío" sin clases (módulo javafx.xxxEmpty); este último no estorba. -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>3.8.1</version>
+                        <executions>
+                            <execution>
+                                <id>copiar-modulos</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>copy-dependencies</goal>
+                                </goals>
+                                <configuration>
+                                    <includeScope>runtime</includeScope>
+                                    <outputDirectory>${jpackage.dir}/mods</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- 2 y 3. jlink y jpackage son programas del JDK: se ejecutan con exec-maven-plugin -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.5.1</version>
+                        <executions>
+                            <execution>
+                                <id>jlink</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <!-- java.home = el JDK con el que se ejecuta Maven -->
+                                    <executable>${java.home}/bin/jlink${exe.suffix}</executable>
+                                    <arguments>
+                                        <argument>--add-modules</argument>
+                                        <argument>${jlink.modules}</argument>
+                                        <!-- Quitar lo que no hace falta para ejecutar: ocupa menos -->
+                                        <argument>--strip-debug</argument>
+                                        <argument>--no-header-files</argument>
+                                        <argument>--no-man-pages</argument>
+                                        <argument>--output</argument>
+                                        <argument>${jpackage.dir}/runtime</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>jpackage</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>${java.home}/bin/jpackage${exe.suffix}</executable>
+                                    <arguments>
+                                        <argument>--name</argument>
+                                        <argument>VN Launcher</argument>
+                                        <argument>--app-version</argument>
+                                        <argument>${project.version}</argument>
+                                        <argument>--vendor</argument>
+                                        <argument>VN Launcher</argument>
+                                        <argument>--description</argument>
+                                        <argument>Launcher de novelas visuales</argument>
+                                        <!-- El Java reducido del paso 2 y los módulos del paso 1 -->
+                                        <argument>--runtime-image</argument>
+                                        <argument>${jpackage.dir}/runtime</argument>
+                                        <argument>--module-path</argument>
+                                        <argument>${jpackage.dir}/mods</argument>
+                                        <argument>--module</argument>
+                                        <argument>com.vnlauncher/com.vnlauncher.app.Main</argument>
+                                        <!-- Igual que en javafx:run (ver arriba) -->
+                                        <argument>--java-options</argument>
+                                        <argument>--enable-native-access=javafx.graphics,org.xerial.sqlitejdbc</argument>
+                                        <argument>--dest</argument>
+                                        <argument>${project.build.directory}/instalador</argument>
+                                        <!-- Opciones de cada sistema (tipo, icono, menú Inicio...):
+                                             un archivo de src/packaging (ver los perfiles de abajo) -->
+                                        <argument>@${jpackage.options}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Perfiles que se activan solos según el sistema operativo y solo ponen propiedades.
+             jpackage.options se puede cambiar al ejecutar, p. ej. para la versión portable:
+             mvn clean package -P instalador -Djpackage.options=src/packaging/windows/portable.txt -->
+        <profile>
+            <id>windows</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                </os>
+            </activation>
+            <properties>
+                <exe.suffix>.exe</exe.suffix>
+                <jpackage.options>src/packaging/windows/instalador.txt</jpackage.options>
+            </properties>
+        </profile>
+        <profile>
+            <id>no-windows</id>
+            <activation>
+                <os>
+                    <family>!windows</family>
+                </os>
+            </activation>
+            <properties>
+                <exe.suffix/>
+                <jpackage.options>src/packaging/linux/portable.txt</jpackage.options>
+            </properties>
+        </profile>
+    </profiles>
 </project>

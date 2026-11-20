@@ -9,6 +9,7 @@ import com.vnlauncher.model.VisualNovel;
 import com.vnlauncher.model.VnCharacter;
 import com.vnlauncher.util.PlayTime;
 import com.vnlauncher.util.RelativeTime;
+import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.scene.Cursor;
 import javafx.scene.control.Button;
@@ -18,10 +19,12 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.HashSet;
@@ -51,6 +54,9 @@ public class VnDetailController implements PlaytimeAware {
     private final String vnId;
 
     // --- cabecera
+    @FXML private VBox noticeBox;
+    @FXML private Hyperlink refreshLink;
+    @FXML private Label refreshStatus;
     @FXML private StackPane coverBox;
     @FXML private Label titleLabel;
     @FXML private Label altTitleLabel;
@@ -58,6 +64,11 @@ public class VnDetailController implements PlaytimeAware {
     @FXML private Button playButton;
     @FXML private Button exeButton;
     @FXML private Label exePathLabel;
+    @FXML private Button configButton;
+    @FXML private HBox configRow;
+    @FXML private Label configPathLabel;
+    @FXML private Hyperlink configChangeLink;
+    @FXML private Hyperlink configRemoveLink;
     @FXML private CheckBox localeEmulatorCheck;
     @FXML private Label playTimeLabel;
     @FXML private Label lastPlayedLabel;
@@ -100,19 +111,17 @@ public class VnDetailController implements PlaytimeAware {
         launchFlow = new LaunchFlow(ctx, navigator, playButton);
         removeButton.setDisable(true);   // hasta que se cargue la VN
         playButton.setDisable(true);
-        BackgroundTasks.run(ctx.background(), () -> ctx.libraryService().find(vnId),
-                maybeEntry -> {
-                    if (maybeEntry.isEmpty()) {
-                        navigator.showLibrary(); // ya no está en la biblioteca
-                    } else {
-                        renderHeader(maybeEntry.get());
-                    }
-                },
-                error -> titleLabel.setText("Error: " + error.getMessage()));
+        loadHeader();
         reloadPlayData(); // tiempo jugado (suma de sesiones)
 
         // La etiqueta de estado solo ocupa sitio cuando tiene texto (binding: se recalcula sola)
         launchStatusLabel.managedProperty().bind(launchStatusLabel.textProperty().isNotEmpty());
+        // La zona de avisos, solo cuando tiene alguno
+        noticeBox.managedProperty().bind(Bindings.isNotEmpty(noticeBox.getChildren()));
+        // Guardar el cambio de Locale Emulator. Al pintar la VN también se cambia la casilla, pero
+        // onLocaleEmulatorToggled ve que coincide con lo guardado y no hace nada.
+        localeEmulatorCheck.selectedProperty().addListener(
+                (obs, oldValue, selected) -> onLocaleEmulatorToggled(selected));
 
         localeEmulatorCheck.setTooltip(new Tooltip(
                 "Lanza el juego con LEProc.exe -run (perfil por defecto de Locale Emulator, japonés).\n"
@@ -136,7 +145,13 @@ public class VnDetailController implements PlaytimeAware {
         BackgroundTasks.run(ctx.background(), () -> ctx.settingsService().showSpoilers(),
                 showSpoilersCheck::setSelected, error -> { });
         showSensitiveCheck.selectedProperty().addListener((obs, oldValue, selected) -> renderCharacters());
+        loadCharacters();
+    }
+
+    /** Personajes: la primera vez tardan (VNDB + imágenes); después salen de la base de datos. */
+    private void loadCharacters() {
         charactersStatus.setText("Cargando personajes...");
+        charactersStatus.setManaged(true);
         BackgroundTasks.run(ctx.background(), () -> ctx.characterService().getPrimaryCharacters(vnId),
                 loaded -> {
                     characters = loaded;
@@ -148,8 +163,31 @@ public class VnDetailController implements PlaytimeAware {
 
     // =========================================================== cabecera
 
-    private void renderHeader(LibraryEntry loaded) {
-        VisualNovel vn = loaded.vn();
+    /** Lee la VN (y la fecha de sus datos de VNDB) y pinta la cabecera. */
+    private void loadHeader() {
+        record Header(Optional<LibraryEntry> entry, Optional<Instant> fetchedAt) {
+        }
+        BackgroundTasks.run(ctx.background(),
+                () -> new Header(ctx.libraryService().find(vnId), ctx.libraryService().fetchedAt(vnId)),
+                header -> {
+                    if (header.entry().isEmpty()) {
+                        navigator.showLibrary(); // ya no está en la biblioteca
+                        return;
+                    }
+                    renderVn(header.entry().get().vn());
+                    renderLaunchInfo(header.entry().get());
+                    removeButton.setDisable(false);
+                    String when = header.fetchedAt()
+                            .map(t -> RelativeTime.format(t, Instant.now(), ZoneId.systemDefault()))
+                            .orElse("nunca");
+                    refreshLink.setTooltip(new Tooltip("Vuelve a pedir a VNDB la ficha y los personajes "
+                            + "(2 peticiones).\nDatos descargados: " + when + "."));
+                },
+                error -> titleLabel.setText("Error: " + error.getMessage()));
+    }
+
+    /** Datos de la VN que vienen de VNDB: portada, títulos, desarrollador y descripción. */
+    private void renderVn(VisualNovel vn) {
         Path file = vn.imagePath() == null ? null : ctx.imageCache().resolve(vn.imagePath());
         CoverView cover = new CoverView(file,
                 ctx.contentFilter().isSensitive(vn.imageSexual(), vn.imageViolence()), 220, 330, vn.title());
@@ -173,12 +211,6 @@ public class VnDetailController implements PlaytimeAware {
         altTitleLabel.setManaged(vn.altTitle() != null);
         metaLabel.setText(SearchController.meta(vn));
         renderDescription(vn.description());
-
-        renderLaunchInfo(loaded);
-        // El listener se añade DESPUÉS de poner el valor inicial, para que no cuente como cambio
-        localeEmulatorCheck.selectedProperty().addListener(
-                (obs, oldValue, selected) -> onLocaleEmulatorToggled(selected));
-        removeButton.setDisable(false);
     }
 
     /** Parte de la cabecera que cambia al configurar o lanzar el juego. */
@@ -188,8 +220,29 @@ public class VnDetailController implements PlaytimeAware {
         exePathLabel.setText(loaded.hasExecutable() ? loaded.exePath()
                 : "Aún no has elegido el ejecutable del juego.");
         localeEmulatorCheck.setSelected(loaded.useLocaleEmulator());
+        renderConfigInfo(loaded);
         lastPlayedLabel.setText(RelativeTime.format(loaded.lastPlayedAt(), Instant.now(), ZoneId.systemDefault()));
         renderPlayButton();
+    }
+
+    /**
+     * Programa de configuración: con él, botón "Configuración" y "Configuración: ruta · Cambiar ·
+     * Quitar"; sin él, solo el enlace para añadirlo (y nada si aún no hay ni ejecutable del juego).
+     */
+    private void renderConfigInfo(LibraryEntry loaded) {
+        boolean hasConfig = loaded.hasConfigExecutable();
+        show(configButton, hasConfig);
+        show(configRow, hasConfig || loaded.hasExecutable());
+        show(configPathLabel, hasConfig);
+        show(configRemoveLink, hasConfig);
+        configPathLabel.setText(hasConfig ? "Configuración: " + loaded.configExePath() : "");
+        configChangeLink.setText(hasConfig ? "Cambiar" : "+  Añadir programa de configuración (config.exe...)");
+    }
+
+    /** Muestra u oculta un nodo sin que ocupe sitio cuando está oculto. */
+    private static void show(javafx.scene.Node node, boolean visible) {
+        node.setVisible(visible);
+        node.setManaged(visible);
     }
 
     /** "▶ Jugar", "Lanzando..." o "Jugando..." según el estado. */
@@ -253,6 +306,42 @@ public class VnDetailController implements PlaytimeAware {
         urlOpener.accept("https://vndb.org/" + vnId);
     }
 
+    /**
+     * "Actualizar desde VNDB": vuelve a pedir la ficha y los personajes y repinta la pantalla.
+     * Las rutas, el tiempo de juego y el ejecutable no cambian (son datos del usuario).
+     */
+    @FXML
+    private void onRefresh() {
+        noticeBox.getChildren().clear();
+        refreshLink.setDisable(true);
+        // Si ahora mismo hay que esperar por el límite de VNDB, decirlo (la tarea espera sola)
+        Duration wait = ctx.rateLimiter().timeUntilAvailable();
+        refreshStatus.setText(wait.isZero() ? "Actualizando..."
+                : "Esperando al límite de VNDB (" + wait.toMinutesPart() + ":"
+                        + String.format("%02d", wait.toSecondsPart()) + ")...");
+        BackgroundTasks.run(ctx.background(), () -> ctx.refreshService().refresh(vnId),
+                result -> {
+                    refreshLink.setDisable(false);
+                    if (!result.found()) {
+                        refreshStatus.setText("");
+                        noticeBox.getChildren().setAll(new Notice(Notice.Kind.WARNING)
+                                .title("VNDB ya no tiene esta novela")
+                                .text("Puede que la hayan borrado o unido a otra. Se conservan los "
+                                        + "datos que ya tenías."));
+                        return;
+                    }
+                    refreshStatus.setText("✓  Actualizado");
+                    loadHeader();
+                    loadCharacters();
+                    navigator.refreshSidebar(); // la portada o el título pueden haber cambiado
+                },
+                error -> {
+                    refreshLink.setDisable(false);
+                    refreshStatus.setText("");
+                    noticeBox.getChildren().setAll(Notice.vndbError(error, this::onRefresh));
+                });
+    }
+
     // =========================================================== lanzar el juego
 
     @FXML
@@ -292,6 +381,34 @@ public class VnDetailController implements PlaytimeAware {
             launchStatusLabel.setText("Ejecutable guardado.");
             reloadPlayData();
         });
+    }
+
+    @FXML
+    private void onOpenConfig() {
+        launchFlow.openConfig(vnId, entry.vn().title(),
+                () -> launchStatusLabel.setText("Programa de configuración abierto."),
+                this::reloadPlayData); // por si se eligió otro .exe en el diálogo de error
+    }
+
+    @FXML
+    private void onChooseConfig() {
+        // Empieza en la carpeta del programa actual o, si no hay, en la del juego
+        String startFrom = entry.hasConfigExecutable() ? entry.configExePath() : entry.exePath();
+        launchFlow.chooseConfig(vnId, entry.vn().title(), startFrom, () -> {
+            launchStatusLabel.setText("Programa de configuración guardado.");
+            reloadPlayData();
+        });
+    }
+
+    @FXML
+    private void onRemoveConfig() {
+        // Solo se olvida la ruta; el archivo no se toca. Por eso no hace falta confirmar.
+        BackgroundTasks.run(ctx.background(), () -> {
+                    ctx.launchService().setConfigExecutable(vnId, null);
+                    return null;
+                },
+                ignored -> reloadPlayData(),
+                error -> Dialogs.error(playButton, error.getMessage()));
     }
 
     private void onLocaleEmulatorToggled(boolean selected) {

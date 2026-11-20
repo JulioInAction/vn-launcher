@@ -49,13 +49,33 @@ public class CharacterService {
     public List<VnCharacter> getPrimaryCharacters(String vnId)
             throws VndbException, SQLException, InterruptedException {
         if (!repository.isFetched(vnId)) {
-            List<VnCharacter> fetched = vndb.primaryCharactersOfVn(vnId).stream()
-                    .map(dto -> toModel(dto, vnId))
-                    .flatMap(Optional::stream) // quita los Optional vacíos
-                    .filter(vc -> vc.role() == CharacterRole.PRIMARY)
-                    .toList();
-            repository.saveForVn(vnId, fetched, clock.instant());
+            fetchAndSave(vnId);
         }
+        return loadWithImages(vnId);
+    }
+
+    /**
+     * "Actualizar desde VNDB": vuelve a pedir los personajes aunque ya estuvieran guardados
+     * (alguien puede haberlos añadido o corregido en VNDB). Las rutas no se pierden: apuntan a la
+     * tabla character, y de ahí no se borra nadie.
+     */
+    public List<VnCharacter> refresh(String vnId) throws VndbException, SQLException, InterruptedException {
+        fetchAndSave(vnId);
+        return loadWithImages(vnId);
+    }
+
+    /** Pide a VNDB los personajes principales de la VN y los guarda (1 petición, o más si son >100). */
+    private void fetchAndSave(String vnId) throws VndbException, SQLException {
+        List<VnCharacter> fetched = vndb.primaryCharactersOfVn(vnId).stream()
+                .map(dto -> toModel(dto, vnId))
+                .flatMap(Optional::stream) // quita los Optional vacíos
+                .filter(vc -> vc.role() == CharacterRole.PRIMARY)
+                .toList();
+        repository.saveForVn(vnId, fetched, clock.instant());
+    }
+
+    /** Personajes guardados, descargando antes las imágenes que falten. */
+    private List<VnCharacter> loadWithImages(String vnId) throws SQLException, InterruptedException {
         List<VnCharacter> characters = repository.findByVn(vnId);
         if (downloadMissingImages(characters) > 0) {
             characters = repository.findByVn(vnId); // releer para tener las rutas nuevas

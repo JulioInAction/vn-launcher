@@ -17,8 +17,8 @@ import java.util.List;
  * Descarga imágenes de VNDB a la carpeta local y sabe dónde están.
  *
  * <p>Las imágenes vienen de t.vndb.org, que es un servidor distinto de la API y NO cuenta para
- * el límite de 200 peticiones. Aun así, cada imagen se descarga una sola vez: si el fichero
- * ya existe, no se vuelve a pedir.
+ * el límite de 200 peticiones. Aun así, cada imagen se descarga una sola vez: quien llama comprueba
+ * antes con {@link #isCached} si ya la tiene.
  */
 public class ImageCacheService {
 
@@ -36,16 +36,17 @@ public class ImageCacheService {
      * Descarga {@code url} como images/{folder}/{id}.{ext} y devuelve esa ruta RELATIVA,
      * que es lo que se guarda en la base de datos.
      *
-     * @param folder "vn" para portadas, "char" para personajes (Fase 3)
+     * <p>Si ya hay un fichero con ese nombre, se REEMPLAZA. Antes se daba por bueno, pero con
+     * "Actualizar desde VNDB" la portada puede haber cambiado de URL y seguir llamándose v4.jpg:
+     * nos quedaríamos con la vieja. Para no repetir descargas, quien llama mira antes {@link #isCached}.
+     *
+     * @param folder "vn" para portadas, "char" para personajes
      */
     public String download(String url, String folder, String id) throws IOException, InterruptedException {
         // Barras "/" también en Windows: Path las acepta, y así la ruta guardada en la BD
         // es la misma en cualquier sistema.
         String relative = "images/" + folder + "/" + id + extensionOf(url);
         Path target = resolve(relative);
-        if (Files.exists(target)) {
-            return relative;
-        }
         Files.createDirectories(target.getParent());
 
         // Se descarga a un fichero temporal ".part" y al terminar se renombra. Si la descarga

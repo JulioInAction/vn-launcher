@@ -1,0 +1,4 @@
+# Opciones de jpackage para la versión PORTABLE de Windows: una carpeta con "VN Launcher.exe"
+# que se puede copiar donde quieras. No necesita WiX.
+--type app-image
+--icon src/packaging/windows/vn-launcher.ico

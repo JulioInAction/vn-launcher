@@ -10,9 +10,10 @@ import com.vnlauncher.model.VisualNovel;
 import com.vnlauncher.util.VndbMarkup;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
- * Lógica de negocio del catálogo: buscar VNs y (en la Fase 2) guardarlas en la biblioteca.
+ * Lógica de negocio del catálogo: buscar VNs en VNDB y pedir los datos actuales de una.
  * Es el único sitio que convierte DTOs de la API en objetos del modelo.
  */
 public class CatalogService {
@@ -33,6 +34,14 @@ public class CatalogService {
         return vndb.searchVn(text.strip(), MAX_SEARCH_RESULTS).stream()
                 .map(CatalogService::toModel)
                 .toList();
+    }
+
+    /**
+     * Datos actuales de una VN en VNDB (para "Actualizar desde VNDB"). Gasta 1 petición.
+     * Vacío si VNDB ya no tiene esa VN.
+     */
+    public Optional<VisualNovel> fetchById(String vnId) throws VndbException {
+        return vndb.vnById(vnId).map(CatalogService::toModel);
     }
 
     /** DTO → modelo. Package-private (sin "public") para poder testearlo desde el mismo paquete. */

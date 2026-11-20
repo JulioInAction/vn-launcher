@@ -30,7 +30,8 @@ public class Database {
      */
     private static final List<String> MIGRATIONS = List.of(
             "migration/001_initial.sql",
-            "migration/002_play_session_last_seen.sql"
+            "migration/002_play_session_last_seen.sql",
+            "migration/003_library_config_exe.sql"
     );
 
     private final String url;
@@ -80,6 +81,11 @@ public class Database {
     }
 
     /** Versión actual del esquema, guardada por SQLite en la cabecera del fichero. */
+    /** Versión que tendrá la base de datos después de migrate() (una por cada migración). */
+    public static int latestVersion() {
+        return MIGRATIONS.size();
+    }
+
     public int schemaVersion() throws SQLException {
         try (Connection conn = getConnection();
              Statement st = conn.createStatement();

@@ -108,6 +108,17 @@ public class VnRepository {
         }
     }
 
+    /** Cuándo se pidieron a VNDB los datos de esta VN (al añadirla o con "Actualizar desde VNDB"). */
+    public Optional<Instant> fetchedAt(String id) throws SQLException {
+        try (Connection conn = db.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT fetched_at FROM vn WHERE id = ?")) {
+            ps.setString(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? Optional.of(Instant.ofEpochSecond(rs.getLong(1))) : Optional.empty();
+            }
+        }
+    }
+
     /** Apunta dónde se ha guardado la portada (ruta relativa a la carpeta de datos). */
     public void updateImagePath(String id, String imagePath) throws SQLException {
         try (Connection conn = db.getConnection();

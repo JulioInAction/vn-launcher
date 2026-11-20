@@ -43,14 +43,14 @@ class DatabaseTest {
         assertTrue(tables.containsAll(List.of(
                 "vn", "developer", "vn_developer", "character", "vn_character",
                 "library_entry", "route", "play_session", "setting")), "Tablas encontradas: " + tables);
-        assertEquals(2, db.schemaVersion());
+        assertEquals(Database.latestVersion(), db.schemaVersion());
     }
 
     @Test
     void migrateIsIdempotent() throws SQLException {
         // Una segunda llamada no debe fallar intentando crear de nuevo las tablas.
         db.migrate();
-        assertEquals(2, db.schemaVersion());
+        assertEquals(Database.latestVersion(), db.schemaVersion());
     }
 
     @Test
@@ -73,15 +73,21 @@ class DatabaseTest {
             throw new IllegalStateException(e);
         }
 
-        old.migrate(); // aplica solo la 002
+        old.migrate(); // aplica las que faltan: 002 y 003
 
-        assertEquals(2, old.schemaVersion());
+        assertEquals(3, old.schemaVersion());
         try (Connection c = old.getConnection(); Statement st = c.createStatement();
              ResultSet rs = st.executeQuery("SELECT duration_seconds, last_seen_at FROM play_session")) {
             assertTrue(rs.next());
             assertEquals(300, rs.getInt(1), "La sesión antigua se conserva");
             rs.getLong(2);
             assertTrue(rs.wasNull(), "La columna nueva empieza vacía");
+        }
+        try (Connection c = old.getConnection(); Statement st = c.createStatement();
+             ResultSet rs = st.executeQuery("SELECT vn_id, config_exe_path FROM library_entry")) {
+            assertTrue(rs.next());
+            assertEquals("v1", rs.getString(1), "La VN de la biblioteca se conserva");
+            assertNull(rs.getString(2), "Sin programa de configuración hasta que se elija");
         }
     }
 

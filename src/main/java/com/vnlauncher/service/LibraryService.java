@@ -67,6 +67,24 @@ public class LibraryService {
         }
     }
 
+    /**
+     * Guarda los datos nuevos de una VN que ya está en la biblioteca ("Actualizar desde VNDB") y
+     * descarga la portada si ha cambiado. VnRepository.save deja image_path a NULL cuando cambia la
+     * URL de la portada, así que ensureCover la ve como "falta" y la vuelve a descargar.
+     */
+    public void updateFromVndb(VisualNovel fresh) throws SQLException, InterruptedException {
+        vnRepository.save(fresh, clock.instant());
+        Optional<VisualNovel> saved = vnRepository.findById(fresh.id());
+        if (saved.isPresent()) {
+            ensureCover(saved.get());
+        }
+    }
+
+    /** Cuándo se pidieron a VNDB los datos de la VN. */
+    public Optional<Instant> fetchedAt(String vnId) throws SQLException {
+        return vnRepository.fetchedAt(vnId);
+    }
+
     public void remove(String vnId) throws SQLException {
         libraryRepository.remove(vnId);
     }

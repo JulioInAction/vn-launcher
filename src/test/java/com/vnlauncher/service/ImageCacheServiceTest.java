@@ -34,7 +34,7 @@ class ImageCacheServiceTest {
     }
 
     @Test
-    void downloadsToRelativePathAndSkipsSecondTime() throws Exception {
+    void downloadsToRelativePath() throws Exception {
         String url = server.url("/cv/95/75895.jpg");
 
         String relative = cache.download(url, "vn", "v4");
@@ -42,9 +42,20 @@ class ImageCacheServiceTest {
         assertEquals("images/vn/v4.jpg", relative);
         assertArrayEquals(FakeImageServer.IMAGE_BYTES, Files.readAllBytes(tempDir.resolve(relative)));
         assertTrue(cache.isCached(relative));
+    }
 
-        cache.download(url, "vn", "v4");
-        assertEquals(1, server.requestCount(), "Si ya existe el fichero no se vuelve a descargar");
+    @Test
+    void downloadReplacesAnExistingFile() throws Exception {
+        // Caso de "Actualizar desde VNDB": la portada cambia de URL pero el archivo se sigue
+        // llamando v4.jpg. Si se diera por buena la que había, nos quedaríamos con la vieja.
+        Path target = tempDir.resolve("images/vn/v4.jpg");
+        Files.createDirectories(target.getParent());
+        Files.writeString(target, "portada vieja");
+
+        cache.download(server.url("/cv/nueva.jpg"), "vn", "v4");
+
+        assertEquals(1, server.requestCount());
+        assertArrayEquals(FakeImageServer.IMAGE_BYTES, Files.readAllBytes(target));
     }
 
     @Test

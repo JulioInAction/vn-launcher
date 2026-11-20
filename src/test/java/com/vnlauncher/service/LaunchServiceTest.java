@@ -110,6 +110,52 @@ class LaunchServiceTest {
     }
 
     @Test
+    void configProgramRunsFromItsFolderWithLocaleEmulatorButIsNotAPlay() throws Exception {
+        Path leProc = Files.createFile(tempDir.resolve("LEProc.exe"));
+        settings.setLocaleEmulatorPath(leProc);
+        Path toolsDir = Files.createDirectories(gameDir.resolve("tools"));
+        Path config = Files.createFile(toolsDir.resolve("config.exe"));
+        LaunchService service = service(recording);
+        service.configure("v4", exe, true);
+        service.setConfigExecutable("v4", config);
+
+        service.launchConfig("v4", false);
+
+        assertEquals(new Call(List.of(leProc.toAbsolutePath().toString(), "-run",
+                config.toAbsolutePath().toString()), toolsDir.toAbsolutePath()), calls.getFirst());
+        assertFalse(tracker.isRunning("v4"), "La configuración no cuenta como tiempo de juego");
+        assertNull(library.findByVnId("v4").orElseThrow().lastPlayedAt(), "Ni como última partida");
+    }
+
+    @Test
+    void configProgramCanBeRemovedAndThenFails() throws Exception {
+        Path config = Files.createFile(gameDir.resolve("config.exe"));
+        LaunchService service = service(recording);
+        service.setConfigExecutable("v4", config);
+        assertTrue(library.findByVnId("v4").orElseThrow().hasConfigExecutable());
+
+        service.setConfigExecutable("v4", null);
+
+        assertFalse(library.findByVnId("v4").orElseThrow().hasConfigExecutable());
+        LaunchException e = assertThrows(LaunchException.class, () -> service.launchConfig("v4", false));
+        assertEquals(LaunchException.Reason.NO_EXECUTABLE, e.reason());
+    }
+
+    @Test
+    void missingConfigProgramCarriesItsPath() throws Exception {
+        Path config = Files.createFile(gameDir.resolve("config.exe"));
+        LaunchService service = service(recording);
+        service.setConfigExecutable("v4", config);
+        Files.delete(config);
+
+        LaunchException e = assertThrows(LaunchException.class, () -> service.launchConfig("v4", false));
+
+        assertEquals(LaunchException.Reason.EXECUTABLE_NOT_FOUND, e.reason());
+        assertEquals(config.toAbsolutePath(), e.path());
+        assertTrue(calls.isEmpty());
+    }
+
+    @Test
     void failsWithoutExecutable() {
         LaunchException e = assertThrows(LaunchException.class, () -> service(recording).launch("v4"));
         assertEquals(LaunchException.Reason.NO_EXECUTABLE, e.reason());

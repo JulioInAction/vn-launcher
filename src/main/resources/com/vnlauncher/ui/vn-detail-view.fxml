@@ -25,6 +25,9 @@
     <VBox spacing="28" styleClass="page-content">
         <Button text="‹  Biblioteca" onAction="#onBack" styleClass="link-button"/>
 
+        <!-- Avisos de "Actualizar desde VNDB" (sin conexión...). Solo ocupa sitio si hay alguno. -->
+        <VBox fx:id="noticeBox" maxWidth="760"/>
+
         <!-- ================================================= cabecera -->
         <HBox spacing="28">
             <!-- Aquí VnDetailController pone un CoverView cuando carga la VN.
@@ -40,6 +43,10 @@
                         <Label fx:id="metaLabel" styleClass="muted"/>
                         <Label text="·" styleClass="muted"/>
                         <Hyperlink text="Ver en VNDB" onAction="#onOpenVndb"/>
+                        <Label text="·" styleClass="muted"/>
+                        <!-- Vuelve a pedir la ficha y los personajes (2 peticiones) -->
+                        <Hyperlink fx:id="refreshLink" text="Actualizar desde VNDB" onAction="#onRefresh"/>
+                        <Label fx:id="refreshStatus" styleClass="muted"/>
                     </HBox>
                 </VBox>
 
@@ -48,8 +55,20 @@
                             styleClass="primary-button, big-button"/>
                     <Button fx:id="exeButton" text="Elegir ejecutable" onAction="#onChooseExecutable"
                             styleClass="secondary-button"/>
+                    <!-- Solo se ve cuando hay programa de configuración (config.exe...) -->
+                    <Button fx:id="configButton" text="Configuración" onAction="#onOpenConfig"
+                            styleClass="secondary-button"/>
                 </HBox>
-                <Label fx:id="exePathLabel" styleClass="exe-path"/>
+                <VBox spacing="2">
+                    <Label fx:id="exePathLabel" styleClass="exe-path"/>
+                    <!-- "Configuración: C:\...\config.exe · Cambiar · Quitar", o el enlace para añadirlo -->
+                    <HBox fx:id="configRow" spacing="6" alignment="BASELINE_LEFT">
+                        <Label fx:id="configPathLabel" styleClass="exe-path"/>
+                        <Hyperlink fx:id="configChangeLink" onAction="#onChooseConfig" styleClass="small-link"/>
+                        <Hyperlink fx:id="configRemoveLink" text="Quitar" onAction="#onRemoveConfig"
+                                   styleClass="small-link"/>
+                    </HBox>
+                </VBox>
                 <CheckBox fx:id="localeEmulatorCheck" text="Lanzar con Locale Emulator (perfil japonés)"/>
 
                 <!-- Tarjetas de datos -->
