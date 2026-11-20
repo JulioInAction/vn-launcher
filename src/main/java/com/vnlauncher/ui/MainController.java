@@ -3,12 +3,15 @@ package com.vnlauncher.ui;
 import com.vnlauncher.app.AppContext;
 import com.vnlauncher.model.PlayStatus;
 import com.vnlauncher.model.Theme;
+import com.vnlauncher.service.PlaytimeTracker;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 
+import java.time.Duration;
 import java.util.function.Consumer;
 
 /**
@@ -26,6 +29,8 @@ public class MainController implements Navigator {
     @FXML private BorderPane root;
 
     private SidebarController sidebar;
+    /** Controlador de la pantalla visible, para avisarle de cambios en el tiempo de juego. */
+    private Object currentController;
 
     // Biblioteca y búsqueda se crean una sola vez y se reutilizan (la búsqueda conserva sus
     // resultados al volver). El detalle de una VN se crea nuevo cada vez.
@@ -47,7 +52,35 @@ public class MainController implements Navigator {
         sidebar = new SidebarController(context, this);
         root.setLeft(Views.load("sidebar.fxml", sidebar));
         sidebar.showTheme(initialTheme);
+        listenToPlaytime();
         showLibrary();
+    }
+
+    /**
+     * El PlaytimeTracker avisa cuando un juego se abre o se cierra. Esos avisos llegan desde SU
+     * hilo, no desde el de la interfaz: Platform.runLater(...) encarga el trabajo al hilo de la
+     * interfaz, que es el único que puede tocar los controles.
+     */
+    private void listenToPlaytime() {
+        context.playtimeTracker().addListener(new PlaytimeTracker.Listener() {
+            @Override
+            public void sessionStarted(String vnId) {
+                Platform.runLater(() -> notifyPlaytime(vnId));
+            }
+
+            @Override
+            public void sessionEnded(String vnId, Duration played) {
+                Platform.runLater(() -> notifyPlaytime(vnId));
+            }
+        });
+    }
+
+    private void notifyPlaytime(String vnId) {
+        sidebar.refresh();
+        // "instanceof con patrón" (Java 16+): comprueba el tipo y ya lo da convertido en "aware"
+        if (currentController instanceof PlaytimeAware aware) {
+            aware.playtimeChanged(vnId);
+        }
     }
 
     @Override
@@ -58,12 +91,12 @@ public class MainController implements Navigator {
     @Override
     public void showLibrary(PlayStatus shelf) {
         if (libraryView == null) {
-            libraryController = new LibraryController(context.libraryService(), context.contentFilter(),
-                    context.imageCache(), context.background(), this);
+            libraryController = new LibraryController(context, this);
             libraryView = Views.load("library-view.fxml", libraryController);
         }
         libraryController.show(shelf); // recarga: puede haber VNs nuevas añadidas desde la búsqueda
         root.setCenter(libraryView);
+        currentController = libraryController;
         sidebar.setActive(SidebarController.Section.LIBRARY);
         sidebar.refresh();
     }
@@ -74,6 +107,7 @@ public class MainController implements Navigator {
             searchView = Views.load("search-view.fxml", new SearchController(context, this));
         }
         root.setCenter(searchView);
+        currentController = null;
         sidebar.setActive(SidebarController.Section.SEARCH);
     }
 
@@ -89,12 +123,15 @@ public class MainController implements Navigator {
         VBox page = new VBox(16, title, text);
         page.getStyleClass().add("content");
         root.setCenter(page);
+        currentController = null;
         sidebar.setActive(SidebarController.Section.SETTINGS);
     }
 
     @Override
     public void showVnDetail(String vnId) {
-        root.setCenter(Views.load("vn-detail-view.fxml", new VnDetailController(context, this, urlOpener, vnId)));
+        VnDetailController detail = new VnDetailController(context, this, urlOpener, vnId);
+        root.setCenter(Views.load("vn-detail-view.fxml", detail));
+        currentController = detail;
         sidebar.setActive(SidebarController.Section.LIBRARY);
         sidebar.refresh();
     }

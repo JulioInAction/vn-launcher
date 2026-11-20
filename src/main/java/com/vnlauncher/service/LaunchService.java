@@ -35,12 +35,15 @@ public class LaunchService {
     private final LibraryRepository library;
     private final SettingsService settings;
     private final ProcessStarter starter;
+    private final PlaytimeTracker tracker;
     private final Clock clock;
 
-    public LaunchService(LibraryRepository library, SettingsService settings, ProcessStarter starter, Clock clock) {
+    public LaunchService(LibraryRepository library, SettingsService settings, ProcessStarter starter,
+                         PlaytimeTracker tracker, Clock clock) {
         this.library = library;
         this.settings = settings;
         this.starter = starter;
+        this.tracker = tracker;
         this.clock = clock;
     }
 
@@ -50,12 +53,27 @@ public class LaunchService {
                 useLocaleEmulator);
     }
 
+    public void setExecutable(String vnId, Path exePath) throws SQLException {
+        library.updateExePath(vnId, exePath.toAbsolutePath().toString());
+    }
+
+    public void setUseLocaleEmulator(String vnId, boolean use) throws SQLException {
+        library.updateUseLocaleEmulator(vnId, use);
+    }
+
+    public boolean isRunning(String vnId) {
+        return tracker.isRunning(vnId);
+    }
+
     /**
-     * Lanza el juego y apunta la hora como "última partida".
+     * Lanza el juego, apunta la hora como "última partida" y empieza a medir el tiempo de juego.
      *
      * @throws LaunchException si falta algo por configurar o el sistema no pudo arrancarlo
      */
     public LaunchedGame launch(String vnId) throws LaunchException, SQLException {
+        if (tracker.isRunning(vnId)) {
+            throw new LaunchException(LaunchException.Reason.ALREADY_RUNNING, "El juego ya está abierto.");
+        }
         LibraryEntry entry = library.findByVnId(vnId)
                 .orElseThrow(() -> new IllegalArgumentException(vnId + " no está en la biblioteca"));
 
@@ -74,6 +92,7 @@ public class LaunchService {
         Instant now = clock.instant();
         LaunchedGame launched = start(vnId, command, exe, gameDir, now, !entry.useLocaleEmulator());
         library.updateLastPlayed(vnId, now);
+        tracker.track(launched);
         return launched;
     }
 

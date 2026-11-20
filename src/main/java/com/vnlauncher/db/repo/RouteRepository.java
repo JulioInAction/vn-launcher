@@ -1,6 +1,7 @@
 package com.vnlauncher.db.repo;
 
 import com.vnlauncher.db.Database;
+import com.vnlauncher.model.CurrentRoute;
 import com.vnlauncher.model.Route;
 import com.vnlauncher.model.RouteStatus;
 import com.vnlauncher.model.RouteSummary;
@@ -137,6 +138,29 @@ public class RouteRepository {
                         rs.getInt("total"), rs.getInt("completed"), rs.getInt("in_progress")));
             }
             return result;
+        }
+    }
+
+    /**
+     * Primera ruta "En curso" según el orden recomendado, con el nombre de su heroína.
+     * LEFT JOIN (y no JOIN) para que también salgan las rutas sin heroína (character_id NULL).
+     */
+    public Optional<CurrentRoute> findCurrent(String vnId) throws SQLException {
+        try (Connection conn = db.getConnection();
+             PreparedStatement ps = conn.prepareStatement("""
+                     SELECT r.name AS route_name, c.name AS heroine_name
+                     FROM route r
+                     LEFT JOIN character c ON c.id = r.character_id
+                     WHERE r.vn_id = ? AND r.status = 'IN_PROGRESS'
+                     ORDER BY r.recommended_order
+                     LIMIT 1
+                     """)) {
+            ps.setString(1, vnId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next()
+                        ? Optional.of(new CurrentRoute(rs.getString("route_name"), rs.getString("heroine_name")))
+                        : Optional.empty();
+            }
         }
     }
 

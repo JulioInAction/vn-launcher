@@ -112,6 +112,27 @@ public class LibraryRepository {
         }
     }
 
+    /** Cambia solo el ejecutable (conserva la opción de Locale Emulator). */
+    public void updateExePath(String vnId, String exePath) throws SQLException {
+        try (Connection conn = db.getConnection();
+             PreparedStatement ps = conn.prepareStatement("UPDATE library_entry SET exe_path = ? WHERE vn_id = ?")) {
+            ps.setString(1, exePath);
+            ps.setString(2, vnId);
+            ps.executeUpdate();
+        }
+    }
+
+    /** Cambia solo la opción de Locale Emulator (conserva el ejecutable). */
+    public void updateUseLocaleEmulator(String vnId, boolean use) throws SQLException {
+        try (Connection conn = db.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "UPDATE library_entry SET use_locale_emulator = ? WHERE vn_id = ?")) {
+            ps.setInt(1, use ? 1 : 0);
+            ps.setString(2, vnId);
+            ps.executeUpdate();
+        }
+    }
+
     public void updateLastPlayed(String vnId, Instant when) throws SQLException {
         try (Connection conn = db.getConnection();
              PreparedStatement ps = conn.prepareStatement(

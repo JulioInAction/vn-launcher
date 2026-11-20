@@ -2,7 +2,7 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
-<?import javafx.scene.control.Hyperlink?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.HBox?>
@@ -10,26 +10,38 @@
 <?import javafx.scene.layout.TilePane?>
 <?import javafx.scene.layout.VBox?>
 
-<!-- Biblioteca: cabecera (título, contador, filtro activo, "Añadir VN") y la cuadrícula de portadas.
-     TilePane coloca los hijos en filas y salta de línea cuando no caben.
-     En la Fase 6 se añadirán la franja "Continuar", los filtros por estado y el orden. -->
+<!-- Biblioteca (docs/diseño/capturas/biblioteca_*.png):
+       · cabecera: título, número de novelas y "Añadir VN"
+       · franja "Continuar" con la última VN jugada (la rellena LibraryController)
+       · filtros por estado con contadores y "Ordenar por"
+       · cuadrícula de portadas (TilePane: filas que saltan de línea cuando no caben) -->
 <ScrollPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.vnlauncher.ui.LibraryController"
             fitToWidth="true" styleClass="plain-scroll">
 
-    <VBox spacing="24" styleClass="content">
+    <VBox spacing="28" styleClass="content">
         <HBox spacing="12" alignment="CENTER_LEFT">
-            <Label fx:id="titleLabel" text="Biblioteca" styleClass="page-title"/>
+            <Label text="Biblioteca" styleClass="page-title"/>
             <Label fx:id="countLabel" styleClass="meta"/>
-            <Hyperlink fx:id="clearFilterLink" text="Ver todas" onAction="#onClearFilter"/>
             <Region HBox.hgrow="ALWAYS"/>
             <CheckBox fx:id="showSensitiveCheck" text="Mostrar imágenes sensibles"/>
+            <Region minWidth="12"/>
             <Button text="+  Añadir VN" onAction="#onAddVn"/>
+        </HBox>
+
+        <HBox fx:id="continueCard" styleClass="card, continue-card" spacing="20" alignment="CENTER_LEFT"/>
+
+        <HBox spacing="8" alignment="CENTER_LEFT">
+            <HBox fx:id="chipsBox" spacing="8" alignment="CENTER_LEFT"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <!-- minWidth="-Infinity" = Region.USE_PREF_SIZE: no encoger por debajo de su texto -->
+            <Label text="Ordenar por" styleClass="meta" minWidth="-Infinity"/>
+            <ComboBox fx:id="sortBox" prefWidth="200"/>
         </HBox>
 
         <Label fx:id="emptyLabel" styleClass="muted" wrapText="true"/>
 
-        <TilePane fx:id="grid" hgap="22" vgap="26"/>
+        <TilePane fx:id="grid" hgap="22" vgap="28"/>
     </VBox>
 </ScrollPane>

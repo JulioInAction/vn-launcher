@@ -7,12 +7,10 @@ import com.vnlauncher.model.Route;
 import com.vnlauncher.model.RouteProgress;
 import com.vnlauncher.model.VisualNovel;
 import com.vnlauncher.model.VnCharacter;
-import com.vnlauncher.service.LaunchException;
+import com.vnlauncher.util.PlayTime;
 import com.vnlauncher.util.RelativeTime;
-import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
 import javafx.scene.Cursor;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Hyperlink;
@@ -22,11 +20,7 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.stage.FileChooser;
-import javafx.util.Duration;
 
-import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -40,12 +34,13 @@ import java.util.stream.Collectors;
 
 /**
  * Ficha de una VN de la biblioteca: cabecera con acciones (jugar, elegir ejecutable,
- * Locale Emulator), datos, descripción, rutas y personajes principales.
+ * Locale Emulator), datos (tiempo jugado, última partida, rutas), descripción, rutas y
+ * personajes principales.
  *
  * <p>Recibe el AppContext entero en vez de cada servicio por separado porque usa casi todos;
  * con ocho parámetros en el constructor se volvía ilegible.
  */
-public class VnDetailController {
+public class VnDetailController implements PlaytimeAware {
 
     /** Descripción recortada a unos 4-5 renglones hasta pulsar "Leer más". */
     private static final int DESCRIPTION_PREVIEW_CHARS = 380;
@@ -64,6 +59,7 @@ public class VnDetailController {
     @FXML private Button exeButton;
     @FXML private Label exePathLabel;
     @FXML private CheckBox localeEmulatorCheck;
+    @FXML private Label playTimeLabel;
     @FXML private Label lastPlayedLabel;
     @FXML private Label routesStatLabel;
     @FXML private ProgressBar routesStatBar;
@@ -79,9 +75,12 @@ public class VnDetailController {
     @FXML private FlowPane charactersPane;
 
     private RoutesPane routesPane;
+    private LaunchFlow launchFlow;
 
     private LibraryEntry entry;
     private boolean descriptionExpanded = false;
+    /** true mientras se está lanzando (entre pulsar Jugar y que el juego arranque). */
+    private boolean launching = false;
     /** Personajes cargados (todos, incluidos los spoiler); null mientras se cargan. */
     private List<VnCharacter> characters;
     /** Rutas actuales de la VN. */
@@ -98,6 +97,7 @@ public class VnDetailController {
 
     @FXML
     private void initialize() {
+        launchFlow = new LaunchFlow(ctx, playButton);
         removeButton.setDisable(true);   // hasta que se cargue la VN
         playButton.setDisable(true);
         BackgroundTasks.run(ctx.background(), () -> ctx.libraryService().find(vnId),
@@ -109,6 +109,7 @@ public class VnDetailController {
                     }
                 },
                 error -> titleLabel.setText("Error: " + error.getMessage()));
+        reloadPlayData(); // tiempo jugado (suma de sesiones)
 
         // La etiqueta de estado solo ocupa sitio cuando tiene texto (binding: se recalcula sola)
         launchStatusLabel.managedProperty().bind(launchStatusLabel.textProperty().isNotEmpty());
@@ -148,7 +149,7 @@ public class VnDetailController {
         VisualNovel vn = loaded.vn();
         Path file = vn.imagePath() == null ? null : ctx.imageCache().resolve(vn.imagePath());
         CoverView cover = new CoverView(file,
-                ctx.contentFilter().isSensitive(vn.imageSexual(), vn.imageViolence()), 220, 310);
+                ctx.contentFilter().isSensitive(vn.imageSexual(), vn.imageViolence()), 220, 330, vn.title());
         if (cover.isSensitive()) {
             // Clic en la portada para mostrarla u ocultarla. Usamos un array de 1 elemento porque
             // una lambda solo puede usar variables locales "efectivamente finales": no podemos
@@ -179,12 +180,33 @@ public class VnDetailController {
     /** Parte de la cabecera que cambia al configurar o lanzar el juego. */
     private void renderLaunchInfo(LibraryEntry loaded) {
         entry = loaded;
-        playButton.setDisable(false);
         exeButton.setText(loaded.hasExecutable() ? "Cambiar ejecutable" : "Elegir ejecutable");
         exePathLabel.setText(loaded.hasExecutable() ? loaded.exePath()
                 : "Aún no has elegido el ejecutable del juego.");
         localeEmulatorCheck.setSelected(loaded.useLocaleEmulator());
         lastPlayedLabel.setText(RelativeTime.format(loaded.lastPlayedAt(), Instant.now(), ZoneId.systemDefault()));
+        renderPlayButton();
+    }
+
+    /** "▶ Jugar", "Lanzando..." o "Jugando..." según el estado. */
+    private void renderPlayButton() {
+        boolean running = ctx.launchService().isRunning(vnId);
+        playButton.setText(running ? "Jugando..." : launching ? "Lanzando..." : "▶  Jugar");
+        playButton.setDisable(entry == null || running || launching);
+    }
+
+    /** Recarga los datos de juego: última partida y tiempo total (en segundo plano). */
+    private void reloadPlayData() {
+        // Un record local: solo existe dentro de este método, para devolver dos valores juntos
+        record PlayData(Optional<LibraryEntry> entry, long seconds) {
+        }
+        BackgroundTasks.run(ctx.background(),
+                () -> new PlayData(ctx.libraryService().find(vnId), ctx.libraryService().totalPlaySeconds(vnId)),
+                data -> {
+                    data.entry().ifPresent(this::renderLaunchInfo);
+                    playTimeLabel.setText(PlayTime.format(data.seconds()));
+                },
+                error -> launchStatusLabel.setText("Error: " + error.getMessage()));
     }
 
     private void renderRouteStats() {
@@ -234,152 +256,59 @@ public class VnDetailController {
         if (entry == null) {
             return;
         }
-        if (!entry.hasExecutable()) {
-            chooseExecutableThen(this::launch); // primero elegir el .exe, luego lanzar
-        } else {
-            launch();
-        }
-    }
-
-    private void launch() {
-        playButton.setDisable(true);
-        playButton.setText("Lanzando...");
-        BackgroundTasks.run(ctx.background(), () -> ctx.launchService().launch(vnId),
-                game -> {
-                    launchStatusLabel.setText(game.elevated()
-                            ? "Juego lanzado con permisos de administrador. ¡A jugar!"
-                            : "Juego lanzado. ¡A jugar!");
-                    reloadLaunchInfo();
+        launching = true;
+        renderPlayButton();
+        launchFlow.play(vnId, entry.vn().title(),
+                () -> {
+                    launching = false;
+                    launchStatusLabel.setText("Juego lanzado. El tiempo se cuenta mientras siga abierto.");
+                    reloadPlayData();   // última partida + botón "Jugando..."
                     navigator.refreshSidebar(); // "Recientes" y estantería "Jugando"
-                    // Volver a habilitar "Jugar" pasados unos segundos (evita lanzarlo dos veces
-                    // con un doble clic). En la Fase 6 mostrará "Jugando..." mientras siga abierto.
-                    PauseTransition pause = new PauseTransition(Duration.seconds(4));
-                    pause.setOnFinished(e -> resetPlayButton());
-                    pause.play();
                 },
-                error -> {
-                    resetPlayButton();
-                    handleLaunchError(error);
+                () -> {
+                    launching = false;
+                    reloadPlayData();   // puede haber cambiado el ejecutable o LE en el intento
                 });
     }
 
-    private void resetPlayButton() {
-        playButton.setText("▶  Jugar");
-        playButton.setDisable(false);
-    }
-
-    /**
-     * Cada motivo de fallo tiene su "remedio": si falta el ejecutable, elegirlo; si falta
-     * Locale Emulator, indicar dónde está. Después se vuelve a intentar automáticamente.
-     */
-    private void handleLaunchError(Throwable error) {
-        if (!(error instanceof LaunchException launchError)) {
-            Dialogs.error(playButton, error.getMessage());
-            return;
-        }
-        // "switch" con flechas (Java 14+): no hace falta break y el compilador avisa si falta un caso
-        switch (launchError.reason()) {
-            case NO_EXECUTABLE -> chooseExecutableThen(this::launch);
-            case EXECUTABLE_NOT_FOUND -> {
-                Dialogs.error(playButton, launchError.getMessage());
-                chooseExecutableThen(this::launch);
+    /** Un juego se ha abierto o cerrado (aviso de MainController). */
+    @Override
+    public void playtimeChanged(String changedVnId) {
+        if (vnId.equals(changedVnId)) {
+            if (!ctx.launchService().isRunning(vnId)) {
+                launchStatusLabel.setText("");
             }
-            case LOCALE_EMULATOR_NOT_CONFIGURED, LOCALE_EMULATOR_NOT_FOUND -> {
-                info("Locale Emulator", launchError.getMessage()
-                        + "\n\nA continuación elige el archivo LEProc.exe de la carpeta donde "
-                        + "descomprimiste Locale Emulator. Solo se pide una vez.");
-                chooseLocaleEmulatorThen(this::launch);
-            }
-            case START_FAILED -> Dialogs.error(playButton, launchError.getMessage());
+            reloadPlayData();
         }
     }
 
     @FXML
     private void onChooseExecutable() {
-        chooseExecutableThen(() -> launchStatusLabel.setText("Ejecutable guardado."));
-    }
-
-    /** Abre el selector de archivos; si el usuario elige uno, lo guarda y luego ejecuta {@code after}. */
-    private void chooseExecutableThen(Runnable after) {
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Elige el ejecutable de " + entry.vn().title());
-        chooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Ejecutables (*.exe)", "*.exe"),
-                new FileChooser.ExtensionFilter("Todos los archivos", "*.*"));
-        if (entry.hasExecutable()) {
-            File previousDir = Path.of(entry.exePath()).getParent().toFile();
-            if (previousDir.isDirectory()) {
-                chooser.setInitialDirectory(previousDir);
-            }
-        }
-        // showOpenDialog bloquea hasta que el usuario elige o cancela; null = canceló
-        File chosen = chooser.showOpenDialog(playButton.getScene().getWindow());
-        if (chosen == null) {
-            return;
-        }
-        boolean useLe = localeEmulatorCheck.isSelected();
-        BackgroundTasks.run(ctx.background(), () -> {
-                    ctx.launchService().configure(vnId, chosen.toPath(), useLe);
-                    return ctx.libraryService().find(vnId);
-                },
-                (Optional<LibraryEntry> updated) -> {
-                    updated.ifPresent(this::renderLaunchInfo);
-                    after.run();
-                },
-                error -> Dialogs.error(playButton, error.getMessage()));
+        launchFlow.chooseExecutable(vnId, entry.vn().title(), entry.exePath(), () -> {
+            launchStatusLabel.setText("Ejecutable guardado.");
+            reloadPlayData();
+        });
     }
 
     private void onLocaleEmulatorToggled(boolean selected) {
         if (entry == null || selected == entry.useLocaleEmulator()) {
             return; // nada que guardar (p. ej. el cambio lo hizo renderLaunchInfo)
         }
-        String exe = entry.exePath();
         BackgroundTasks.run(ctx.background(), () -> {
-                    ctx.launchService().configure(vnId, exe == null ? null : Path.of(exe), selected);
+                    ctx.launchService().setUseLocaleEmulator(vnId, selected);
                     // Si se activa y no sabemos dónde está LEProc.exe, preguntarlo ya
                     return selected && ctx.settingsService().localeEmulatorPath().isEmpty();
                 },
                 needsPath -> {
-                    reloadLaunchInfo();
+                    reloadPlayData();
                     if (needsPath) {
-                        info("Locale Emulator", "Elige el archivo LEProc.exe de la carpeta donde "
+                        launchFlow.info("Locale Emulator", "Elige el archivo LEProc.exe de la carpeta donde "
                                 + "descomprimiste Locale Emulator. Solo se pide una vez.");
-                        chooseLocaleEmulatorThen(() -> launchStatusLabel.setText("Locale Emulator configurado."));
+                        launchFlow.chooseLocaleEmulator(
+                                () -> launchStatusLabel.setText("Locale Emulator configurado."));
                     }
                 },
                 error -> Dialogs.error(playButton, error.getMessage()));
-    }
-
-    private void chooseLocaleEmulatorThen(Runnable after) {
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Elige LEProc.exe (Locale Emulator)");
-        chooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("LEProc.exe", "LEProc.exe"),
-                new FileChooser.ExtensionFilter("Ejecutables (*.exe)", "*.exe"),
-                new FileChooser.ExtensionFilter("Todos los archivos", "*.*"));
-        File chosen = chooser.showOpenDialog(playButton.getScene().getWindow());
-        if (chosen == null || !Files.isRegularFile(chosen.toPath())) {
-            return;
-        }
-        BackgroundTasks.run(ctx.background(), () -> {
-                    ctx.settingsService().setLocaleEmulatorPath(chosen.toPath());
-                    return null;
-                },
-                ignored -> after.run(),
-                error -> Dialogs.error(playButton, error.getMessage()));
-    }
-
-    private void reloadLaunchInfo() {
-        BackgroundTasks.run(ctx.background(), () -> ctx.libraryService().find(vnId),
-                updated -> updated.ifPresent(this::renderLaunchInfo),
-                error -> launchStatusLabel.setText("Error: " + error.getMessage()));
-    }
-
-    private void info(String header, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION, message);
-        alert.setHeaderText(header);
-        Dialogs.prepare(alert, playButton);
-        alert.showAndWait();
     }
 
     // =========================================================== personajes
@@ -439,6 +368,10 @@ public class VnDetailController {
 
     @FXML
     private void onRemove() {
+        if (ctx.launchService().isRunning(vnId)) {
+            Dialogs.error(removeButton, "Cierra el juego antes de quitarlo de la biblioteca.");
+            return;
+        }
         if (!Dialogs.confirm(removeButton, "¿Quitar \"" + entry.vn().title() + "\" de la biblioteca?",
                 "Se borrarán también sus rutas y el tiempo de juego registrado.")) {
             return;

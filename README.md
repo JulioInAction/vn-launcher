@@ -39,15 +39,21 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
 - [x] Fase 4: rutas
 - [x] Fase 5: lanzamiento (+ ficha de VN rediseñada)
 - [x] Diseño: temas claro/oscuro, fuentes, barra lateral común, búsqueda nueva
-- [ ] Fase 6: tiempo de juego
+- [x] Fase 6: tiempo de juego (+ biblioteca del diseño: Continuar, filtros, orden)
 - [ ] Fase 7: pulido
+- [ ] Fase 8: integraciones (Discord Rich Presence y tema del sistema)
 
-## Pendiente para la Fase 6 (del diseño)
+## Cómo se mide el tiempo de juego
 
-- Tarjeta "Tiempo jugado" en la ficha.
-- Biblioteca: franja "Continuar" con la última VN jugada y su ruta en curso, filtros por estado
-  con contadores (Todas / Jugando / Pendientes / Completadas), orden ("Último jugado"...) y
-  horas jugadas en cada portada.
+Al lanzar un juego, `PlaytimeTracker` comprueba cada 5 s si hay algún proceso ejecutándose
+**desde la carpeta del juego** (da igual que el juego lance un proceso hijo y cierre el original,
+o que pase por Locale Emulator). La sesión se guarda en `play_session`:
+
+- Durante los primeros 30 s no se cierra aunque no se vea nada (el juego está arrancando).
+- Si el juego desaparece menos de 15 s (p. ej. se reinicia), sigue siendo la misma sesión.
+- Cada 30 s se guarda un "latido" (`last_seen_at`). Si el launcher se cierra de golpe, al volver a
+  abrirlo la sesión se cierra con el último latido.
+- Limitación: si cierras el launcher con el juego abierto, el tiempo posterior no se cuenta.
 
 ## Pendiente para la Fase 7
 
@@ -57,3 +63,22 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
   - ver la carpeta de datos.
 - Botón "Actualizar desde VNDB" en la ficha.
 - Ejecutable secundario por VN (p. ej. `config.exe`).
+
+## Plan de la Fase 8: integraciones
+
+- **Discord Rich Presence**: mientras un juego está abierto (lo sabe el registro de tiempo de la
+  Fase 6), mostrar en el perfil de Discord "Jugando a *VN* · *ruta en curso*" con el tiempo
+  transcurrido y la portada.
+  - Idea: hablar con Discord por su canal local (IPC; en Windows, la tubería con nombre
+    `\\.\pipe\discord-ipc-0`) enviando mensajes JSON. Se puede hacer en Java puro, sin librerías
+    nativas, y es un buen ejercicio de protocolos.
+  - Hace falta crear una aplicación en el Discord Developer Portal para obtener su *client ID*
+    (lo tendrá que hacer el usuario).
+  - Opción en Ajustes para activarlo/desactivarlo; si Discord no está abierto, no hacer nada.
+- **Tema del sistema** con [jSystemThemeDetector](https://github.com/Dansoftowner/jSystemThemeDetector):
+  al arrancar, usar el tema (claro/oscuro) que tenga Windows.
+  - Se publica en **JitPack** (`com.github.Dansoftowner:jSystemThemeDetector:3.9.1`), no en Maven
+    Central: hay que añadir ese repositorio al `pom.xml`. Trae JNA, OSHI y slf4j como dependencias.
+  - Propuesta: el ajuste `theme` pasa a tener tres valores, **Sistema** (por defecto), **Claro** y
+    **Oscuro**. Con "Sistema" se sigue al de Windows, también si cambia con la app abierta (la
+    librería avisa con un listener); el botón de la barra lateral fija Claro u Oscuro.

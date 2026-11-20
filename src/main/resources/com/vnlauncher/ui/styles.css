@@ -621,6 +621,38 @@
 
 /* ===================================================================== Biblioteca */
 
+/* Filtros por estado: pastillas con borde; la activa, rellena (-vn-chip-on-bg) */
+.chip {
+    -fx-background-radius: 999;
+    -fx-border-radius: 999;
+    -fx-padding: 0 16 0 16;
+    -fx-graphic-text-gap: 8;
+    -fx-font-family: "Inter Medium";
+}
+
+.chip-count {
+    -fx-text-fill: -vn-muted;
+    -fx-font-family: "Inter Medium";
+}
+
+.chip.active {
+    -fx-background-color: -vn-chip-on-bg;
+    -fx-border-color: -vn-chip-on-bg;
+    -fx-text-fill: -vn-chip-ontext;
+}
+
+.chip.active .chip-count {
+    -fx-text-fill: -vn-chip-ontext;
+}
+
+.continue-card {
+    -fx-padding: 18 20 18 18;
+}
+
+.continue-caps {
+    -fx-text-fill: -vn-accent-ink;
+}
+
 .tile {
     -fx-padding: 6;
     -fx-background-radius: 14;

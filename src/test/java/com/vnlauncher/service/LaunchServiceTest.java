@@ -2,6 +2,7 @@ package com.vnlauncher.service;
 
 import com.vnlauncher.db.Database;
 import com.vnlauncher.db.repo.LibraryRepository;
+import com.vnlauncher.db.repo.PlaySessionRepository;
 import com.vnlauncher.db.repo.SettingsRepository;
 import com.vnlauncher.db.repo.VnRepository;
 import com.vnlauncher.model.VisualNovel;
@@ -31,6 +32,7 @@ class LaunchServiceTest {
 
     private LibraryRepository library;
     private SettingsService settings;
+    private PlaytimeTracker tracker;
     private Path gameDir;
     private Path exe;
 
@@ -54,6 +56,8 @@ class LaunchServiceTest {
         library = new LibraryRepository(db);
         library.add("v4", NOW);
         settings = new SettingsService(new SettingsRepository(db));
+        // Tracker real (con BD) pero con un escáner que nunca ve procesos: aquí no se prueba él
+        tracker = new PlaytimeTracker(new PlaySessionRepository(db), dir -> false, () -> NOW);
 
         // Un "juego" falso en una carpeta con espacios (caso típico: "C:\Program Files (x86)\...")
         gameDir = Files.createDirectories(tempDir.resolve("Mis Juegos/CLANNAD"));
@@ -61,7 +65,7 @@ class LaunchServiceTest {
     }
 
     private LaunchService service(ProcessStarter starter) {
-        return new LaunchService(library, settings, starter, Clock.fixed(NOW, ZoneOffset.UTC));
+        return new LaunchService(library, settings, starter, tracker, Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
     @Test
@@ -90,6 +94,19 @@ class LaunchServiceTest {
         assertEquals(List.of(leProc.toAbsolutePath().toString(), "-run", exe.toAbsolutePath().toString()),
                 call.command());
         assertEquals(gameDir.toAbsolutePath(), call.dir(), "También con LE, el directorio es el del juego");
+    }
+
+    @Test
+    void launchStartsTrackingAndRefusesToLaunchTwice() throws Exception {
+        LaunchService service = service(recording);
+        service.configure("v4", exe, false);
+
+        service.launch("v4");
+        assertTrue(tracker.isRunning("v4"), "Al lanzar empieza a medirse el tiempo");
+
+        LaunchException e = assertThrows(LaunchException.class, () -> service.launch("v4"));
+        assertEquals(LaunchException.Reason.ALREADY_RUNNING, e.reason());
+        assertEquals(1, calls.size(), "No se lanza una segunda copia");
     }
 
     @Test

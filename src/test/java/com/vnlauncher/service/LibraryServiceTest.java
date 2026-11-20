@@ -2,6 +2,7 @@ package com.vnlauncher.service;
 
 import com.vnlauncher.db.Database;
 import com.vnlauncher.db.repo.LibraryRepository;
+import com.vnlauncher.db.repo.PlaySessionRepository;
 import com.vnlauncher.db.repo.RouteRepository;
 import com.vnlauncher.db.repo.VnRepository;
 import com.vnlauncher.model.LibraryEntry;
@@ -47,12 +48,14 @@ class LibraryServiceTest {
         // Clock.fixed: un reloj parado, para saber exactamente qué fecha se guardará.
         library = new LibraryRepository(db);
         routes = new RouteService(new RouteRepository(db), Clock.fixed(NOW, ZoneOffset.UTC));
-        service = new LibraryService(new VnRepository(db), library, new RouteRepository(db),
+        sessions = new PlaySessionRepository(db);
+        service = new LibraryService(new VnRepository(db), library, new RouteRepository(db), sessions,
                 images, Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
     private LibraryRepository library;
     private RouteService routes;
+    private PlaySessionRepository sessions;
 
     @AfterEach
     void tearDown() {

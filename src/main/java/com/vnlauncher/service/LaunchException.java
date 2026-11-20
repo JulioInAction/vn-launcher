@@ -16,7 +16,9 @@ public class LaunchException extends Exception {
         /** La ruta guardada de LEProc.exe ya no existe. */
         LOCALE_EMULATOR_NOT_FOUND,
         /** El sistema operativo no pudo arrancar el proceso. */
-        START_FAILED
+        START_FAILED,
+        /** El juego ya está abierto (lo está vigilando el PlaytimeTracker). */
+        ALREADY_RUNNING
     }
 
     private final Reason reason;

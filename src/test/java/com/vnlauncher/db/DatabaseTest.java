@@ -43,14 +43,46 @@ class DatabaseTest {
         assertTrue(tables.containsAll(List.of(
                 "vn", "developer", "vn_developer", "character", "vn_character",
                 "library_entry", "route", "play_session", "setting")), "Tablas encontradas: " + tables);
-        assertEquals(1, db.schemaVersion());
+        assertEquals(2, db.schemaVersion());
     }
 
     @Test
     void migrateIsIdempotent() throws SQLException {
         // Una segunda llamada no debe fallar intentando crear de nuevo las tablas.
         db.migrate();
-        assertEquals(1, db.schemaVersion());
+        assertEquals(2, db.schemaVersion());
+    }
+
+    @Test
+    void upgradingFromVersion1KeepsExistingData() throws SQLException {
+        // Simula la base de datos de alguien que usó la app antes de la migración 2:
+        // se crea en otra carpeta, se aplica solo la 001 a mano y se mete una sesión.
+        Database old = new Database(tempDir.resolve("old.db"));
+        try (Connection c = old.getConnection(); Statement st = c.createStatement()) {
+            for (String sql : Database.splitStatements(new String(
+                    Database.class.getResourceAsStream("migration/001_initial.sql").readAllBytes(),
+                    java.nio.charset.StandardCharsets.UTF_8))) {
+                st.execute(sql);
+            }
+            st.execute("PRAGMA user_version = 1");
+            st.executeUpdate("INSERT INTO vn (id, title, fetched_at) VALUES ('v1', 'Test', 0)");
+            st.executeUpdate("INSERT INTO library_entry (vn_id, added_at) VALUES ('v1', 0)");
+            st.executeUpdate("INSERT INTO play_session (vn_id, started_at, ended_at, duration_seconds) "
+                    + "VALUES ('v1', 100, 400, 300)");
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException(e);
+        }
+
+        old.migrate(); // aplica solo la 002
+
+        assertEquals(2, old.schemaVersion());
+        try (Connection c = old.getConnection(); Statement st = c.createStatement();
+             ResultSet rs = st.executeQuery("SELECT duration_seconds, last_seen_at FROM play_session")) {
+            assertTrue(rs.next());
+            assertEquals(300, rs.getInt(1), "La sesión antigua se conserva");
+            rs.getLong(2);
+            assertTrue(rs.wasNull(), "La columna nueva empieza vacía");
+        }
     }
 
     @Test

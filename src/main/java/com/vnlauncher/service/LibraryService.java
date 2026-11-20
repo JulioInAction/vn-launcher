@@ -1,8 +1,10 @@
 package com.vnlauncher.service;
 
 import com.vnlauncher.db.repo.LibraryRepository;
+import com.vnlauncher.db.repo.PlaySessionRepository;
 import com.vnlauncher.db.repo.RouteRepository;
 import com.vnlauncher.db.repo.VnRepository;
+import com.vnlauncher.model.CurrentRoute;
 import com.vnlauncher.model.LibraryEntry;
 import com.vnlauncher.model.LibraryItem;
 import com.vnlauncher.model.PlayStatus;
@@ -31,14 +33,17 @@ public class LibraryService {
     private final VnRepository vnRepository;
     private final LibraryRepository libraryRepository;
     private final RouteRepository routeRepository;
+    private final PlaySessionRepository sessionRepository;
     private final ImageCacheService imageCache;
     private final Clock clock; // inyectado para que los tests puedan fijar la hora
 
     public LibraryService(VnRepository vnRepository, LibraryRepository libraryRepository,
-                          RouteRepository routeRepository, ImageCacheService imageCache, Clock clock) {
+                          RouteRepository routeRepository, PlaySessionRepository sessionRepository,
+                          ImageCacheService imageCache, Clock clock) {
         this.vnRepository = vnRepository;
         this.libraryRepository = libraryRepository;
         this.routeRepository = routeRepository;
+        this.sessionRepository = sessionRepository;
         this.imageCache = imageCache;
         this.clock = clock;
     }
@@ -75,11 +80,14 @@ public class LibraryService {
 
     /** Toda la biblioteca con el estado de cada VN (Jugando / Pendiente / Completada). */
     public List<LibraryItem> findAllWithStatus() throws SQLException {
-        Map<String, RouteSummary> routes = routeRepository.summariesByVn(); // 1 consulta para todas
+        // Una consulta para las rutas de todas las VNs y otra para los tiempos (no una por VN)
+        Map<String, RouteSummary> routes = routeRepository.summariesByVn();
+        Map<String, Long> seconds = sessionRepository.totalSecondsByVn();
         return findAll().stream()
                 .map(e -> {
                     RouteSummary summary = routes.getOrDefault(e.vn().id(), RouteSummary.NONE);
-                    return new LibraryItem(e, PlayStatus.of(summary, e.lastPlayedAt()), summary);
+                    return new LibraryItem(e, PlayStatus.of(summary, e.lastPlayedAt()), summary,
+                            seconds.getOrDefault(e.vn().id(), 0L));
                 })
                 .toList();
     }
@@ -93,6 +101,16 @@ public class LibraryService {
                 .sorted(Comparator.comparing(LibraryEntry::lastPlayedAt).reversed())
                 .limit(limit)
                 .toList();
+    }
+
+    /** Segundos jugados a una VN (suma de sus sesiones terminadas). */
+    public long totalPlaySeconds(String vnId) throws SQLException {
+        return sessionRepository.totalSeconds(vnId);
+    }
+
+    /** Ruta en curso, para la franja "Continuar". */
+    public Optional<CurrentRoute> currentRoute(String vnId) throws SQLException {
+        return routeRepository.findCurrent(vnId);
     }
 
     public Optional<LibraryEntry> find(String vnId) throws SQLException {

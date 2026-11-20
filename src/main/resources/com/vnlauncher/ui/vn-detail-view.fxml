@@ -30,7 +30,7 @@
             <!-- Aquí VnDetailController pone un CoverView cuando carga la VN.
                  alignment TOP_CENTER: el HBox estira este hueco a toda la altura de la fila
                  y sin esto la portada saldría centrada en vertical. -->
-            <StackPane fx:id="coverBox" alignment="TOP_CENTER" minWidth="220" minHeight="310"/>
+            <StackPane fx:id="coverBox" alignment="TOP_CENTER" minWidth="220" minHeight="330"/>
 
             <VBox spacing="12" HBox.hgrow="ALWAYS">
                 <VBox spacing="4">
@@ -52,8 +52,12 @@
                 <Label fx:id="exePathLabel" styleClass="exe-path"/>
                 <CheckBox fx:id="localeEmulatorCheck" text="Lanzar con Locale Emulator (perfil japonés)"/>
 
-                <!-- Tarjetas de datos. En la Fase 6 se añadirá "Tiempo jugado". -->
+                <!-- Tarjetas de datos -->
                 <HBox spacing="10">
+                    <VBox styleClass="stat-card">
+                        <Label text="Tiempo jugado" styleClass="stat-label"/>
+                        <Label fx:id="playTimeLabel" text="0 min" styleClass="stat-value"/>
+                    </VBox>
                     <VBox styleClass="stat-card">
                         <Label text="Última partida" styleClass="stat-label"/>
                         <Label fx:id="lastPlayedLabel" text="Nunca" styleClass="stat-value"/>

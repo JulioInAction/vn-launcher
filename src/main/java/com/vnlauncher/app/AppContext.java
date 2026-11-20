@@ -5,6 +5,7 @@ import com.vnlauncher.api.VndbClient;
 import com.vnlauncher.db.Database;
 import com.vnlauncher.db.repo.CharacterRepository;
 import com.vnlauncher.db.repo.LibraryRepository;
+import com.vnlauncher.db.repo.PlaySessionRepository;
 import com.vnlauncher.db.repo.RouteRepository;
 import com.vnlauncher.db.repo.SettingsRepository;
 import com.vnlauncher.db.repo.VnRepository;
@@ -14,6 +15,8 @@ import com.vnlauncher.service.ContentFilter;
 import com.vnlauncher.service.ImageCacheService;
 import com.vnlauncher.service.LaunchService;
 import com.vnlauncher.service.LibraryService;
+import com.vnlauncher.service.PlaytimeTracker;
+import com.vnlauncher.service.ProcessScanner;
 import com.vnlauncher.service.ProcessStarter;
 import com.vnlauncher.service.RouteService;
 import com.vnlauncher.service.SettingsService;
@@ -37,6 +40,8 @@ import java.util.concurrent.Executors;
  */
 public final class AppContext {
 
+    private static final System.Logger LOG = System.getLogger(AppContext.class.getName());
+
     /**
      * VNDB permite 200 peticiones cada 5 minutos. Nos quedamos en 190 como margen de seguridad
      * (por si VNDB cuenta alguna petición que nosotros no, p. ej. de otra herramienta tuya).
@@ -57,6 +62,7 @@ public final class AppContext {
     private final SettingsService settingsService;
     private final LaunchService launchService;
     private final RateLimiter rateLimiter;
+    private final PlaytimeTracker playtimeTracker;
 
     // Constructor con muchos parámetros: es el precio de la inyección manual. Si crece demasiado,
     // se podría agrupar (p. ej. un record con los servicios), pero así se ve todo de un vistazo.
@@ -64,7 +70,8 @@ public final class AppContext {
                        CatalogService catalogService, LibraryService libraryService,
                        ImageCacheService imageCache, ContentFilter contentFilter,
                        CharacterService characterService, RouteService routeService,
-                       SettingsService settingsService, LaunchService launchService, RateLimiter rateLimiter) {
+                       SettingsService settingsService, LaunchService launchService, RateLimiter rateLimiter,
+                       PlaytimeTracker playtimeTracker) {
         this.paths = paths;
         this.database = database;
         this.httpClient = httpClient;
@@ -78,6 +85,7 @@ public final class AppContext {
         this.settingsService = settingsService;
         this.launchService = launchService;
         this.rateLimiter = rateLimiter;
+        this.playtimeTracker = playtimeTracker;
     }
 
     /** Prepara carpetas, base de datos y servicios. Si algo falla aquí la app no puede arrancar. */
@@ -109,22 +117,32 @@ public final class AppContext {
         ImageCacheService imageCache = new ImageCacheService(httpClient, paths);
         Clock clock = Clock.systemUTC();
         RouteRepository routeRepository = new RouteRepository(database);
+        PlaySessionRepository sessionRepository = new PlaySessionRepository(database);
+        // Sesiones que quedaron abiertas porque la app se cerró de golpe: cerrarlas con su último latido
+        int recovered = sessionRepository.closeUnfinished();
+        if (recovered > 0) {
+            LOG.log(System.Logger.Level.INFO, "Sesiones de juego recuperadas (no se cerraron bien): {0}", recovered);
+        }
         LibraryService libraryService = new LibraryService(
-                vnRepository, libraryRepository, routeRepository, imageCache, clock);
+                vnRepository, libraryRepository, routeRepository, sessionRepository, imageCache, clock);
         CharacterService characterService = new CharacterService(
                 vndb, new CharacterRepository(database), imageCache, clock);
         SettingsService settingsService = new SettingsService(new SettingsRepository(database));
+        // Vigila los juegos abiertos (cada 5 s, en su propio hilo)
+        PlaytimeTracker playtimeTracker = new PlaytimeTracker(sessionRepository, ProcessScanner.system(), clock);
+        playtimeTracker.startPolling();
         LaunchService launchService = new LaunchService(
-                libraryRepository, settingsService, ProcessStarter.system(), clock);
+                libraryRepository, settingsService, ProcessStarter.system(), playtimeTracker, clock);
 
         return new AppContext(paths, database, httpClient, background,
                 new CatalogService(vndb), libraryService, imageCache, ContentFilter.withDefaults(),
                 characterService, new RouteService(routeRepository, clock),
-                settingsService, launchService, rateLimiter);
+                settingsService, launchService, rateLimiter, playtimeTracker);
     }
 
     /** Se llama al cerrar la ventana: corta las tareas y conexiones pendientes. */
     public void shutdown() {
+        playtimeTracker.shutdown(); // cierra las sesiones de los juegos que sigan abiertos
         background.shutdownNow();
         httpClient.shutdownNow();
     }
@@ -172,6 +190,10 @@ public final class AppContext {
 
     public LaunchService launchService() {
         return launchService;
+    }
+
+    public PlaytimeTracker playtimeTracker() {
+        return playtimeTracker;
     }
 
     /** Para mostrar en el menú lateral cuántas peticiones a VNDB se han hecho en los últimos 5 min. */

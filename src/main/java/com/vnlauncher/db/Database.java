@@ -29,7 +29,8 @@ public class Database {
      * (Hay que listarlas a mano porque Java no puede "listar" ficheros dentro de un .jar fácilmente.)
      */
     private static final List<String> MIGRATIONS = List.of(
-            "migration/001_initial.sql"
+            "migration/001_initial.sql",
+            "migration/002_play_session_last_seen.sql"
     );
 
     private final String url;
