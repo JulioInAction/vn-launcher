@@ -74,8 +74,8 @@ public class MainController implements Navigator {
     @Override
     public void showVnDetail(String vnId) {
         root.setCenter(Views.load("vn-detail-view.fxml", new VnDetailController(
-                context.libraryService(), context.characterService(), context.contentFilter(), context.imageCache(),
-                context.background(), this, vnId)));
+                context.libraryService(), context.characterService(), context.routeService(),
+                context.contentFilter(), context.imageCache(), context.background(), this, vnId)));
         markActive(libraryButton);
     }
 

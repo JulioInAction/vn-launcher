@@ -23,7 +23,7 @@ Los datos se guardan en `%LOCALAPPDATA%\VNLauncher` (`library.db` + carpeta `ima
 - [x] Fase 1: cliente VNDB y búsqueda
 - [x] Fase 2: biblioteca local
 - [x] Fase 3: personajes
-- [ ] Fase 4: rutas
+- [x] Fase 4: rutas
 - [ ] Fase 5: lanzamiento
 - [ ] Fase 6: tiempo de juego
 - [ ] Fase 7: pulido

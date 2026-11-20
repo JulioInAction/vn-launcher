@@ -2,17 +2,17 @@ package com.vnlauncher.ui;
 
 import com.vnlauncher.model.GameCharacter;
 import com.vnlauncher.model.LibraryEntry;
+import com.vnlauncher.model.Route;
 import com.vnlauncher.model.VisualNovel;
 import com.vnlauncher.model.VnCharacter;
 import com.vnlauncher.service.CharacterService;
 import com.vnlauncher.service.ContentFilter;
 import com.vnlauncher.service.ImageCacheService;
 import com.vnlauncher.service.LibraryService;
+import com.vnlauncher.service.RouteService;
 import javafx.fxml.FXML;
 import javafx.scene.Cursor;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
@@ -24,13 +24,19 @@ import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.concurrent.ExecutorService;
 
 /**
- * Ficha de una VN de la biblioteca: cabecera con portada y datos, y pestañas con la descripción
- * y los personajes principales. En las próximas fases se añadirán rutas (4), botón de jugar (5)
+ * Ficha de una VN de la biblioteca: cabecera con portada y datos, y pestañas con la descripción,
+ * los personajes principales y las rutas. En las próximas fases se añadirán botón de jugar (5)
  * y tiempo de juego (6).
+ *
+ * <p>Las pestañas Personajes y Rutas están conectadas: marcar "+ Tiene ruta" en un personaje crea
+ * una ruta, y cada vez que cambian las rutas se redibujan las tarjetas ("✓ Con ruta").
  */
 public class VnDetailController {
 
@@ -38,6 +44,7 @@ public class VnDetailController {
 
     private final LibraryService library;
     private final CharacterService characterService;
+    private final RouteService routeService;
     private final ContentFilter contentFilter;
     private final ImageCacheService images;
     private final ExecutorService background;
@@ -57,15 +64,21 @@ public class VnDetailController {
     @FXML private CheckBox showSpoilersCheck;
     @FXML private FlowPane charactersPane;
 
+    @FXML private Tab routesTab;
+    private RoutesPane routesPane;
+
     private VisualNovel vn;
     /** Personajes cargados (todos, incluidos los spoiler); null mientras se cargan. */
     private List<VnCharacter> characters;
+    /** Rutas actuales de la VN. */
+    private List<Route> routes = List.of();
 
     public VnDetailController(LibraryService library, CharacterService characterService,
-                              ContentFilter contentFilter, ImageCacheService images,
+                              RouteService routeService, ContentFilter contentFilter, ImageCacheService images,
                               ExecutorService background, Navigator navigator, String vnId) {
         this.library = library;
         this.characterService = characterService;
+        this.routeService = routeService;
         this.contentFilter = contentFilter;
         this.images = images;
         this.background = background;
@@ -92,6 +105,16 @@ public class VnDetailController {
                 },
                 error -> charactersStatus.setText(
                         "No se pudieron cargar los personajes: " + error.getMessage()));
+
+        // Pestaña de rutas: un componente propio (RoutesPane) que avisa cuando cambian las rutas.
+        routesPane = new RoutesPane(routeService, background, images, contentFilter, vnId);
+        routesPane.setOnRoutesChanged(changed -> {
+            routes = changed;
+            routesTab.setText("Rutas (" + routeService.progressOf(changed) + ")");
+            renderCharacters(); // actualizar "+ Tiene ruta" / "✓ Con ruta"
+        });
+        routesTab.setContent(routesPane);
+        routesPane.reload();
     }
 
     /**
@@ -104,6 +127,11 @@ public class VnDetailController {
         }
         long spoilerCount = characters.stream().filter(VnCharacter::isSpoiler).count();
         boolean showSpoilers = showSpoilersCheck.isSelected();
+        // Ids de los personajes que ya tienen alguna ruta (un Set para buscar rápido)
+        Set<String> withRoute = routes.stream()
+                .map(Route::characterId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
 
         charactersPane.getChildren().clear();
         for (VnCharacter vc : characters) {
@@ -113,8 +141,10 @@ public class VnDetailController {
             GameCharacter c = vc.character();
             Path file = c.imagePath() == null ? null : images.resolve(c.imagePath());
             charactersPane.getChildren().add(new CharacterCard(vc, file,
-                    contentFilter.isSensitive(c.imageSexual(), c.imageViolence())));
+                    contentFilter.isSensitive(c.imageSexual(), c.imageViolence()),
+                    withRoute.contains(c.id()), () -> routesPane.addRouteFor(vc)));
         }
+        routesPane.setCharacters(characters, showSpoilers);
 
         charactersTab.setText("Personajes (" + (characters.size() - (showSpoilers ? 0 : spoilerCount)) + ")");
         showSpoilersCheck.setVisible(spoilerCount > 0);
@@ -170,12 +200,8 @@ public class VnDetailController {
 
     @FXML
     private void onRemove() {
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-                "Se borrarán también sus rutas y el tiempo de juego registrado.",
-                ButtonType.OK, ButtonType.CANCEL);
-        confirm.setHeaderText("¿Quitar \"" + vn.title() + "\" de la biblioteca?");
-        // showAndWait bloquea hasta que el usuario responde (es un diálogo modal).
-        if (confirm.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) {
+        if (!Dialogs.confirm(removeButton, "¿Quitar \"" + vn.title() + "\" de la biblioteca?",
+                "Se borrarán también sus rutas y el tiempo de juego registrado.")) {
             return;
         }
         removeButton.setDisable(true);
@@ -186,7 +212,7 @@ public class VnDetailController {
                 ignored -> navigator.showLibrary(),
                 error -> {
                     removeButton.setDisable(false);
-                    new Alert(Alert.AlertType.ERROR, error.getMessage()).showAndWait();
+                    Dialogs.error(removeButton, error.getMessage());
                 });
     }
 }

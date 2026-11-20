@@ -12,8 +12,8 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<!-- Ficha de una VN: cabecera (portada + datos) y debajo pestañas con la descripción y los
-     personajes (en la Fase 4 se añadirá la de rutas). Todo dentro de un ScrollPane. -->
+<!-- Ficha de una VN: cabecera (portada + datos) y debajo pestañas con la descripción, los
+     personajes y las rutas. Todo dentro de un ScrollPane. -->
 <ScrollPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.vnlauncher.ui.VnDetailController"
@@ -55,6 +55,9 @@
                     <FlowPane fx:id="charactersPane" hgap="16" vgap="16"/>
                 </VBox>
             </Tab>
+
+            <!-- El contenido (RoutesPane) lo crea VnDetailController en código -->
+            <Tab fx:id="routesTab" text="Rutas"/>
         </TabPane>
     </VBox>
 </ScrollPane>

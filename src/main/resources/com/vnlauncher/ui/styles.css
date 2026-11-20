@@ -287,3 +287,109 @@
     -fx-background-color: -bg-dark;
     -fx-text-fill: -text;
 }
+
+.small-button {
+    -fx-font-size: 12px;
+    -fx-padding: 3 8;
+}
+
+.route-badge {
+    -fx-text-fill: #9be29b;
+    -fx-font-size: 12px;
+}
+
+/* ---------- Rutas ---------- */
+
+.route-row {
+    -fx-background-color: -bg-dark;
+    -fx-background-radius: 6;
+    -fx-padding: 8 12;
+    /* Borde izquierdo de color según el estado (se define en las clases status-*) */
+    -fx-border-width: 0 0 0 4;
+    -fx-border-radius: 6 0 0 6;
+}
+
+.route-row.status-pending     { -fx-border-color: #6b6e78; }
+.route-row.status-in-progress { -fx-border-color: #e0b04a; }
+.route-row.status-completed   { -fx-border-color: #5cc46a; }
+
+.route-order {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-muted;
+    -fx-min-width: 24;
+}
+
+.route-name {
+    -fx-font-weight: bold;
+    -fx-font-size: 15px;
+}
+
+.route-notes {
+    -fx-font-size: 12px;
+    -fx-text-fill: #c8c9cf;
+}
+
+.icon-button {
+    -fx-padding: 4 8;
+    -fx-min-width: 30;
+}
+
+.progress-bar > .track {
+    -fx-background-color: -bg-light;
+    -fx-background-insets: 0;
+}
+
+.progress-bar > .bar {
+    -fx-background-color: #5cc46a;
+    -fx-background-insets: 0;
+    -fx-padding: 4;
+}
+
+/* ---------- Desplegables, áreas de texto y diálogos ---------- */
+
+.combo-box-base {
+    -fx-background-color: -bg-light;
+    -fx-background-radius: 4;
+}
+
+.combo-box > .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: -text;
+    -fx-padding: 3 6;
+}
+
+.combo-box > .arrow-button > .arrow {
+    -fx-background-color: -text-muted;
+}
+
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell {
+    -fx-text-fill: -text;
+    -fx-padding: 6 10;
+}
+
+.text-area {
+    -fx-text-fill: -text;
+    -fx-prompt-text-fill: -text-muted;
+}
+
+.text-area .content {
+    -fx-background-color: -bg-light;
+}
+
+.dialog-pane {
+    -fx-background-color: -bg;
+}
+
+.dialog-pane > .header-panel {
+    -fx-background-color: -bg-dark;
+}
+
+.dialog-pane > .header-panel .label {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+}
+
+.dialog-pane > .content.label {
+    -fx-text-fill: -text;
+}
