@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<!-- Ficha de una VN: portada a la izquierda, datos a la derecha y descripción debajo.
-     Todo dentro de un ScrollPane porque la descripción puede ser larga. -->
+<!-- Ficha de una VN: cabecera (portada + datos) y debajo pestañas con la descripción y los
+     personajes (en la Fase 4 se añadirá la de rutas). Todo dentro de un ScrollPane. -->
 <ScrollPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.vnlauncher.ui.VnDetailController"
@@ -18,9 +23,7 @@
         <Button text="← Biblioteca" onAction="#onBack" styleClass="link-button"/>
 
         <HBox spacing="24">
-            <!-- Aquí VnDetailController pone un CoverView cuando carga la VN.
-                 alignment TOP_CENTER: el HBox estira este hueco a toda la altura de la fila
-                 (la descripción puede ser muy larga) y sin esto la portada saldría centrada. -->
+            <!-- Aquí VnDetailController pone un CoverView cuando carga la VN. -->
             <StackPane fx:id="coverBox" alignment="TOP_CENTER" minWidth="256" minHeight="360"/>
 
             <VBox spacing="8" HBox.hgrow="ALWAYS">
@@ -32,8 +35,26 @@
                     <Button fx:id="removeButton" text="Quitar de la biblioteca"
                             onAction="#onRemove" styleClass="danger-button"/>
                 </HBox>
-                <Label fx:id="descriptionLabel" wrapText="true" styleClass="description"/>
             </VBox>
         </HBox>
+
+        <!-- tabClosingPolicy UNAVAILABLE: las pestañas no tienen la "x" de cerrar -->
+        <TabPane fx:id="tabs" tabClosingPolicy="UNAVAILABLE">
+            <Tab text="Descripción">
+                <Label fx:id="descriptionLabel" wrapText="true" styleClass="description"/>
+            </Tab>
+
+            <Tab fx:id="charactersTab" text="Personajes">
+                <VBox spacing="12">
+                    <HBox spacing="12" alignment="CENTER_LEFT">
+                        <Label fx:id="charactersStatus" styleClass="muted" wrapText="true"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <CheckBox fx:id="showSpoilersCheck" text="Mostrar spoilers"/>
+                    </HBox>
+                    <!-- FlowPane: como TilePane pero cada hijo con su propio tamaño -->
+                    <FlowPane fx:id="charactersPane" hgap="16" vgap="16"/>
+                </VBox>
+            </Tab>
+        </TabPane>
     </VBox>
 </ScrollPane>

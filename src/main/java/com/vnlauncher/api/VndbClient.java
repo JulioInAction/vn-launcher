@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.vnlauncher.api.dto.CharacterDto;
 import com.vnlauncher.api.dto.VnDto;
 import com.vnlauncher.api.dto.VndbQuery;
 import com.vnlauncher.api.dto.VndbResponse;
@@ -16,6 +17,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -39,6 +41,13 @@ public class VndbClient {
     static final String VN_FIELDS = "id, title, alttitle, released, description, "
             + "image.url, image.sexual, image.violence, "
             + "developers.id, developers.name, developers.original";
+
+    static final String CHARACTER_FIELDS = "id, name, original, description, "
+            + "image.url, image.sexual, image.violence, "
+            + "vns.id, vns.role, vns.spoiler";
+
+    /** Tope de páginas por consulta, por si acaso: 10 páginas = 1000 personajes. */
+    static final int MAX_PAGES = 10;
 
     static final int MAX_RETRIES = 3;
     static final Duration FIRST_RETRY_DELAY = Duration.ofSeconds(10);
@@ -73,6 +82,32 @@ public class VndbClient {
         VndbQuery query = new VndbQuery(
                 List.of("search", "=", text), VN_FIELDS, "searchrank", maxResults, null);
         return post("vn", query, VnDto.class).results();
+    }
+
+    /**
+     * Personajes de una VN que tienen rol "primary" en ALGUNA de sus VNs.
+     *
+     * <p>Cuidado: el filtro "role" de VNDB no se limita a esta VN. Un personaje secundario aquí
+     * pero principal en la secuela también llega. El servicio vuelve a filtrar mirando el campo
+     * vns de esta VN concreta. Aun así el filtro merece la pena: descarta a la mayoría de
+     * secundarios y la respuesta es mucho más pequeña.
+     *
+     * <p>Pide páginas de 100 (el máximo) mientras VNDB diga que hay más ("more": true).
+     */
+    public List<CharacterDto> primaryCharactersOfVn(String vnId) throws VndbException {
+        List<Object> filters = List.of("and",
+                List.of("vn", "=", List.of("id", "=", vnId)),   // filtro anidado: "aparece en la VN con id..."
+                List.of("role", "=", "primary"));
+        List<CharacterDto> all = new ArrayList<>();
+        for (int page = 1; page <= MAX_PAGES; page++) {
+            VndbQuery query = new VndbQuery(filters, CHARACTER_FIELDS, "name", 100, page);
+            VndbResponse<CharacterDto> response = post("character", query, CharacterDto.class);
+            all.addAll(response.results());
+            if (!response.more()) {
+                break;
+            }
+        }
+        return all;
     }
 
     /**

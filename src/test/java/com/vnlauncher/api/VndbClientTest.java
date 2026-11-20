@@ -3,6 +3,8 @@ package com.vnlauncher.api;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpServer;
+import com.vnlauncher.api.dto.CharacterDto;
+import com.vnlauncher.api.dto.CharacterVnDto;
 import com.vnlauncher.api.dto.VnDto;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -96,6 +98,36 @@ class VndbClientTest {
         assertEquals("searchrank", body.get("sort").asText());
         assertEquals(10, body.get("results").asInt());
         assertFalse(body.has("page"), "Los campos null no se envían");
+    }
+
+    @Test
+    void parsesRealCharacterResponse() throws Exception {
+        responses.add(new FakeResponse(200, fixture("character-v4.json")));
+
+        List<CharacterDto> characters = client.primaryCharactersOfVn("v4");
+
+        assertEquals(4, characters.size());
+        CharacterDto nagisa = characters.stream().filter(c -> c.id().equals("c478")).findFirst().orElseThrow();
+        assertEquals("Furukawa Nagisa", nagisa.name());
+        assertEquals("古河 渚", nagisa.original());
+        assertNotNull(nagisa.image().url());
+        assertEquals(new CharacterVnDto("v4", "primary", 0), nagisa.vns().getFirst());
+    }
+
+    @Test
+    void characterQueryUsesNestedFilterAndPaginates() throws Exception {
+        responses.add(new FakeResponse(200, "{\"results\": [], \"more\": true}"));
+        responses.add(new FakeResponse(200, "{\"results\": [], \"more\": false}"));
+
+        client.primaryCharactersOfVn("v4");
+
+        assertEquals(2, requestBodies.size(), "Pide la página 2 porque la 1 dijo more=true");
+        ObjectMapper json = new ObjectMapper();
+        JsonNode first = json.readTree(requestBodies.get(0));
+        assertEquals("[\"and\",[\"vn\",\"=\",[\"id\",\"=\",\"v4\"]],[\"role\",\"=\",\"primary\"]]",
+                first.get("filters").toString());
+        assertEquals(1, first.get("page").asInt());
+        assertEquals(2, json.readTree(requestBodies.get(1)).get("page").asInt());
     }
 
     @Test

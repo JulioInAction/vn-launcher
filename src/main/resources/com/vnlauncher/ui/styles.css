@@ -226,3 +226,64 @@
     -fx-padding: 12 0 0 0;
     -fx-line-spacing: 3px;
 }
+
+/* ---------- Pestañas ---------- */
+
+.tab-pane > .tab-header-area > .headers-region > .tab {
+    -fx-background-color: -bg-light;
+    -fx-background-radius: 4 4 0 0;
+    -fx-padding: 4 12;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab:selected {
+    -fx-background-color: derive(-accent, -45%);
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab .tab-label {
+    -fx-text-fill: -text;
+}
+
+.tab-pane > .tab-header-area > .tab-header-background {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent -bg-light transparent;
+}
+
+/* Quitar el borde azul de "foco" alrededor de la pestaña seleccionada */
+.tab-pane:focused > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
+    -fx-border-color: transparent;
+}
+
+.tab-pane > .tab-content-area {
+    -fx-background-color: transparent;
+    -fx-padding: 16 0 0 0;
+}
+
+/* ---------- Personajes ---------- */
+
+.character-card {
+    -fx-padding: 6;
+    -fx-background-radius: 6;
+}
+
+.character-card:hover {
+    -fx-background-color: -bg-light;
+}
+
+.character-name {
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+
+.spoiler-badge {
+    -fx-background-color: #5a4a1e;
+    -fx-text-fill: #ffe2a0;
+    -fx-font-size: 11px;
+    -fx-padding: 1 6;
+    -fx-background-radius: 3;
+}
+
+.tooltip {
+    -fx-font-size: 13px;
+    -fx-background-color: -bg-dark;
+    -fx-text-fill: -text;
+}

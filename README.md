@@ -22,8 +22,16 @@ Los datos se guardan en `%LOCALAPPDATA%\VNLauncher` (`library.db` + carpeta `ima
 - [x] Fase 0: esqueleto (ventana JavaFX + base de datos SQLite con migraciones)
 - [x] Fase 1: cliente VNDB y búsqueda
 - [x] Fase 2: biblioteca local
-- [ ] Fase 3: personajes
+- [x] Fase 3: personajes
 - [ ] Fase 4: rutas
 - [ ] Fase 5: lanzamiento
 - [ ] Fase 6: tiempo de juego
 - [ ] Fase 7: pulido
+
+## Pendiente para la Fase 7
+
+- Menú de **Opciones** con los ajustes que hagan falta, entre ellos:
+  - desactivar el difuminado ("censura") de imágenes sensibles;
+  - elegir/cambiar la ruta de Locale Emulator (`LEProc.exe`). En la Fase 5 se pedirá con un
+    selector de archivos la primera vez que haga falta; en Opciones se podrá cambiar.
+- Ejecutable secundario por VN (p. ej. `config.exe`).

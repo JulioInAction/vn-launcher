@@ -3,9 +3,11 @@ package com.vnlauncher.app;
 import com.vnlauncher.api.RateLimiter;
 import com.vnlauncher.api.VndbClient;
 import com.vnlauncher.db.Database;
+import com.vnlauncher.db.repo.CharacterRepository;
 import com.vnlauncher.db.repo.LibraryRepository;
 import com.vnlauncher.db.repo.VnRepository;
 import com.vnlauncher.service.CatalogService;
+import com.vnlauncher.service.CharacterService;
 import com.vnlauncher.service.ContentFilter;
 import com.vnlauncher.service.ImageCacheService;
 import com.vnlauncher.service.LibraryService;
@@ -44,12 +46,14 @@ public final class AppContext {
     private final LibraryService libraryService;
     private final ImageCacheService imageCache;
     private final ContentFilter contentFilter;
+    private final CharacterService characterService;
 
     // Constructor con muchos parámetros: es el precio de la inyección manual. Si crece demasiado,
     // se podría agrupar (p. ej. un record con los servicios), pero así se ve todo de un vistazo.
     private AppContext(AppPaths paths, Database database, HttpClient httpClient, ExecutorService background,
                        CatalogService catalogService, LibraryService libraryService,
-                       ImageCacheService imageCache, ContentFilter contentFilter) {
+                       ImageCacheService imageCache, ContentFilter contentFilter,
+                       CharacterService characterService) {
         this.paths = paths;
         this.database = database;
         this.httpClient = httpClient;
@@ -58,6 +62,7 @@ public final class AppContext {
         this.libraryService = libraryService;
         this.imageCache = imageCache;
         this.contentFilter = contentFilter;
+        this.characterService = characterService;
     }
 
     /** Prepara carpetas, base de datos y servicios. Si algo falla aquí la app no puede arrancar. */
@@ -87,11 +92,14 @@ public final class AppContext {
         VnRepository vnRepository = new VnRepository(database);
         LibraryRepository libraryRepository = new LibraryRepository(database);
         ImageCacheService imageCache = new ImageCacheService(httpClient, paths);
-        LibraryService libraryService = new LibraryService(
-                vnRepository, libraryRepository, imageCache, Clock.systemUTC());
+        Clock clock = Clock.systemUTC();
+        LibraryService libraryService = new LibraryService(vnRepository, libraryRepository, imageCache, clock);
+        CharacterService characterService = new CharacterService(
+                vndb, new CharacterRepository(database), imageCache, clock);
 
         return new AppContext(paths, database, httpClient, background,
-                new CatalogService(vndb), libraryService, imageCache, ContentFilter.withDefaults());
+                new CatalogService(vndb), libraryService, imageCache, ContentFilter.withDefaults(),
+                characterService);
     }
 
     /** Se llama al cerrar la ventana: corta las tareas y conexiones pendientes. */
@@ -127,5 +135,9 @@ public final class AppContext {
 
     public ContentFilter contentFilter() {
         return contentFilter;
+    }
+
+    public CharacterService characterService() {
+        return characterService;
     }
 }

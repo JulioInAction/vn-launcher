@@ -1,0 +1,92 @@
+{
+  "more": false,
+  "results": [
+    {
+      "description": "Akio is Nagisa's father and the husband of Sanae Furukawa. He looks deceptively young, and is shown to be an avid smoker. Although he often talks and plays rough (in addition to having a reckless personality) he is kind and sympathetic. His child-like side makes it easy for kids and adults alike to...",
+      "id": "c15864",
+      "image": {
+        "sexual": 0,
+        "url": "https://t.vndb.org/ch/42/27942.jpg",
+        "violence": 0
+      },
+      "name": "Furukawa Akio",
+      "original": "古河 秋生",
+      "vns": [
+        {
+          "id": "v4",
+          "role": "side",
+          "spoiler": 0
+        },
+        {
+          "id": "v4060",
+          "role": "primary",
+          "spoiler": 0
+        }
+      ]
+    },
+    {
+      "description": "Nagisa is Clannad's main heroine; timid and quirky, she struggles with self-confidence and has an obsession with the anachronous mascot group known as the Big Dango Family. She is in the midst of repeating her senior year of high school due to an illness that sidelined her during the last academic...",
+      "id": "c478",
+      "image": {
+        "sexual": 0,
+        "url": "https://t.vndb.org/ch/28/27928.jpg",
+        "violence": 0
+      },
+      "name": "Furukawa Nagisa",
+      "original": "古河 渚",
+      "vns": [
+        {
+          "id": "v4",
+          "role": "primary",
+          "spoiler": 0
+        },
+        {
+          "id": "v4060",
+          "role": "primary",
+          "spoiler": 0
+        }
+      ]
+    },
+    {
+      "description": "Clannad's leading protagonist; Tomoya is often labeled a delinquent at Hikarizaka High School as a result of his regular tardiness. Due to his mother dying in a car crash when he was young, Tomoya lives with his father with whom he argues incessantly. Despite his emotionally-disconnected demeanor...",
+      "id": "c476",
+      "image": {
+        "sexual": 0,
+        "url": "https://t.vndb.org/ch/83/55083.jpg",
+        "violence": 0
+      },
+      "name": "Okazaki Tomoya",
+      "original": "岡崎 朋也",
+      "vns": [
+        {
+          "id": "v4",
+          "role": "main",
+          "spoiler": 0
+        },
+        {
+          "id": "v4060",
+          "role": "primary",
+          "spoiler": 0
+        }
+      ]
+    },
+    {
+      "description": "Ushio is Tomoya and Nagisa's daughter. She appears prominently in the After Story of the game and anime TV series, and in the film. Ushio resembles her mother a lot, and seems to like the Great Dango Family as well. After giving birth to her, Nagisa dies. This deeply saddens Tomoya to the point he...",
+      "id": "c15867",
+      "image": {
+        "sexual": 0,
+        "url": "https://t.vndb.org/ch/92/40092.jpg",
+        "violence": 0
+      },
+      "name": "Okazaki Ushio",
+      "original": "岡崎 汐",
+      "vns": [
+        {
+          "id": "v4",
+          "role": "primary",
+          "spoiler": 2
+        }
+      ]
+    }
+  ]
+}
