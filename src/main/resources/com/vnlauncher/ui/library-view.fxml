@@ -4,6 +4,7 @@
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
@@ -20,19 +21,27 @@
             fx:controller="com.vnlauncher.ui.LibraryController"
             fitToWidth="true" styleClass="plain-scroll">
 
-    <VBox spacing="28" styleClass="content">
-        <HBox spacing="12" alignment="CENTER_LEFT">
-            <Label text="Biblioteca" styleClass="page-title"/>
-            <Label fx:id="countLabel" styleClass="meta"/>
-            <Region HBox.hgrow="ALWAYS"/>
-            <CheckBox fx:id="showSensitiveCheck" text="Mostrar imágenes sensibles"/>
-            <Region minWidth="12"/>
-            <Button text="+  Añadir VN" onAction="#onAddVn"/>
-        </HBox>
+    <VBox spacing="28" styleClass="page-content">
+        <VBox spacing="14">
+            <HBox spacing="12" alignment="CENTER_LEFT">
+                <Label text="Biblioteca" styleClass="page-title"/>
+                <Label fx:id="countLabel" styleClass="meta"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <!-- "Descargando portadas · 3 de 8": solo mientras se descargan -->
+                <Label fx:id="coversLabel" styleClass="meta"/>
+                <CheckBox fx:id="showSensitiveCheck" text="Mostrar imágenes sensibles"/>
+                <Region minWidth="12"/>
+                <Button fx:id="addButton" text="+  Añadir VN" onAction="#onAddVn"/>
+            </HBox>
+            <ProgressBar fx:id="coversBar" progress="0" maxWidth="Infinity" styleClass="thin-bar"/>
+        </VBox>
+
+        <!-- Biblioteca vacía: "Tu biblioteca está vacía" + "Buscar en VNDB" -->
+        <VBox fx:id="emptyBox" alignment="CENTER"/>
 
         <HBox fx:id="continueCard" styleClass="card, continue-card" spacing="20" alignment="CENTER_LEFT"/>
 
-        <HBox spacing="8" alignment="CENTER_LEFT">
+        <HBox fx:id="filtersRow" spacing="8" alignment="CENTER_LEFT">
             <HBox fx:id="chipsBox" spacing="8" alignment="CENTER_LEFT"/>
             <Region HBox.hgrow="ALWAYS"/>
             <!-- minWidth="-Infinity" = Region.USE_PREF_SIZE: no encoger por debajo de su texto -->

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Hyperlink?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.text.TextFlow?>
+
+<!-- Ajustes (docs/diseño/capturas/ajustes.png). Cada bloque es una tarjeta con filas de
+     "etiqueta + explicación" a la izquierda y el control a la derecha.
+     Los HBox vacíos con fx:id (themeBox, spoilersBox, blurBox) los rellena SettingsController con
+     controles propios (Segmented, Switch). -->
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.vnlauncher.ui.SettingsController"
+            fitToWidth="true" styleClass="plain-scroll">
+
+    <VBox spacing="20" styleClass="page-content" maxWidth="1000">
+        <Label text="Ajustes" styleClass="page-title"/>
+
+        <!-- ================================================= Locale Emulator -->
+        <VBox styleClass="card, settings-card">
+            <Label text="Locale Emulator" styleClass="settings-card-title"/>
+            <HBox styleClass="settings-row">
+                <VBox styleClass="settings-text" HBox.hgrow="ALWAYS">
+                    <Label text="Ruta de LEProc.exe" styleClass="settings-label"/>
+                    <Label text="Se usa con las novelas marcadas para abrirse en japonés."
+                           styleClass="settings-desc" wrapText="true"/>
+                    <Label fx:id="leStatusLabel"/>
+                </VBox>
+                <TextField fx:id="lePathField" styleClass="mono" prefWidth="340"
+                           promptText="C:\Herramientas\Locale Emulator\LEProc.exe"/>
+                <Button text="Examinar..." onAction="#onBrowseLocaleEmulator"/>
+            </HBox>
+        </VBox>
+
+        <!-- ================================================= Apariencia -->
+        <VBox styleClass="card, settings-card">
+            <Label text="Apariencia" styleClass="settings-card-title"/>
+            <HBox styleClass="settings-row">
+                <VBox styleClass="settings-text" HBox.hgrow="ALWAYS">
+                    <Label text="Tema" styleClass="settings-label"/>
+                    <Label text="Con «Según Windows» cambia solo cuando cambias el modo de color del sistema."
+                           styleClass="settings-desc" wrapText="true"/>
+                </VBox>
+                <HBox fx:id="themeBox"/>
+            </HBox>
+        </VBox>
+
+        <!-- ================================================= Contenido -->
+        <VBox styleClass="card, settings-card">
+            <Label text="Contenido" styleClass="settings-card-title"/>
+            <HBox styleClass="settings-row">
+                <VBox styleClass="settings-text" HBox.hgrow="ALWAYS">
+                    <Label text="Mostrar spoilers" styleClass="settings-label"/>
+                    <Label text="Personajes que VNDB marca como spoiler. Si está apagado, salen tapados con un botón para verlos."
+                           styleClass="settings-desc" wrapText="true"/>
+                </VBox>
+                <HBox fx:id="spoilersBox"/>
+            </HBox>
+            <Region styleClass="divider"/>
+            <HBox styleClass="settings-row">
+                <VBox styleClass="settings-text" HBox.hgrow="ALWAYS">
+                    <Label text="Difuminar imágenes" styleClass="settings-label"/>
+                    <Label text="Según la valoración de cada imagen en VNDB. Siempre puedes mostrarlas una a una."
+                           styleClass="settings-desc" wrapText="true"/>
+                </VBox>
+                <HBox fx:id="blurBox"/>
+            </HBox>
+        </VBox>
+
+        <!-- ================================================= Datos -->
+        <VBox styleClass="card, settings-card">
+            <Label text="Datos" styleClass="settings-card-title"/>
+            <HBox styleClass="settings-row">
+                <VBox styleClass="settings-text" HBox.hgrow="ALWAYS">
+                    <Label text="Carpeta de datos" styleClass="settings-label"/>
+                    <Label text="Base de datos y todas las imágenes descargadas." styleClass="settings-desc"/>
+                </VBox>
+                <Label fx:id="dataDirLabel" styleClass="mono-text"/>
+                <Button text="Abrir carpeta" onAction="#onOpenDataFolder"/>
+            </HBox>
+            <Region styleClass="divider"/>
+            <HBox styleClass="settings-row">
+                <VBox styleClass="settings-text" HBox.hgrow="ALWAYS">
+                    <Label text="Caché de imágenes" styleClass="settings-label"/>
+                    <Label text="Portadas e imágenes de personajes. Si la vacías, se vuelven a descargar cuando hagan falta."
+                           styleClass="settings-desc" wrapText="true"/>
+                </VBox>
+                <Label fx:id="cacheSizeLabel" styleClass="settings-value"/>
+                <Button fx:id="clearCacheButton" text="Vaciar caché" onAction="#onClearCache"/>
+            </HBox>
+        </VBox>
+
+        <!-- ================================================= Cuenta de VNDB (aún no disponible) -->
+        <VBox styleClass="card, settings-card, settings-disabled">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Cuenta de VNDB" styleClass="settings-card-title"/>
+                <Label text="Próximamente" styleClass="badge"/>
+            </HBox>
+            <HBox styleClass="settings-row">
+                <VBox styleClass="settings-text" HBox.hgrow="ALWAYS">
+                    <Label text="Token de la API" styleClass="settings-label"/>
+                    <Label text="Opcional. Servirá para sincronizar tu lista de VNDB. Se crea en tu perfil de VNDB, en la pestaña Aplicaciones."
+                           styleClass="settings-desc" wrapText="true"/>
+                </VBox>
+                <TextField promptText="Pega aquí tu token" prefWidth="280" disable="true"/>
+                <Button text="Conectar" disable="true" minWidth="-Infinity"/>
+            </HBox>
+        </VBox>
+
+        <!-- ================================================= Acerca de -->
+        <VBox styleClass="card, settings-card" spacing="10">
+            <Label text="Acerca de" styleClass="settings-card-title"/>
+            <TextFlow>
+                <Text fx:id="appNameText" styleClass="text-strong"/>
+                <Text fx:id="versionText" styleClass="text-flow-normal"/>
+            </TextFlow>
+            <HBox alignment="BASELINE_LEFT">
+                <Label text="Datos de las novelas: "/>
+                <Hyperlink text="VNDB.org" onAction="#onOpenVndb"/>
+            </HBox>
+            <HBox alignment="BASELINE_LEFT">
+                <Label text="Usa "/>
+                <Hyperlink text="Locale Emulator" onAction="#onOpenLocaleEmulator"/>
+                <Label text=" (LGPL-3.0) para abrir juegos en japonés."/>
+            </HBox>
+            <Label text="Fuentes Inter y Zen Kaku Gothic New (SIL Open Font License)."/>
+        </VBox>
+    </VBox>
+</ScrollPane>

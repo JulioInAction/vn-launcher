@@ -60,6 +60,19 @@ class ImageCacheServiceTest {
     }
 
     @Test
+    void cacheSizeAndClear() throws Exception {
+        assertEquals(0, cache.cacheSizeBytes(), "Sin carpeta de imágenes todavía");
+        String a = cache.download(server.url("/cv/1.jpg"), "vn", "v1");
+        cache.download(server.url("/ch/2.jpg"), "char", "c2");
+
+        assertEquals(2L * FakeImageServer.IMAGE_BYTES.length, cache.cacheSizeBytes());
+
+        assertEquals(2, cache.clearCache());
+        assertEquals(0, cache.cacheSizeBytes());
+        assertFalse(cache.isCached(a), "Al vaciar, la imagen deja de estar y se volverá a descargar");
+    }
+
+    @Test
     void isCachedHandlesNullAndMissingFiles() {
         assertFalse(cache.isCached(null));
         assertFalse(cache.isCached("images/vn/no-existe.jpg"));

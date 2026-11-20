@@ -2,6 +2,7 @@ package com.vnlauncher.service;
 
 import com.vnlauncher.db.Database;
 import com.vnlauncher.db.repo.SettingsRepository;
+import com.vnlauncher.model.BlurLevel;
 import com.vnlauncher.model.Theme;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -19,7 +20,7 @@ class SettingsServiceTest {
     void localeEmulatorPathCanBeSavedChangedAndCleared() throws Exception {
         Database db = new Database(tempDir.resolve("test.db"));
         db.migrate();
-        SettingsService settings = new SettingsService(new SettingsRepository(db));
+        SettingsService settings = new SettingsService(new SettingsRepository(db), ContentFilter.withDefaults());
 
         assertTrue(settings.localeEmulatorPath().isEmpty());
 
@@ -38,7 +39,7 @@ class SettingsServiceTest {
         Database db = new Database(tempDir.resolve("test.db"));
         db.migrate();
         SettingsRepository repo = new SettingsRepository(db);
-        SettingsService settings = new SettingsService(repo);
+        SettingsService settings = new SettingsService(repo, ContentFilter.withDefaults());
 
         assertEquals(Theme.DARK, settings.theme(), "Sin valor guardado: oscuro");
 
@@ -48,5 +49,36 @@ class SettingsServiceTest {
 
         repo.put("theme", "valor-raro");
         assertEquals(Theme.DARK, settings.theme(), "Un valor desconocido no rompe nada");
+    }
+
+    @Test
+    void systemThemeIsAThirdValue() throws Exception {
+        Database db = new Database(tempDir.resolve("test.db"));
+        db.migrate();
+        SettingsRepository repo = new SettingsRepository(db);
+        SettingsService settings = new SettingsService(repo, ContentFilter.withDefaults());
+
+        settings.setTheme(Theme.SYSTEM);
+
+        assertEquals(Theme.SYSTEM, settings.theme());
+        assertEquals("sistema", repo.get("theme").orElseThrow());
+    }
+
+    @Test
+    void contentSettingsHaveDefaultsAndUpdateTheFilter() throws Exception {
+        Database db = new Database(tempDir.resolve("test.db"));
+        db.migrate();
+        ContentFilter filter = ContentFilter.withDefaults();
+        SettingsService settings = new SettingsService(new SettingsRepository(db), filter);
+
+        assertFalse(settings.showSpoilers(), "Por defecto los spoilers se ocultan");
+        assertEquals(BlurLevel.EXPLICIT, settings.blurLevel(), "Por defecto, solo explícitas");
+
+        settings.setShowSpoilers(true);
+        settings.setBlurLevel(BlurLevel.NONE);
+
+        assertTrue(settings.showSpoilers());
+        assertEquals(BlurLevel.NONE, settings.blurLevel());
+        assertEquals(BlurLevel.NONE, filter.level(), "El filtro de la app cambia al momento");
     }
 }

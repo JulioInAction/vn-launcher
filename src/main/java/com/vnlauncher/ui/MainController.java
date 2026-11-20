@@ -7,9 +7,8 @@ import com.vnlauncher.service.PlaytimeTracker;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
-import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.StackPane;
 
 import java.time.Duration;
 import java.util.function.Consumer;
@@ -26,9 +25,11 @@ public class MainController implements Navigator {
     private final Consumer<String> urlOpener;
     private final Theme initialTheme;
 
+    @FXML private StackPane appRoot;
     @FXML private BorderPane root;
 
     private SidebarController sidebar;
+    private ThemeManager themeManager;
     /** Controlador de la pantalla visible, para avisarle de cambios en el tiempo de juego. */
     private Object currentController;
 
@@ -47,11 +48,11 @@ public class MainController implements Navigator {
     /** FXMLLoader llama a initialize() automáticamente cuando ya ha rellenado los campos @FXML. */
     @FXML
     private void initialize() {
-        // root es el nodo raíz de la escena: el tema se aplica poniéndole (o no) la clase tema-claro
-        Themes.apply(root, initialTheme);
+        // appRoot es el nodo raíz de la escena: el tema se aplica poniéndole (o no) la clase tema-claro
+        themeManager = new ThemeManager(appRoot, context, initialTheme);
         sidebar = new SidebarController(context, this);
         root.setLeft(Views.load("sidebar.fxml", sidebar));
-        sidebar.showTheme(initialTheme);
+        sidebar.setThemeManager(themeManager);
         listenToPlaytime();
         showLibrary();
     }
@@ -111,19 +112,11 @@ public class MainController implements Navigator {
         sidebar.setActive(SidebarController.Section.SEARCH);
     }
 
-    /** La pantalla de Ajustes llega en la Fase 7; de momento, un aviso. */
     @Override
     public void showSettings() {
-        Label title = new Label("Ajustes");
-        title.getStyleClass().add("page-title");
-        Label text = new Label("La pantalla de ajustes llegará en la Fase 7 (ruta de Locale Emulator, "
-                + "difuminado de imágenes...). El tema ya se puede cambiar con el botón de abajo de la barra lateral.");
-        text.getStyleClass().add("muted");
-        text.setWrapText(true);
-        VBox page = new VBox(16, title, text);
-        page.getStyleClass().add("content");
-        root.setCenter(page);
-        currentController = null;
+        SettingsController settings = new SettingsController(context, themeManager, urlOpener);
+        root.setCenter(Views.load("settings-view.fxml", settings));
+        currentController = settings;
         sidebar.setActive(SidebarController.Section.SETTINGS);
     }
 

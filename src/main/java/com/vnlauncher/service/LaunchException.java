@@ -1,5 +1,7 @@
 package com.vnlauncher.service;
 
+import java.nio.file.Path;
+
 /**
  * No se pudo lanzar el juego. El {@link Reason} permite a la interfaz reaccionar a cada caso
  * (p. ej. abrir el selector de archivos si falta el ejecutable) en vez de solo mostrar el texto.
@@ -22,15 +24,27 @@ public class LaunchException extends Exception {
     }
 
     private final Reason reason;
+    /** Archivo relacionado con el error (el .exe o LEProc.exe que falta), o null. */
+    private final Path path;
 
     public LaunchException(Reason reason, String message) {
+        this(reason, message, (Path) null);
+    }
+
+    public LaunchException(Reason reason, String message, Path path) {
         super(message);
         this.reason = reason;
+        this.path = path;
     }
 
     public LaunchException(Reason reason, String message, Throwable cause) {
         super(message, cause);
         this.reason = reason;
+        this.path = null;
+    }
+
+    public Path path() {
+        return path;
     }
 
     public Reason reason() {

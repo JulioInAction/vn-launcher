@@ -1,21 +1,30 @@
 package com.vnlauncher.model;
 
 /**
- * Tema de la interfaz. {@link #settingValue()} es lo que se guarda en la tabla setting
- * (clave "theme"); la interfaz traduce LIGHT en la clase CSS "tema-claro" (ver styles.css).
+ * Tema de la interfaz elegido por el usuario. {@link #settingValue()} es lo que se guarda en la
+ * tabla setting (clave "theme"). SYSTEM ("Según Windows") no es un tema en sí: la interfaz lo
+ * traduce en DARK o LIGHT según el modo de color del sistema operativo.
  */
 public enum Theme {
-    DARK("oscuro"),
-    LIGHT("claro");
+    DARK("oscuro", "Oscuro"),
+    LIGHT("claro", "Claro"),
+    SYSTEM("sistema", "Según Windows");
 
     private final String settingValue;
+    private final String label;
 
-    Theme(String settingValue) {
+    Theme(String settingValue, String label) {
         this.settingValue = settingValue;
+        this.label = label;
     }
 
     public String settingValue() {
         return settingValue;
+    }
+
+    /** Texto para la pantalla de Ajustes. */
+    public String label() {
+        return label;
     }
 
     /** Valor guardado → tema. Si no hay valor o no se reconoce, el oscuro (el de por defecto). */
@@ -28,6 +37,7 @@ public enum Theme {
         return DARK;
     }
 
+    /** El contrario de un tema concreto (para el botón de la barra lateral). */
     public Theme toggled() {
         return this == DARK ? LIGHT : DARK;
     }

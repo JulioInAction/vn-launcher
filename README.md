@@ -27,8 +27,11 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
 
 - `src/main/resources/com/vnlauncher/ui/styles.css`: todos los colores son variables `-vn-*`
   en `.root` (tema oscuro) y `.root.tema-claro` (tema claro). El tema elegido se guarda en la
-  tabla `setting` (clave `theme`).
+  tabla `setting` (clave `theme`): `oscuro`, `claro` o `sistema` («Según Windows», que sigue el
+  modo de color del sistema con `Platform.getPreferences()` de JavaFX, sin librerías extra).
 - `src/main/resources/fonts/`: Inter y Zen Kaku Gothic New, con su licencia SIL OFL 1.1.
+- Diálogos (`ModalDialog`), avisos (`Notice`), estados vacíos (`EmptyState`) y controles propios
+  (`Segmented`, `Switch`) en `com.vnlauncher.ui`, todos con los colores del tema.
 
 ## Estado
 
@@ -40,8 +43,10 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
 - [x] Fase 5: lanzamiento (+ ficha de VN rediseñada)
 - [x] Diseño: temas claro/oscuro, fuentes, barra lateral común, búsqueda nueva
 - [x] Fase 6: tiempo de juego (+ biblioteca del diseño: Continuar, filtros, orden)
+- [x] Diseño (2.ª parte): Ajustes, diálogo de ruta, diálogos de error al lanzar, estados vacíos,
+  de carga y de error, tema «Según Windows»
 - [ ] Fase 7: pulido
-- [ ] Fase 8: integraciones (Discord Rich Presence y tema del sistema)
+- [ ] Fase 8: Discord Rich Presence
 
 ## Cómo se mide el tiempo de juego
 
@@ -57,28 +62,24 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
 
 ## Pendiente para la Fase 7
 
-- Pantalla de **Ajustes** (entrada "03 Ajustes" de la barra lateral) con, entre otros:
-  - desactivar el difuminado ("censura") de imágenes sensibles;
-  - cambiar la ruta de Locale Emulator (`LEProc.exe`), que ahora se pide la primera vez que hace falta;
-  - ver la carpeta de datos.
-- Botón "Actualizar desde VNDB" en la ficha.
+Los Ajustes ya están hechos (Locale Emulator, tema, spoilers, nivel de difuminado, carpeta de
+datos y caché). Queda:
+
+- Botón «Actualizar desde VNDB» en la ficha (vuelve a pedir datos y personajes).
 - Ejecutable secundario por VN (p. ej. `config.exe`).
+- Empaquetar con `jpackage` para Windows, con el icono `vn-launcher.ico`.
+- La tarjeta «Cuenta de VNDB» de Ajustes está desactivada («Próximamente»): servirá para
+  sincronizar la lista de VNDB con un token, más adelante.
 
-## Plan de la Fase 8: integraciones
+## Plan de la Fase 8: Discord Rich Presence
 
-- **Discord Rich Presence**: mientras un juego está abierto (lo sabe el registro de tiempo de la
-  Fase 6), mostrar en el perfil de Discord "Jugando a *VN* · *ruta en curso*" con el tiempo
-  transcurrido y la portada.
-  - Idea: hablar con Discord por su canal local (IPC; en Windows, la tubería con nombre
-    `\\.\pipe\discord-ipc-0`) enviando mensajes JSON. Se puede hacer en Java puro, sin librerías
-    nativas, y es un buen ejercicio de protocolos.
-  - Hace falta crear una aplicación en el Discord Developer Portal para obtener su *client ID*
-    (lo tendrá que hacer el usuario).
-  - Opción en Ajustes para activarlo/desactivarlo; si Discord no está abierto, no hacer nada.
-- **Tema del sistema** con [jSystemThemeDetector](https://github.com/Dansoftowner/jSystemThemeDetector):
-  al arrancar, usar el tema (claro/oscuro) que tenga Windows.
-  - Se publica en **JitPack** (`com.github.Dansoftowner:jSystemThemeDetector:3.9.1`), no en Maven
-    Central: hay que añadir ese repositorio al `pom.xml`. Trae JNA, OSHI y slf4j como dependencias.
-  - Propuesta: el ajuste `theme` pasa a tener tres valores, **Sistema** (por defecto), **Claro** y
-    **Oscuro**. Con "Sistema" se sigue al de Windows, también si cambia con la app abierta (la
-    librería avisa con un listener); el botón de la barra lateral fija Claro u Oscuro.
+- Mientras un juego está abierto (lo sabe el registro de tiempo de la Fase 6), mostrar en el
+  perfil de Discord "Jugando a *VN* · *ruta en curso*" con el tiempo transcurrido y la portada.
+- Idea: hablar con Discord por su canal local (IPC; en Windows, la tubería con nombre
+  `\\.\pipe\discord-ipc-0`) enviando mensajes JSON. Se puede hacer en Java puro, sin librerías
+  nativas, y es un buen ejercicio de protocolos.
+- Hace falta crear una aplicación en el Discord Developer Portal para obtener su *client ID*
+  (lo tendrá que hacer el usuario).
+- Opción en Ajustes para activarlo/desactivarlo; si Discord no está abierto, no hacer nada.
+- El tema del sistema, que antes estaba en esta fase, ya está hecho con la API de JavaFX
+  (`Platform.getPreferences().getColorScheme()`), así que no hace falta jSystemThemeDetector.

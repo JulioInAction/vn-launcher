@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.StackPane?>
 
-<!-- Ventana principal: un BorderPane con la barra lateral a la izquierda (sidebar.fxml) y la
-     pantalla actual en el centro. Las dos las pone MainController en código.
+<!-- Ventana principal.
+     · StackPane (raíz de la escena): permite poner capas encima, como el fondo -vn-backdrop que
+       tapa la ventana mientras hay un diálogo abierto (ModalDialog). También recibe la clase
+       "tema-claro" del tema.
+     · BorderPane: la barra lateral a la izquierda (sidebar.fxml) y la pantalla actual en el
+       centro. Las dos las pone MainController en código.
      fx:controller dice QUÉ clase controla esta vista; CÓMO se crea lo decide Views.load
      (para pasarle el AppContext por constructor). -->
-<BorderPane fx:id="root"
-            xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.vnlauncher.ui.MainController"/>
+<StackPane fx:id="appRoot"
+           xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.vnlauncher.ui.MainController">
+    <BorderPane fx:id="root"/>
+</StackPane>

@@ -103,8 +103,9 @@ public final class AppContext {
                 .build();
 
         Sleeper sleeper = Sleeper.real();
-        RateLimiter rateLimiter = new RateLimiter(
-                VNDB_MAX_REQUESTS, VNDB_WINDOW, InstantSource.system(), sleeper);
+        // -Dvnlauncher.vndb.maxRequests=3 baja el límite: solo sirve para probar el aviso de límite
+        int maxRequests = Integer.getInteger("vnlauncher.vndb.maxRequests", VNDB_MAX_REQUESTS);
+        RateLimiter rateLimiter = new RateLimiter(maxRequests, VNDB_WINDOW, InstantSource.system(), sleeper);
         VndbClient vndb = new VndbClient(httpClient, rateLimiter, sleeper, VndbClient.DEFAULT_BASE_URI);
 
         // Hilos virtuales (Java 21+): muy baratos, uno por tarea. Ideales para trabajo que pasa
@@ -127,7 +128,9 @@ public final class AppContext {
                 vnRepository, libraryRepository, routeRepository, sessionRepository, imageCache, clock);
         CharacterService characterService = new CharacterService(
                 vndb, new CharacterRepository(database), imageCache, clock);
-        SettingsService settingsService = new SettingsService(new SettingsRepository(database));
+        ContentFilter contentFilter = ContentFilter.withDefaults();
+        SettingsService settingsService = new SettingsService(new SettingsRepository(database), contentFilter);
+        settingsService.loadContentFilter(); // nivel de difuminado guardado en Ajustes
         // Vigila los juegos abiertos (cada 5 s, en su propio hilo)
         PlaytimeTracker playtimeTracker = new PlaytimeTracker(sessionRepository, ProcessScanner.system(), clock);
         playtimeTracker.startPolling();
@@ -135,7 +138,7 @@ public final class AppContext {
                 libraryRepository, settingsService, ProcessStarter.system(), playtimeTracker, clock);
 
         return new AppContext(paths, database, httpClient, background,
-                new CatalogService(vndb), libraryService, imageCache, ContentFilter.withDefaults(),
+                new CatalogService(vndb), libraryService, imageCache, contentFilter,
                 characterService, new RouteService(routeRepository, clock),
                 settingsService, launchService, rateLimiter, playtimeTracker);
     }

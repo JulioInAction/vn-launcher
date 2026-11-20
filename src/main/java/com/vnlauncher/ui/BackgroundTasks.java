@@ -19,9 +19,10 @@ final class BackgroundTasks {
      * @param work      se ejecuta en segundo plano; NO debe tocar la interfaz
      * @param onSuccess se ejecuta en el hilo de la interfaz con el resultado
      * @param onError   se ejecuta en el hilo de la interfaz si work lanzó una excepción
+     * @return la tarea; task.cancel() interrumpe el hilo (y entonces no se llama a ninguno de los dos)
      */
-    static <T> void run(ExecutorService executor, Callable<T> work,
-                        Consumer<T> onSuccess, Consumer<Throwable> onError) {
+    static <T> Task<T> run(ExecutorService executor, Callable<T> work,
+                           Consumer<T> onSuccess, Consumer<Throwable> onError) {
         Task<T> task = new Task<>() {
             @Override
             protected T call() throws Exception {
@@ -31,5 +32,6 @@ final class BackgroundTasks {
         task.setOnSucceeded(event -> onSuccess.accept(task.getValue()));
         task.setOnFailed(event -> onError.accept(task.getException()));
         executor.submit(task);
+        return task; // por si quien llama quiere cancelarla (task.cancel())
     }
 }

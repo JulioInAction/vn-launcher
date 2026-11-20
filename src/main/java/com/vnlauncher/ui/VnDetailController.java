@@ -97,7 +97,7 @@ public class VnDetailController implements PlaytimeAware {
 
     @FXML
     private void initialize() {
-        launchFlow = new LaunchFlow(ctx, playButton);
+        launchFlow = new LaunchFlow(ctx, navigator, playButton);
         removeButton.setDisable(true);   // hasta que se cargue la VN
         playButton.setDisable(true);
         BackgroundTasks.run(ctx.background(), () -> ctx.libraryService().find(vnId),
@@ -132,6 +132,9 @@ public class VnDetailController implements PlaytimeAware {
 
         // Personajes: se cargan a la vez, en otra tarea (la primera vez tardan: VNDB + imágenes).
         showSpoilersCheck.selectedProperty().addListener((obs, oldValue, selected) -> renderCharacters());
+        // Valor inicial de "Mostrar spoilers": el de Ajustes → Contenido
+        BackgroundTasks.run(ctx.background(), () -> ctx.settingsService().showSpoilers(),
+                showSpoilersCheck::setSelected, error -> { });
         showSensitiveCheck.selectedProperty().addListener((obs, oldValue, selected) -> renderCharacters());
         charactersStatus.setText("Cargando personajes...");
         BackgroundTasks.run(ctx.background(), () -> ctx.characterService().getPrimaryCharacters(vnId),
@@ -165,6 +168,7 @@ public class VnDetailController implements PlaytimeAware {
         coverBox.getChildren().setAll(cover);
 
         titleLabel.setText(vn.title());
+        routesPane.setVnTitle(vn.title());
         altTitleLabel.setText(vn.altTitle() == null ? "" : vn.altTitle());
         altTitleLabel.setManaged(vn.altTitle() != null);
         metaLabel.setText(SearchController.meta(vn));
@@ -296,16 +300,21 @@ public class VnDetailController implements PlaytimeAware {
         }
         BackgroundTasks.run(ctx.background(), () -> {
                     ctx.launchService().setUseLocaleEmulator(vnId, selected);
-                    // Si se activa y no sabemos dónde está LEProc.exe, preguntarlo ya
+                    // Si se activa y no sabemos dónde está LEProc.exe, avisar ya
                     return selected && ctx.settingsService().localeEmulatorPath().isEmpty();
                 },
                 needsPath -> {
                     reloadPlayData();
                     if (needsPath) {
-                        launchFlow.info("Locale Emulator", "Elige el archivo LEProc.exe de la carpeta donde "
-                                + "descomprimiste Locale Emulator. Solo se pide una vez.");
-                        launchFlow.chooseLocaleEmulator(
-                                () -> launchStatusLabel.setText("Locale Emulator configurado."));
+                        ModalDialog dialog = new ModalDialog(playButton, 480)
+                                .title("Falta indicar dónde está Locale Emulator", false)
+                                .text("Elige el archivo LEProc.exe en Ajustes → Locale Emulator. "
+                                        + "Solo hay que hacerlo una vez para todas las novelas.");
+                        dialog.button("later", "Más tarde", ModalDialog.ButtonKind.SECONDARY);
+                        dialog.button("settings", "Ir a Ajustes", ModalDialog.ButtonKind.PRIMARY);
+                        if ("settings".equals(dialog.showAndWait())) {
+                            navigator.showSettings();
+                        }
                     }
                 },
                 error -> Dialogs.error(playButton, error.getMessage()));
@@ -354,9 +363,21 @@ public class VnDetailController implements PlaytimeAware {
                 .anyMatch(ch -> ctx.contentFilter().isSensitive(ch.imageSexual(), ch.imageViolence()));
         showSensitiveCheck.setVisible(anySensitive);
         showSensitiveCheck.setManaged(anySensitive);
-        charactersStatus.setText(characters.isEmpty()
-                ? "VNDB no tiene personajes principales para esta novela." : "");
-        charactersStatus.setManaged(characters.isEmpty());
+        charactersStatus.setText("");
+        charactersStatus.setManaged(false);
+        if (characters.isEmpty()) {
+            // Estado vacío (vacio-personajes.png): las rutas se pueden crear igualmente
+            Button addRoute = new Button("+  Añadir ruta");
+            addRoute.setOnAction(event -> routesPane.openCreateDialog());
+            VBox empty = EmptyState.create(null, "VNDB no tiene personajes principales para esta novela",
+                    addRoute,
+                    "Puedes crear las rutas igualmente y escribir el nombre de la heroína a mano. Si "
+                            + "alguien los añade en VNDB, aparecerán al pulsar «Actualizar desde VNDB».");
+            empty.getStyleClass().add("empty-dashed");
+            // Que ocupe todo el ancho de la sección
+            empty.prefWidthProperty().bind(charactersPane.widthProperty());
+            charactersPane.getChildren().setAll(empty);
+        }
     }
 
     // =========================================================== otras acciones
@@ -373,7 +394,7 @@ public class VnDetailController implements PlaytimeAware {
             return;
         }
         if (!Dialogs.confirm(removeButton, "¿Quitar \"" + entry.vn().title() + "\" de la biblioteca?",
-                "Se borrarán también sus rutas y el tiempo de juego registrado.")) {
+                "Se borrarán también sus rutas y el tiempo de juego registrado.", "Quitar", true)) {
             return;
         }
         removeButton.setDisable(true);

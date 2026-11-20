@@ -55,7 +55,7 @@ class LaunchServiceTest {
                 List.of()), NOW);
         library = new LibraryRepository(db);
         library.add("v4", NOW);
-        settings = new SettingsService(new SettingsRepository(db));
+        settings = new SettingsService(new SettingsRepository(db), ContentFilter.withDefaults());
         // Tracker real (con BD) pero con un escáner que nunca ve procesos: aquí no se prueba él
         tracker = new PlaytimeTracker(new PlaySessionRepository(db), dir -> false, () -> NOW);
 
@@ -139,6 +139,27 @@ class LaunchServiceTest {
         assertEquals(LaunchException.Reason.LOCALE_EMULATOR_NOT_FOUND, missing.reason());
         assertTrue(calls.isEmpty());
         assertNull(library.findByVnId("v4").orElseThrow().lastPlayedAt(), "Si no se lanza, no cuenta como partida");
+    }
+
+    @Test
+    void canLaunchOnceWithoutLocaleEmulator() throws Exception {
+        LaunchService service = service(recording);
+        service.configure("v4", exe, true); // usa LE, pero LEProc.exe no está configurado
+
+        service.launch("v4", true);         // "Jugar sin Locale Emulator"
+
+        assertEquals(List.of(exe.toAbsolutePath().toString()), calls.getFirst().command());
+        assertTrue(library.findByVnId("v4").orElseThrow().useLocaleEmulator(), "La opción no se cambia");
+    }
+
+    @Test
+    void missingExecutableErrorCarriesThePath() throws Exception {
+        LaunchService service = service(recording);
+        service.configure("v4", exe, false);
+        Files.delete(exe);
+
+        LaunchException e = assertThrows(LaunchException.class, () -> service.launch("v4"));
+        assertEquals(exe.toAbsolutePath(), e.path().toAbsolutePath(), "El diálogo de error muestra la ruta");
     }
 
     @Test

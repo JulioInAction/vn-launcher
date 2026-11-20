@@ -78,6 +78,20 @@ class RateLimiterTest {
     }
 
     @Test
+    void timeUntilAvailableIsZeroWithRoomAndCountsDownWhenFull() throws InterruptedException {
+        limiter.acquire();                    // t = 0
+        assertEquals(Duration.ZERO, limiter.timeUntilAvailable());
+        now = now.plusSeconds(60);
+        limiter.acquire();
+        limiter.acquire();                    // ventana llena (3 de 3)
+
+        now = now.plusSeconds(40);            // t = 100 s
+        assertEquals(Duration.ofSeconds(200), limiter.timeUntilAvailable(),
+                "La primera (t=0) caduca en t=300");
+        assertTrue(sleeps.isEmpty(), "Consultarlo no espera ni gasta una petición");
+    }
+
+    @Test
     void rejectsInvalidLimit() {
         assertThrows(IllegalArgumentException.class,
                 () -> new RateLimiter(0, Duration.ofMinutes(5), () -> now, d -> { }));

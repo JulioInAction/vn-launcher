@@ -1,13 +1,9 @@
 package com.vnlauncher.ui;
 
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Dialog;
 
 /**
- * Utilidades para diálogos. Un diálogo de JavaFX abre su PROPIA ventana (con su propia escena),
- * así que no hereda la hoja de estilos de la ventana principal: hay que añadírsela.
+ * Diálogos de uso común, todos con el aspecto del diseño (ver {@link ModalDialog}).
  */
 final class Dialogs {
 
@@ -15,32 +11,33 @@ final class Dialogs {
     }
 
     /**
-     * Aplica nuestro CSS y el tema actual, y asocia el diálogo a la ventana de {@code owner}
-     * (así sale centrado encima de ella y no como una ventana suelta).
+     * Pregunta antes de una acción. Devuelve true si el usuario confirma.
+     *
+     * @param danger true si la acción destruye algo (el botón de confirmar sale en -vn-danger)
      */
-    static void prepare(Dialog<?> dialog, Node owner) {
-        dialog.getDialogPane().getStylesheets()
-                .add(Views.class.getResource("styles.css").toExternalForm());
-        // El DialogPane es la raíz de la escena del diálogo: le copiamos el tema de la ventana
-        Themes.apply(dialog.getDialogPane(), Themes.current(owner));
-        if (owner != null && owner.getScene() != null) {
-            dialog.initOwner(owner.getScene().getWindow());
+    static boolean confirm(Node owner, String title, String message, String confirmText, boolean danger) {
+        ModalDialog dialog = new ModalDialog(owner, 460).title(title, danger).text(message);
+        dialog.button("cancel", "Cancelar", ModalDialog.ButtonKind.SECONDARY);
+        var ok = dialog.button("ok", confirmText, ModalDialog.ButtonKind.PRIMARY);
+        if (danger) {
+            ok.getStyleClass().setAll("button", "danger-solid");
         }
-    }
-
-    /** Pregunta "¿Seguro?" y devuelve true si el usuario pulsa Aceptar. */
-    static boolean confirm(Node owner, String header, String content) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, content, ButtonType.OK, ButtonType.CANCEL);
-        alert.setHeaderText(header);
-        prepare(alert, owner);
-        // showAndWait bloquea hasta que el usuario responde (es un diálogo modal).
-        return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
+        return "ok".equals(dialog.showAndWait());
     }
 
     static void error(Node owner, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR, message);
-        alert.setHeaderText("Algo ha fallado");
-        prepare(alert, owner);
-        alert.showAndWait();
+        error(owner, "Algo ha fallado", message);
+    }
+
+    static void error(Node owner, String title, String message) {
+        ModalDialog dialog = new ModalDialog(owner, 460).title(title, true).text(message);
+        dialog.button("ok", "Aceptar", ModalDialog.ButtonKind.PRIMARY);
+        dialog.showAndWait();
+    }
+
+    static void info(Node owner, String title, String message) {
+        ModalDialog dialog = new ModalDialog(owner, 460).title(title, false).text(message);
+        dialog.button("ok", "Aceptar", ModalDialog.ButtonKind.PRIMARY);
+        dialog.showAndWait();
     }
 }

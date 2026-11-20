@@ -1,170 +1,190 @@
 package com.vnlauncher.ui;
 
+import com.vnlauncher.model.GameCharacter;
 import com.vnlauncher.model.Route;
 import com.vnlauncher.model.RouteStatus;
 import com.vnlauncher.model.VnCharacter;
+import com.vnlauncher.service.ContentFilter;
+import com.vnlauncher.service.ImageCacheService;
 import javafx.beans.binding.Bindings;
 import javafx.scene.Node;
-import javafx.scene.control.ButtonBar;
-import javafx.scene.control.ButtonType;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Priority;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.TilePane;
+import javafx.scene.layout.VBox;
+import javafx.scene.shape.SVGPath;
 
-import java.util.ArrayList;
+import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.IntStream;
 
 /**
- * Diálogo para crear o editar una ruta. Devuelve un {@link Result} si el usuario pulsa Guardar,
- * o nada si cancela.
- *
- * <p>Se construye en código en vez de con FXML porque es pequeño y su contenido depende de los
- * datos (lista de personajes, ruta a editar).
+ * Diálogo para crear o editar una ruta (docs/diseño/capturas/dialogo-ruta.png): nombre, heroína
+ * (tarjetas de radio con avatar, más "Sin heroína"), estado, orden recomendado y notas. Al editar,
+ * "Eliminar ruta" abajo a la izquierda.
  */
-class RouteDialog extends Dialog<RouteDialog.Result> {
+final class RouteDialog {
 
     /**
-     * Lo que ha elegido el usuario. characterId es null si eligió "Sin heroína".
-     * Si delete es true, el usuario pulsó "Borrar ruta" (el resto de campos no importan).
+     * Lo que ha elegido el usuario. characterId es null si eligió "Sin heroína"; position empieza
+     * en 1. Si delete es true, pulsó "Eliminar ruta" (el resto de campos no importan).
      */
-    record Result(String name, String characterId, RouteStatus status, String notes, boolean delete) {
+    record Result(String name, String characterId, RouteStatus status, String notes, int position,
+                  boolean delete) {
     }
 
-    private final TextField nameField = new TextField();
-    private final ComboBox<VnCharacter> characterBox = new ComboBox<>();
-    private final ComboBox<RouteStatus> statusBox = new ComboBox<>();
-    private final TextArea notesArea = new TextArea();
+    private static final String TRASH_ICON = "M5 7H19 M10 11V17 M14 11V17 M6 7L7 20H17L18 7 M9 7V4H15V7";
+    private static final double AVATAR = 34;
+
+    private RouteDialog() {
+    }
 
     /**
-     * @param existing   la ruta a editar, o null para crear una nueva
+     * @param existing   ruta a editar, o null para crear una
      * @param characters personajes que se pueden elegir como heroína
+     * @param routeCount número de rutas que hay ahora (para el desplegable del orden)
      */
-    RouteDialog(Node owner, Route existing, List<VnCharacter> characters) {
-        setTitle(existing == null ? "Nueva ruta" : "Editar ruta");
-        setHeaderText(existing == null ? "Añadir una ruta" : "Editar \"" + existing.name() + "\"");
-        Dialogs.prepare(this, owner);
+    static Optional<Result> show(Node owner, String vnTitle, Route existing, List<VnCharacter> characters,
+                                 int routeCount, ImageCacheService images, ContentFilter contentFilter) {
+        // --- Nombre
+        TextField nameField = new TextField(existing == null ? "" : existing.name());
+        nameField.setPromptText("p. ej. Unlimited Blade Works, True End...");
 
-        // --- Heroína: la primera opción es null = "sin heroína" ---
-        List<VnCharacter> options = new ArrayList<>();
-        options.add(null);
-        options.addAll(characters);
-        characterBox.getItems().setAll(options);
-        // Cómo se dibuja cada opción (en la lista desplegable y en el propio botón del ComboBox)
-        characterBox.setCellFactory(list -> new CharacterCell());
-        characterBox.setButtonCell(new CharacterCell());
-        characterBox.setMaxWidth(Double.MAX_VALUE);
-
-        // Al elegir heroína, si el nombre está vacío, proponer el suyo
-        characterBox.valueProperty().addListener((obs, oldValue, selected) -> {
-            boolean nameUntouched = nameField.getText().isBlank()
-                    || (oldValue != null && nameField.getText().equals(oldValue.character().name()));
-            if (selected != null && nameUntouched) {
-                nameField.setText(selected.character().name());
+        // --- Heroína: un RadioButton por personaje, con su avatar, todos en el mismo ToggleGroup
+        ToggleGroup heroineGroup = new ToggleGroup();
+        TilePane heroines = new TilePane(10, 10);
+        heroines.setPrefColumns(3);
+        heroines.setPrefTileWidth(180);
+        for (VnCharacter vc : characters) {
+            GameCharacter c = vc.character();
+            Path file = c.imagePath() == null ? null : images.resolve(c.imagePath());
+            heroines.getChildren().add(heroineCard(heroineGroup, vc, c.name(),
+                    CoverView.avatar(file, contentFilter.isSensitive(c.imageSexual(), c.imageViolence()),
+                            AVATAR, c.name())));
+        }
+        Region emptyAvatar = new Region();
+        emptyAvatar.getStyleClass().add("avatar-empty");
+        emptyAvatar.setMinSize(AVATAR, AVATAR);
+        RadioButton none = heroineCard(heroineGroup, null, "Sin heroína", emptyAvatar);
+        heroines.getChildren().add(none);
+        // Selección inicial: la heroína de la ruta, o "Sin heroína"
+        heroineGroup.selectToggle(none);
+        if (existing != null && existing.characterId() != null) {
+            heroineGroup.getToggles().stream()
+                    .filter(t -> t.getUserData() instanceof VnCharacter vc
+                            && vc.character().id().equals(existing.characterId()))
+                    .findFirst().ifPresent(heroineGroup::selectToggle);
+        }
+        // Al elegir heroína, si el nombre está vacío (o era el de la anterior), proponer el suyo
+        heroineGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
+            if (newToggle == null) {
+                heroineGroup.selectToggle(oldToggle); // siempre una elegida
+                return;
+            }
+            String oldName = oldToggle != null && oldToggle.getUserData() instanceof VnCharacter o
+                    ? o.character().name() : "";
+            boolean untouched = nameField.getText().isBlank() || nameField.getText().equals(oldName);
+            if (untouched && newToggle.getUserData() instanceof VnCharacter vc) {
+                nameField.setText(vc.character().name());
             }
         });
+        Label heroineHint = new Label("Son los personajes «primary» de VNDB. Elige «Sin heroína» para la "
+                + "ruta común o un True End.");
+        heroineHint.getStyleClass().addAll("meta", "small");
+        heroineHint.setWrapText(true);
 
-        // --- Estado ---
-        statusBox.getItems().setAll(RouteStatus.values());
-        statusBox.setCellFactory(list -> new StatusCell());
-        statusBox.setButtonCell(new StatusCell());
+        // --- Estado y orden recomendado
+        Segmented<RouteStatus> status = new Segmented<>(Arrays.asList(RouteStatus.values()), RouteStatus::label);
+        status.setValue(existing == null ? RouteStatus.PENDING : existing.status());
 
-        notesArea.setPromptText("Requisitos, elecciones clave, finales...");
-        notesArea.setWrapText(true);
-        notesArea.setPrefRowCount(5);
-        nameField.setPromptText("p. ej. Ruta de Nagisa, True End...");
+        int positions = existing == null ? routeCount + 1 : routeCount;
+        ComboBox<Integer> order = new ComboBox<>();
+        order.getItems().setAll(IntStream.rangeClosed(1, Math.max(1, positions)).boxed().toList());
+        order.setCellFactory(list -> new OrdinalCell());
+        order.setButtonCell(new OrdinalCell());
+        order.setValue(existing == null ? positions : existing.recommendedOrder());
+        order.setPrefWidth(140);
 
-        // Valores iniciales
-        if (existing == null) {
-            characterBox.setValue(null);
-            statusBox.setValue(RouteStatus.PENDING);
-        } else {
-            nameField.setText(existing.name());
-            characterBox.setValue(characters.stream()
-                    .filter(vc -> vc.character().id().equals(existing.characterId()))
-                    .findFirst().orElse(null));
-            statusBox.setValue(existing.status());
-            notesArea.setText(existing.notes() == null ? "" : existing.notes());
-        }
+        HBox statusRow = new HBox(24, field("Estado", status), field("Orden recomendado", order));
 
-        // --- Formulario en rejilla: etiquetas a la izquierda, campos a la derecha ---
-        GridPane grid = new GridPane();
-        grid.setHgap(12);
-        grid.setVgap(10);
-        grid.addRow(0, formLabel("Heroína:"), characterBox);
-        grid.addRow(1, formLabel("Nombre:"), nameField);
-        grid.addRow(2, formLabel("Estado:"), statusBox);
-        grid.addRow(3, formLabel("Notas:"), notesArea);
-        GridPane.setHgrow(nameField, Priority.ALWAYS);
-        grid.setPrefWidth(460);
-        getDialogPane().setContent(grid);
+        // --- Notas
+        TextArea notes = new TextArea(existing == null || existing.notes() == null ? "" : existing.notes());
+        notes.setPromptText("Requisitos, elecciones clave, finales...");
+        notes.setWrapText(true);
+        notes.setPrefRowCount(3);
 
-        ButtonType save = new ButtonType("Guardar", ButtonBar.ButtonData.OK_DONE);
-        getDialogPane().getButtonTypes().addAll(save, ButtonType.CANCEL);
-        // Al editar, botón "Borrar ruta" a la izquierda (ButtonData.LEFT lo separa de los demás)
-        ButtonType delete = new ButtonType("Borrar ruta", ButtonBar.ButtonData.LEFT);
+        ModalDialog dialog = new ModalDialog(owner, 620)
+                .titleWithSubtitle(existing == null ? "Nueva ruta" : "Editar ruta", vnTitle)
+                .content(field("Nombre de la ruta", nameField))
+                .content(field("Heroína", heroines, heroineHint))
+                .content(statusRow)
+                .content(field("Notas", notes));
         if (existing != null) {
-            getDialogPane().getButtonTypes().add(delete);
-            getDialogPane().lookupButton(delete).getStyleClass().add("danger-button");
+            Button delete = dialog.button("delete", "Eliminar ruta", ModalDialog.ButtonKind.DANGER);
+            SVGPath trash = new SVGPath();
+            trash.setContent(TRASH_ICON);
+            trash.getStyleClass().add("icon-danger-small");
+            delete.setGraphic(trash);
         }
-        // El botón Guardar se desactiva mientras el nombre esté vacío. Es un "binding": JavaFX
-        // recalcula la condición automáticamente cada vez que cambia el texto.
-        getDialogPane().lookupButton(save).disableProperty().bind(
+        dialog.button("cancel", "Cancelar", ModalDialog.ButtonKind.SECONDARY);
+        Button save = dialog.button("save", "Guardar", ModalDialog.ButtonKind.PRIMARY);
+        // "Guardar" desactivado mientras el nombre esté vacío. Es un "binding": JavaFX recalcula la
+        // condición automáticamente cada vez que cambia el texto.
+        save.disableProperty().bind(
                 Bindings.createBooleanBinding(() -> nameField.getText().isBlank(), nameField.textProperty()));
+        javafx.application.Platform.runLater(nameField::requestFocus);
 
-        // Convierte el botón pulsado en el resultado del diálogo
-        setResultConverter(button -> {
-            if (button == delete) {
-                return new Result(null, null, null, null, true);
-            }
-            if (button == save) {
-                return new Result(nameField.getText(),
-                        characterBox.getValue() == null ? null : characterBox.getValue().character().id(),
-                        statusBox.getValue(), notesArea.getText(), false);
-            }
-            return null; // Cancelar
-        });
-
-        setOnShown(event -> nameField.requestFocus());
-    }
-
-    /**
-     * Etiqueta que nunca se encoge por debajo de su texto. Sin esto, el GridPane le quita ancho
-     * para dárselo a los campos y la etiqueta acaba mostrando "...".
-     */
-    private static Label formLabel(String text) {
-        Label label = new Label(text);
-        label.setMinWidth(Region.USE_PREF_SIZE);
-        return label;
-    }
-
-    /** Celda del desplegable de heroínas. */
-    private static class CharacterCell extends ListCell<VnCharacter> {
-        @Override
-        protected void updateItem(VnCharacter vc, boolean empty) {
-            super.updateItem(vc, empty);
-            if (empty) {
-                setText(null);
-            } else if (vc == null) {
-                setText("— Sin heroína (ruta común, true end...) —");
-            } else {
-                setText(vc.character().name()
-                        + (vc.character().original() == null ? "" : "  (" + vc.character().original() + ")"));
-            }
+        String pressed = dialog.showAndWait();
+        if ("delete".equals(pressed)) {
+            return Optional.of(new Result(null, null, null, null, 0, true));
         }
+        if (!"save".equals(pressed)) {
+            return Optional.empty();
+        }
+        VnCharacter heroine = heroineGroup.getSelectedToggle().getUserData() instanceof VnCharacter vc ? vc : null;
+        return Optional.of(new Result(nameField.getText(),
+                heroine == null ? null : heroine.character().id(),
+                status.getValue(), notes.getText(), order.getValue(), false));
     }
 
-    /** Celda del desplegable de estados: muestra "En curso" en vez de "IN_PROGRESS". */
-    static class StatusCell extends ListCell<RouteStatus> {
+    /** Tarjeta de radio: (o) [avatar] Nombre. userData = el personaje (null = sin heroína). */
+    private static RadioButton heroineCard(ToggleGroup group, VnCharacter vc, String name, Node avatar) {
+        RadioButton card = new RadioButton(name);
+        card.setGraphic(avatar);
+        card.setGraphicTextGap(10);
+        card.setWrapText(true);
+        card.setToggleGroup(group);
+        card.setUserData(vc);
+        card.getStyleClass().add("heroine-card");
+        card.setMaxWidth(Double.MAX_VALUE);
+        return card;
+    }
+
+    /** Etiqueta encima del campo (y textos de ayuda opcionales debajo). */
+    private static VBox field(String label, Node... nodes) {
+        Label l = new Label(label);
+        l.getStyleClass().add("field-label");
+        VBox box = new VBox(8, l);
+        box.getChildren().addAll(nodes);
+        return box;
+    }
+
+    /** "1.º", "2.º"... */
+    private static class OrdinalCell extends ListCell<Integer> {
         @Override
-        protected void updateItem(RouteStatus status, boolean empty) {
-            super.updateItem(status, empty);
-            setText(empty || status == null ? null : status.label());
+        protected void updateItem(Integer n, boolean empty) {
+            super.updateItem(n, empty);
+            setText(empty || n == null ? null : n + ".º");
         }
     }
 }

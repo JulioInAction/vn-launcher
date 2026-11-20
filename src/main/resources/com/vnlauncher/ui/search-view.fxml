@@ -15,7 +15,7 @@
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.vnlauncher.ui.SearchController"
-      spacing="24" styleClass="content">
+      spacing="24" styleClass="page-content">
 
     <Label text="Buscar en VNDB" styleClass="page-title"/>
 
@@ -33,8 +33,14 @@
                styleClass="meta, small"/>
     </VBox>
 
+    <!-- Avisos (sin conexión, límite de VNDB): los pone SearchController cuando hacen falta -->
+    <VBox fx:id="noticeBox" maxWidth="760"/>
+
+    <!-- Estado vacío "No hay resultados para..." (oculto mientras haya resultados) -->
+    <VBox fx:id="emptyBox" alignment="TOP_CENTER" maxWidth="760"/>
+
     <!-- VBox.vgrow=ALWAYS: esta fila ocupa todo el alto sobrante de la ventana -->
-    <HBox spacing="24" VBox.vgrow="ALWAYS">
+    <HBox fx:id="resultsRow" spacing="24" VBox.vgrow="ALWAYS">
         <VBox spacing="12" HBox.hgrow="ALWAYS">
             <Label fx:id="statusLabel" styleClass="meta"/>
             <ScrollPane fitToWidth="true" styleClass="plain-scroll" VBox.vgrow="ALWAYS">

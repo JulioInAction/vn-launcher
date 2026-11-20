@@ -1,8 +1,12 @@
 package com.vnlauncher.ui;
 
+import com.vnlauncher.api.VndbException;
 import com.vnlauncher.app.AppContext;
 import com.vnlauncher.model.LibraryEntry;
 import com.vnlauncher.model.VisualNovel;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -17,6 +21,8 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 import java.sql.SQLException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -52,6 +58,14 @@ public class SearchController {
     @FXML private Label statusLabel;
     @FXML private VBox resultsBox;
     @FXML private VBox previewCard;
+    @FXML private VBox noticeBox;
+    @FXML private VBox emptyBox;
+    @FXML private HBox resultsRow;
+
+    /** Búsqueda en curso (para poder cancelarla desde el aviso de límite). */
+    private Task<SearchResult> searchTask;
+    /** Cuenta atrás del aviso de límite. */
+    private Timeline countdown;
 
     private List<VisualNovel> results = List.of();
     /** Ids de VN que están en la biblioteca (para "✓ En tu biblioteca"). */
@@ -68,6 +82,7 @@ public class SearchController {
     @FXML
     private void initialize() {
         setBusy(false);
+        showEmpty(null);
         renderPreview();
     }
 
@@ -80,27 +95,110 @@ public class SearchController {
         if (text == null || text.isBlank()) {
             return; // no gastamos una petición de VNDB en una búsqueda vacía
         }
+        String query = text.strip();
         setBusy(true);
-        statusLabel.setText("Buscando \"" + text.strip() + "\"...");
+        clearNotice();
+        statusLabel.setText("Buscando \"" + query + "\"...");
 
-        BackgroundTasks.run(ctx.background(),
-                () -> new SearchResult(ctx.catalogService().search(text), libraryIds()), // en segundo plano
-                result -> {                                                             // en la interfaz
+        // ¿Hay que esperar por el límite de VNDB? Se pregunta ANTES, sin gastar petición. La tarea
+        // esperará sola dentro del RateLimiter; mientras, se muestra la cuenta atrás.
+        Duration wait = ctx.rateLimiter().timeUntilAvailable();
+
+        searchTask = BackgroundTasks.run(ctx.background(),
+                () -> new SearchResult(ctx.catalogService().search(query), libraryIds()), // en segundo plano
+                result -> {                                                              // en la interfaz
+                    clearNotice();
                     results = result.results();
                     inLibrary.clear();
                     inLibrary.addAll(result.inLibrary());
                     selected = results.isEmpty() ? null : results.getFirst();
-                    statusLabel.setText(results.isEmpty()
-                            ? "Sin resultados para \"" + text.strip() + "\""
-                            : results.size() == 1 ? "1 resultado" : results.size() + " resultados");
+                    statusLabel.setText(results.size() == 1 ? "1 resultado" : results.size() + " resultados");
+                    showEmpty(results.isEmpty() ? query : null);
                     renderResults();
                     renderPreview();
                     setBusy(false);
                 },
                 error -> {
-                    statusLabel.setText("Error: " + error.getMessage());
+                    clearNotice();
+                    statusLabel.setText("");
+                    showError(error);
                     setBusy(false);
                 });
+        if (!wait.isZero()) {
+            showRateLimitWait(wait);
+        }
+    }
+
+    // =========================================================== avisos y estados vacíos
+
+    /** Aviso azul "Has llegado al límite de VNDB" con cuenta atrás y "Cancelar búsqueda". */
+    private void showRateLimitWait(Duration wait) {
+        Instant end = Instant.now().plus(wait);
+        Notice notice = new Notice(Notice.Kind.WAIT).title("Has llegado al límite de VNDB");
+        notice.action("Cancelar búsqueda", () -> {
+            searchTask.cancel(); // interrumpe el hilo que espera en el RateLimiter
+            clearNotice();
+            statusLabel.setText("Búsqueda cancelada.");
+            setBusy(false);
+        });
+        Runnable tick = () -> {
+            long left = Math.max(0, Duration.between(Instant.now(), end).toSeconds());
+            notice.text("Son 200 peticiones cada 5 minutos. Tu búsqueda se hará sola en "
+                    + left / 60 + ":" + String.format("%02d", left % 60) + ".");
+            notice.progress(1.0 - (double) left / Math.max(1, wait.toSeconds()));
+        };
+        tick.run();
+        countdown = new Timeline(new KeyFrame(javafx.util.Duration.seconds(1), e -> tick.run()));
+        countdown.setCycleCount(Timeline.INDEFINITE);
+        countdown.play();
+        noticeBox.getChildren().setAll(notice);
+    }
+
+    /** Errores de red: aviso naranja dentro de la pantalla con "Reintentar". */
+    private void showError(Throwable error) {
+        Notice notice = new Notice(Notice.Kind.WARNING);
+        if (error instanceof VndbException ve && ve.statusCode() == 0) {
+            // statusCode 0 = ni siquiera hubo respuesta: sin conexión
+            notice.title("No se puede conectar con VNDB")
+                    .text("Tu biblioteca sigue funcionando sin conexión. Solo la búsqueda y "
+                            + "«Actualizar desde VNDB» necesitan internet.");
+        } else {
+            notice.title("VNDB ha respondido con un error").text(error.getMessage());
+        }
+        notice.action("Reintentar", this::onSearch);
+        noticeBox.getChildren().setAll(notice);
+        // Sin resultados anteriores que enseñar, el aviso va solo (sin la tarjeta "Escribe un título...")
+        emptyBox.setVisible(false);
+        emptyBox.setManaged(false);
+        boolean hasResults = results != null && !results.isEmpty();
+        resultsRow.setVisible(hasResults);
+        resultsRow.setManaged(hasResults);
+    }
+
+    private void clearNotice() {
+        if (countdown != null) {
+            countdown.stop();
+            countdown = null;
+        }
+        noticeBox.getChildren().clear();
+    }
+
+    /** Muestra "No hay resultados para «x»" (o lo oculta si query es null). */
+    private void showEmpty(String query) {
+        boolean empty = query != null;
+        emptyBox.getChildren().clear();
+        if (empty) {
+            emptyBox.getChildren().add(EmptyState.create(
+                    EmptyState.svgIcon(EmptyState.SEARCH_ICON, 1.3),
+                    "No hay resultados para «" + query + "»", null,
+                    "Revisa la ortografía o busca solo una parte del título.",
+                    "Prueba con el título original en japonés o en romaji."));
+            statusLabel.setText("");
+        }
+        emptyBox.setVisible(empty);
+        emptyBox.setManaged(empty);
+        resultsRow.setVisible(!empty);
+        resultsRow.setManaged(!empty);
     }
 
     /** Ids de la biblioteca. Se llama en segundo plano, junto con la búsqueda. */
@@ -173,10 +271,12 @@ public class SearchController {
         if (inLibrary.contains(vn.id())) {
             Label done = new Label("✓  En tu biblioteca");
             done.getStyleClass().add("in-library");
+            done.setMinWidth(Region.USE_PREF_SIZE);
             action = done;
         } else {
             Button add = new Button("Añadir");
             add.setOnAction(event -> addToLibrary(vn, add));
+            add.setMinWidth(Region.USE_PREF_SIZE); // con un título largo, se corta el título y no el botón
             action = add;
         }
 

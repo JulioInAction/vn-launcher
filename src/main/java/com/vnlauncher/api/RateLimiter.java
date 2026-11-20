@@ -6,6 +6,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.InstantSource;
 import java.util.Deque;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
@@ -51,6 +52,23 @@ public class RateLimiter {
     public int recentCount() {
         Instant windowStart = clock.instant().minus(window);
         return (int) recent.stream().filter(t -> t.isAfter(windowStart)).count();
+    }
+
+    /**
+     * Cuánto habría que esperar AHORA para hacer una petición: cero si hay hueco; si la ventana
+     * está llena, hasta que caduque la más antigua. Tampoco bloquea (como recentCount): la
+     * interfaz lo usa para mostrar la cuenta atrás del aviso de límite.
+     */
+    public Duration timeUntilAvailable() {
+        Instant now = clock.instant();
+        Instant windowStart = now.minus(window);
+        List<Instant> inWindow = recent.stream().filter(t -> t.isAfter(windowStart)).sorted().toList();
+        if (inWindow.size() < maxRequests) {
+            return Duration.ZERO;
+        }
+        // Hay que esperar a que salgan las sobrantes: la que ocupa el puesto (n - max) caduca la última
+        Instant freesSlot = inWindow.get(inWindow.size() - maxRequests).plus(window);
+        return Duration.between(now, freesSlot);
     }
 
     /**

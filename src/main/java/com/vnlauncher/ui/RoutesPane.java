@@ -59,6 +59,7 @@ class RoutesPane extends VBox {
     private boolean includeSpoilers = false;
     private List<Route> routes = List.of();
     private Consumer<List<Route>> onRoutesChanged = r -> { };
+    private String vnTitle = "";
 
     RoutesPane(RouteService routeService, ExecutorService background, ImageCacheService images,
                ContentFilter contentFilter, String vnId) {
@@ -132,32 +133,48 @@ class RoutesPane extends VBox {
                 error -> Dialogs.error(this, error.getMessage()));
     }
 
-    private void openCreateDialog() {
-        new RouteDialog(this, null, selectableCharacters(null)).showAndWait().ifPresent(result ->
-                runThenReload(() -> {
+    /** Título de la VN, para el subtítulo del diálogo de ruta. */
+    void setVnTitle(String vnTitle) {
+        this.vnTitle = vnTitle;
+    }
+
+    /** Diálogo "Nueva ruta" (también lo usa el estado vacío de personajes de la ficha). */
+    void openCreateDialog() {
+        RouteDialog.show(this, vnTitle, null, selectableCharacters(null), routes.size(), images, contentFilter)
+                .ifPresent(result -> runThenReload(() -> {
                     Route created = routeService.addRoute(vnId, result.characterId(), result.name(), result.notes());
                     if (result.status() != RouteStatus.PENDING) {
                         routeService.setStatus(created.id(), result.status());
+                    }
+                    if (result.position() != created.recommendedOrder()) {
+                        routeService.moveTo(created.id(), result.position() - 1); // moveTo empieza en 0
                     }
                     return null;
                 }));
     }
 
     private void openEditDialog(Route route) {
-        new RouteDialog(this, route, selectableCharacters(route)).showAndWait().ifPresent(result -> {
-            if (result.delete()) {
-                confirmDelete(route);
-            } else {
-                runThenReload(() -> routeService.updateRoute(new Route(route.id(), vnId, result.characterId(),
-                        result.name(), route.recommendedOrder(), result.status(), result.notes(),
-                        route.completedAt())));
-            }
-        });
+        RouteDialog.show(this, vnTitle, route, selectableCharacters(route), routes.size(), images, contentFilter)
+                .ifPresent(result -> {
+                    if (result.delete()) {
+                        confirmDelete(route);
+                        return;
+                    }
+                    runThenReload(() -> {
+                        routeService.updateRoute(new Route(route.id(), vnId, result.characterId(),
+                                result.name(), route.recommendedOrder(), result.status(), result.notes(),
+                                route.completedAt()));
+                        if (result.position() != route.recommendedOrder()) {
+                            routeService.moveTo(route.id(), result.position() - 1);
+                        }
+                        return null;
+                    });
+                });
     }
 
     private void confirmDelete(Route route) {
-        if (Dialogs.confirm(this, "¿Borrar la ruta \"" + route.name() + "\"?",
-                "Se perderán su estado y sus notas.")) {
+        if (Dialogs.confirm(this, "¿Eliminar la ruta \"" + route.name() + "\"?",
+                "Se perderán su estado y sus notas.", "Eliminar", true)) {
             runThenReload(() -> {
                 routeService.delete(route.id());
                 return null;
@@ -251,8 +268,8 @@ class RoutesPane extends VBox {
     private ComboBox<RouteStatus> statusBox(Route route) {
         ComboBox<RouteStatus> status = new ComboBox<>();
         status.getItems().setAll(RouteStatus.values());
-        status.setCellFactory(l -> new RouteDialog.StatusCell());
-        status.setButtonCell(new RouteDialog.StatusCell());
+        status.setCellFactory(l -> new StatusCell());
+        status.setButtonCell(new StatusCell());
         status.setValue(route.status());
         status.getStyleClass().addAll("status-box", pillClass(route.status()));
 
@@ -363,5 +380,14 @@ class RoutesPane extends VBox {
             }
         }
         return -1;
+    }
+
+    /** Celda del desplegable de estados: muestra "En curso" en vez de "IN_PROGRESS". */
+    static class StatusCell extends javafx.scene.control.ListCell<RouteStatus> {
+        @Override
+        protected void updateItem(RouteStatus status, boolean empty) {
+            super.updateItem(status, empty);
+            setText(empty || status == null ? null : status.label());
+        }
     }
 }

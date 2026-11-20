@@ -1,27 +1,37 @@
 package com.vnlauncher.service;
 
+import com.vnlauncher.model.BlurLevel;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class ContentFilterTest {
 
-    private final ContentFilter filter = ContentFilter.withDefaults();
-
     @Test
-    void safeAndSuggestiveImagesAreNotSensitive() {
-        assertFalse(filter.isSensitive(0.0, 0.0));
-        assertFalse(filter.isSensitive(1.0, 1.0), "El umbral es 'mayor que', no 'mayor o igual'");
+    void defaultBlursOnlyExplicitImages() {
+        ContentFilter filter = ContentFilter.withDefaults();
+        assertEquals(BlurLevel.EXPLICIT, filter.level());
+        assertFalse(filter.isSensitive(1.21, 0.0), "Media 1.21 = sugerente (se redondea a 1)");
+        assertTrue(filter.isSensitive(1.93, 0.0), "Media 1.93 = explícita");
+        assertTrue(filter.isSensitive(0.0, 1.5), "Violencia brutal también");
     }
 
     @Test
-    void highSexualOrViolenceIsSensitive() {
-        assertTrue(filter.isSensitive(1.4, 0.0));
-        assertTrue(filter.isSensitive(0.0, 2.0));
+    void suggestiveLevelAlsoBlursSuggestiveImages() {
+        ContentFilter filter = new ContentFilter(BlurLevel.SUGGESTIVE);
+        assertTrue(filter.isSensitive(0.88, 0.0));
+        assertFalse(filter.isSensitive(0.2, 0.0), "Casi todos la votan como segura");
+    }
+
+    @Test
+    void noneNeverBlursAndLevelCanChangeAtRuntime() {
+        ContentFilter filter = ContentFilter.withDefaults();
+        filter.setLevel(BlurLevel.NONE);
+        assertFalse(filter.isSensitive(2.0, 2.0));
     }
 
     @Test
     void missingRatingsAreNotSensitive() {
-        assertFalse(filter.isSensitive(null, null));
+        assertFalse(new ContentFilter(BlurLevel.SUGGESTIVE).isSensitive(null, null));
     }
 }

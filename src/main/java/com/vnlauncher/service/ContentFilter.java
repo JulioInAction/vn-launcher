@@ -1,37 +1,39 @@
 package com.vnlauncher.service;
 
+import com.vnlauncher.model.BlurLevel;
+
 /**
- * Decide qué imágenes se consideran "sensibles" y se muestran difuminadas por defecto.
+ * Decide qué imágenes se consideran "sensibles" y se muestran difuminadas por defecto,
+ * según el nivel elegido en Ajustes (ver {@link BlurLevel} para los umbrales).
  *
- * <p>VNDB da para cada imagen la MEDIA de los votos de los usuarios (0..2):
- * <ul>
- *   <li>sexual: 0 = seguro, 1 = sugerente, 2 = explícito</li>
- *   <li>violencia: 0 = ninguna, 1 = moderada, 2 = brutal</li>
- * </ul>
- * Por defecto difuminamos lo que supera 1, es decir, imágenes que algunos votantes ya
- * consideran explícitas o brutales. Una portada que todos votan "sugerente" (1.0) se ve normal.
- * En la Fase 5 estos umbrales serán configurables en la pantalla de ajustes.
+ * <p>Hay una sola instancia para toda la app; al cambiar el ajuste se llama a
+ * {@link #setLevel} y las pantallas que se dibujen a partir de entonces ya lo usan.
+ * "volatile": se lee desde varios hilos y así todos ven siempre el último valor.
  */
 public class ContentFilter {
 
-    public static final double DEFAULT_SEXUAL_THRESHOLD = 1.0;
-    public static final double DEFAULT_VIOLENCE_THRESHOLD = 1.0;
+    private volatile BlurLevel level;
 
-    private final double sexualThreshold;
-    private final double violenceThreshold;
-
-    public ContentFilter(double sexualThreshold, double violenceThreshold) {
-        this.sexualThreshold = sexualThreshold;
-        this.violenceThreshold = violenceThreshold;
+    public ContentFilter(BlurLevel level) {
+        this.level = level;
     }
 
     public static ContentFilter withDefaults() {
-        return new ContentFilter(DEFAULT_SEXUAL_THRESHOLD, DEFAULT_VIOLENCE_THRESHOLD);
+        return new ContentFilter(BlurLevel.EXPLICIT);
+    }
+
+    public BlurLevel level() {
+        return level;
+    }
+
+    public void setLevel(BlurLevel level) {
+        this.level = level;
     }
 
     /** null = sin votos/sin imagen: no se considera sensible. */
     public boolean isSensitive(Double sexual, Double violence) {
-        return (sexual != null && sexual > sexualThreshold)
-                || (violence != null && violence > violenceThreshold);
+        double threshold = level.threshold();
+        return (sexual != null && sexual >= threshold)
+                || (violence != null && violence >= threshold);
     }
 }

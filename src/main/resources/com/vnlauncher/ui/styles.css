@@ -28,7 +28,7 @@
     -vn-faint: #6E7280;
     -vn-accent: #F2A0B5;
     -vn-accent-ink: #F2A0B5;
-    -vn-onaccent: #2A1219;
+    -vn-on-accent: #2A1219;
     -vn-blue: #8CC8FF;
     -vn-blue-bg: rgba(140, 200, 255, 0.14);
     -vn-orange: #F3B76B;
@@ -36,16 +36,19 @@
     -vn-grey: #B4B8C5;
     -vn-grey-bg: rgba(164, 168, 182, 0.14);
     -vn-chip-on-bg: #ECEDF2;
-    -vn-chip-ontext: #121318;
+    -vn-chip-on-text: #121318;
     -vn-track: #30333E;
     /* -vn-watermark ya no se usa: la marca de agua es una imagen (images/marca-agua-rosa*.png) con
        opacidad 0.07, que da este mismo color. Se mantiene porque figura en DISEÑO.md. */
     -vn-watermark: rgba(242, 160, 181, 0.07);
     -vn-overlay: rgba(18, 19, 24, 0.55);
+    -vn-danger: #FF8F85;                        /* errores y acciones destructivas */
+    -vn-danger-bg: rgba(255, 143, 133, 0.12);   /* fondo de avisos de error */
+    -vn-backdrop: #0B0C10;                      /* fondo detrás de los diálogos */
 
-    /* Variables propias, no están en DISEÑO.md: botón de borrar y fondos de las iniciales */
-    -vn-danger: #FF8F8F;
-    -vn-danger-bg: rgba(255, 143, 143, 0.10);
+    /* Variables propias, no están en DISEÑO.md: sombra de los diálogos y fondos de las
+       iniciales cuando no hay imagen */
+    -vn-shadow: rgba(0, 0, 0, 0.55);
     -vn-avatar-text: #F3F1F5;
     -vn-avatar-1: #4A4F7A;
     -vn-avatar-2: #6B3A44;
@@ -73,7 +76,7 @@
     -vn-faint: #7D7A86;
     -vn-accent: #F2A0B5;
     -vn-accent-ink: #B0365E;
-    -vn-onaccent: #2A1219;
+    -vn-on-accent: #2A1219;
     -vn-blue: #1E66AD;
     -vn-blue-bg: rgba(30, 102, 173, 0.10);
     -vn-orange: #9A5600;
@@ -81,13 +84,15 @@
     -vn-grey: #5E5B68;
     -vn-grey-bg: rgba(94, 91, 104, 0.10);
     -vn-chip-on-bg: #1D1B22;
-    -vn-chip-ontext: #FFFFFF;
+    -vn-chip-on-text: #FFFFFF;
     -vn-track: #E6E0DB;
     -vn-watermark: rgba(176, 54, 94, 0.07);
     -vn-overlay: rgba(247, 244, 241, 0.62);
-
     -vn-danger: #B3261E;
     -vn-danger-bg: rgba(179, 38, 30, 0.08);
+    -vn-backdrop: #DCD5D0;
+    -vn-shadow: rgba(60, 40, 30, 0.22);
+
     /* Las iniciales van sobre colores oscuros también en el tema claro (como en las capturas) */
 }
 
@@ -140,7 +145,9 @@
 
 /* ===================================================================== Estructura */
 
-.content {
+.page-content {
+    /* Margen de cada pantalla. OJO: no llamarla ".content", que es la clase del nodo interno
+       de TextArea y ScrollPane, y le pondría este margen también. */
     -fx-padding: 32 40 32 40;   /* arriba, derecha, abajo, izquierda */
 }
 
@@ -265,6 +272,9 @@
 .thin-bar {
     -fx-pref-height: 4;
     -fx-max-height: 4;
+    /* Sin mínimo, un VBox con poco sitio la encoge hasta 0 px y desaparece (pasaba en el aviso
+       de límite de la búsqueda, donde hay una etiqueta con wrapText encima) */
+    -fx-min-height: 4;
 }
 
 .icon-stroke {
@@ -307,7 +317,7 @@
 .button:default {
     -fx-background-color: -vn-accent;
     -fx-border-color: -vn-accent;
-    -fx-text-fill: -vn-onaccent;
+    -fx-text-fill: -vn-on-accent;
 }
 
 .primary-button:hover,
@@ -406,7 +416,7 @@
     -fx-text-fill: -vn-text;
     -fx-prompt-text-fill: -vn-faint;
     -fx-highlight-fill: -vn-accent;
-    -fx-highlight-text-fill: -vn-onaccent;
+    -fx-highlight-text-fill: -vn-on-accent;
     -fx-padding: 0 14 0 14;
     -fx-min-height: 46;
     -fx-font-size: 15px;
@@ -416,16 +426,33 @@
     -fx-border-color: -vn-accent-ink;
 }
 
+/* TextArea = un ScrollPane con el texto dentro. El borde y el fondo los pinta el propio TextArea
+   (dos capas: borde y, 1 px hacia dentro, el fondo); las piezas internas van transparentes para
+   que no asome el blanco de Modena por las esquinas redondeadas. */
 .text-area {
     -fx-text-fill: -vn-text;
     -fx-prompt-text-fill: -vn-faint;
-    -fx-background-color: -vn-border2;
-    -fx-background-radius: 10;
+    -fx-highlight-fill: -vn-accent;
+    -fx-highlight-text-fill: -vn-on-accent;
+    -fx-background-color: -vn-border2, -vn-surface;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 10, 9;
+    -fx-padding: 1;
+}
+
+.text-area:focused {
+    -fx-background-color: -vn-accent-ink, -vn-surface;
+}
+
+.text-area .scroll-pane,
+.text-area .scroll-pane > .viewport,
+.text-area .scroll-pane > .corner,
+.text-area .content {
+    -fx-background-color: transparent;
 }
 
 .text-area .content {
-    -fx-background-color: -vn-surface;
-    -fx-background-radius: 10;
+    -fx-padding: 10 14 10 14;
 }
 
 .check-box {
@@ -447,7 +474,7 @@
 }
 
 .check-box:selected > .box > .mark {
-    -fx-background-color: -vn-onaccent;
+    -fx-background-color: -vn-on-accent;
 }
 
 /* ===================================================================== Desplegables y menús */
@@ -638,11 +665,11 @@
 .chip.active {
     -fx-background-color: -vn-chip-on-bg;
     -fx-border-color: -vn-chip-on-bg;
-    -fx-text-fill: -vn-chip-ontext;
+    -fx-text-fill: -vn-chip-on-text;
 }
 
 .chip.active .chip-count {
-    -fx-text-fill: -vn-chip-ontext;
+    -fx-text-fill: -vn-chip-on-text;
 }
 
 .continue-card {
@@ -783,4 +810,371 @@
 
 .dialog-pane > .content.label {
     -fx-text-fill: -vn-text;
+}
+
+/* ===================================================================== Texto en TextFlow
+   (los nodos Text usan -fx-fill, no -fx-text-fill) */
+
+.text-strong {
+    -fx-font-family: "Inter SemiBold";
+    -fx-font-size: 14px;
+    -fx-fill: -vn-text;
+}
+
+.text-flow-normal {
+    -fx-font-size: 14px;
+    -fx-fill: -vn-text2;
+}
+
+.mono, .mono-text, .mono-box {
+    -fx-font-family: "Monospaced";
+    -fx-font-size: 13px;
+}
+
+.mono-text {
+    -fx-text-fill: -vn-text2;
+}
+
+.mono-box {
+    -fx-background-color: -vn-surface2;
+    -fx-background-radius: 8;
+    -fx-padding: 10 12 10 12;
+    -fx-text-fill: -vn-text;
+}
+
+/* ===================================================================== Diálogos (ModalDialog) */
+
+/* Margen transparente alrededor de la tarjeta: deja sitio a la sombra */
+.modal-root {
+    -fx-background-color: transparent;
+    -fx-padding: 30;
+}
+
+.modal-card {
+    -fx-background-color: -vn-surface;
+    -fx-background-radius: 16;
+    -fx-border-color: -vn-border;
+    -fx-border-radius: 16;
+    -fx-padding: 28 28 24 28;
+    -fx-effect: dropshadow(gaussian, -vn-shadow, 30, 0.1, 0, 10);
+}
+
+.modal-title {
+    -fx-font-family: "Zen Kaku Gothic New";
+    -fx-font-weight: bold;
+    -fx-font-size: 22px;
+    -fx-text-fill: -vn-text;
+}
+
+.modal-close {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: -vn-muted;
+    -fx-min-width: 44;
+    -fx-padding: 0;
+}
+
+.modal-close:hover {
+    -fx-background-color: -vn-sel;
+    -fx-text-fill: -vn-text;
+}
+
+/* Capa que tapa la ventana principal mientras hay un diálogo abierto */
+.dialog-backdrop {
+    -fx-background-color: -vn-backdrop;
+    -fx-opacity: 0.82;
+}
+
+.icon-danger {
+    -fx-stroke: -vn-danger;
+    -fx-fill: transparent;
+    -fx-stroke-width: 2;
+    -fx-stroke-line-cap: round;
+}
+
+.icon-danger-small {
+    -fx-stroke: -vn-danger;
+    -fx-fill: transparent;
+    -fx-stroke-width: 1.6;
+    -fx-scale-x: 0.75;
+    -fx-scale-y: 0.75;
+}
+
+/* "Eliminar ruta": texto rojo, sin borde, abajo a la izquierda */
+.button.danger-link {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: -vn-danger;
+    -fx-padding: 0 10 0 6;
+}
+
+.button.danger-link:hover {
+    -fx-background-color: -vn-danger-bg;
+}
+
+/* Botón de confirmar una acción destructiva ("Eliminar", "Vaciar caché") */
+.button.danger-solid {
+    -fx-background-color: -vn-danger;
+    -fx-border-color: -vn-danger;
+    -fx-text-fill: -vn-surface;
+}
+
+.button.danger-solid:hover {
+    -fx-background-color: derive(-vn-danger, -8%);
+}
+
+/* ===================================================================== Botones segmentados */
+
+.segmented {
+    -fx-background-color: -vn-surface2;
+    -fx-background-radius: 12;
+    -fx-padding: 4;
+    -fx-spacing: 2;
+}
+
+.segmented .toggle-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 9;
+    -fx-border-color: transparent;
+    -fx-border-radius: 9;
+    -fx-text-fill: -vn-muted;
+    -fx-font-family: "Inter Medium";
+    -fx-padding: 0 14 0 14;
+    -fx-min-height: 38;
+    -fx-cursor: hand;
+}
+
+.segmented .toggle-button:hover {
+    -fx-text-fill: -vn-text;
+}
+
+.segmented .toggle-button:selected {
+    -fx-background-color: -vn-surface;
+    -fx-border-color: -vn-border2;
+    -fx-text-fill: -vn-text;
+}
+
+/* ===================================================================== Interruptor (Switch) */
+
+.switch {
+    -fx-background-color: -vn-border2;
+    -fx-background-radius: 999;
+    -fx-pref-width: 50;
+    -fx-min-width: 50;
+    -fx-pref-height: 28;
+    -fx-min-height: 28;
+    -fx-max-height: 28;
+    -fx-padding: 3;
+    -fx-cursor: hand;
+}
+
+.switch:selected {
+    -fx-background-color: -vn-accent;
+}
+
+.switch-thumb {
+    -fx-background-color: -vn-muted;
+    -fx-background-radius: 999;
+    -fx-min-width: 22;
+    -fx-min-height: 22;
+    -fx-max-width: 22;
+    -fx-max-height: 22;
+}
+
+.switch:selected .switch-thumb {
+    -fx-background-color: -vn-on-accent;
+}
+
+/* ===================================================================== Diálogo de ruta */
+
+/* Tarjeta de radio: (o) [avatar] Nombre */
+.heroine-card {
+    -fx-background-color: transparent;
+    -fx-background-radius: 12;
+    -fx-border-color: -vn-border;
+    -fx-border-radius: 12;
+    -fx-padding: 12;
+    -fx-min-height: 64;
+    -fx-text-fill: -vn-text;
+    -fx-font-family: "Inter Medium";
+    -fx-cursor: hand;
+}
+
+.heroine-card:hover {
+    -fx-border-color: -vn-border2;
+}
+
+.heroine-card:selected {
+    -fx-background-color: -vn-sel;
+    -fx-border-color: -vn-accent-ink;
+}
+
+.heroine-card .radio {
+    -fx-background-color: -vn-surface;
+    -fx-border-color: -vn-border2;
+    -fx-background-radius: 999;
+    -fx-border-radius: 999;
+}
+
+.heroine-card:selected .radio {
+    -fx-border-color: -vn-accent;
+}
+
+.heroine-card .radio .dot {
+    -fx-background-color: transparent;
+}
+
+.heroine-card:selected .radio .dot {
+    -fx-background-color: -vn-accent;
+}
+
+/* Avatar vacío de "Sin heroína": círculo discontinuo */
+.avatar-empty {
+    -fx-border-color: -vn-border2;
+    -fx-border-style: dashed;
+    -fx-border-radius: 999;
+}
+
+/* ===================================================================== Estados vacíos */
+
+.empty-state {
+    -fx-padding: 48 24 48 24;
+}
+
+.empty-title {
+    -fx-font-family: "Zen Kaku Gothic New";
+    -fx-font-weight: bold;
+    -fx-font-size: 21px;
+    -fx-text-fill: -vn-text;
+    -fx-text-alignment: center;   /* centra cada línea cuando el texto ocupa varias */
+    -fx-alignment: center;        /* centra el bloque de texto dentro de la etiqueta */
+}
+
+.empty-text {
+    -fx-text-fill: -vn-text2;
+    -fx-text-alignment: center;
+    -fx-alignment: center;
+}
+
+.empty-icon {
+    -fx-stroke: -vn-muted;
+    -fx-fill: transparent;
+    -fx-stroke-width: 1.6;
+    -fx-stroke-line-cap: round;
+}
+
+/* Logo de la biblioteca vacía: rosa apagado */
+.empty-logo-stroke {
+    -fx-stroke: -vn-accent-ink;
+    -fx-fill: transparent;
+    -fx-stroke-line-cap: round;
+    -fx-opacity: 0.55;
+}
+
+.empty-logo-fill {
+    -fx-fill: -vn-accent-ink;
+    -fx-opacity: 0.55;
+}
+
+/* Recuadro discontinuo (ficha sin personajes) */
+.empty-dashed {
+    -fx-border-color: -vn-border2;
+    -fx-border-style: dashed;
+    -fx-border-radius: 14;
+    -fx-padding: 40 24 40 24;
+}
+
+.empty-dashed .empty-title {
+    -fx-font-family: "Inter SemiBold";
+    -fx-font-weight: normal;
+    -fx-font-size: 15px;
+}
+
+/* ===================================================================== Avisos (Notice) */
+
+.notice {
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
+    -fx-padding: 18 20 18 20;
+}
+
+.notice-warning {
+    -fx-background-color: -vn-orange-bg;
+    -fx-border-color: -vn-orange;
+}
+
+.notice-wait {
+    -fx-background-color: -vn-blue-bg;
+    -fx-border-color: -vn-blue;
+}
+
+.notice-icon {
+    -fx-fill: transparent;
+    -fx-stroke-width: 1.8;
+    -fx-stroke-line-cap: round;
+}
+
+.notice-warning .notice-icon { -fx-stroke: -vn-orange; }
+.notice-wait .notice-icon    { -fx-stroke: -vn-blue; }
+
+.notice-title {
+    -fx-font-family: "Inter SemiBold";
+    -fx-font-size: 15px;
+    -fx-text-fill: -vn-text;
+}
+
+/* ===================================================================== Ajustes */
+
+.settings-card {
+    -fx-padding: 26 26 22 26;
+    -fx-spacing: 16;
+}
+
+.settings-card-title {
+    -fx-font-family: "Zen Kaku Gothic New";
+    -fx-font-weight: bold;
+    -fx-font-size: 19px;
+    -fx-text-fill: -vn-text;
+}
+
+.settings-row {
+    -fx-spacing: 12;
+    -fx-alignment: center-left;
+}
+
+.settings-text {
+    -fx-spacing: 4;
+    -fx-padding: 0 24 0 0;
+}
+
+.settings-label {
+    -fx-font-family: "Inter SemiBold";
+    -fx-text-fill: -vn-text;
+}
+
+.settings-desc {
+    -fx-text-fill: -vn-text2;
+    -fx-font-size: 13px;
+}
+
+.settings-value {
+    -fx-font-family: "Inter SemiBold";
+    -fx-text-fill: -vn-text;
+}
+
+/* Tarjeta de una función que aún no está disponible */
+.settings-disabled {
+    -fx-opacity: 0.6;
+}
+
+.status-ok {
+    -fx-text-fill: -vn-blue;
+    -fx-font-family: "Inter Medium";
+    -fx-font-size: 13px;
+}
+
+.status-error {
+    -fx-text-fill: -vn-danger;
+    -fx-font-family: "Inter Medium";
+    -fx-font-size: 13px;
 }

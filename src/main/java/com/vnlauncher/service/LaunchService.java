@@ -71,6 +71,14 @@ public class LaunchService {
      * @throws LaunchException si falta algo por configurar o el sistema no pudo arrancarlo
      */
     public LaunchedGame launch(String vnId) throws LaunchException, SQLException {
+        return launch(vnId, false);
+    }
+
+    /**
+     * @param withoutLocaleEmulator true = lanzar esta vez sin Locale Emulator aunque la VN lo use
+     *                              (botón "Jugar sin Locale Emulator" del aviso de que falta LEProc.exe)
+     */
+    public LaunchedGame launch(String vnId, boolean withoutLocaleEmulator) throws LaunchException, SQLException {
         if (tracker.isRunning(vnId)) {
             throw new LaunchException(LaunchException.Reason.ALREADY_RUNNING, "El juego ya está abierto.");
         }
@@ -84,22 +92,24 @@ public class LaunchService {
         Path exe = Path.of(entry.exePath());
         if (!Files.isRegularFile(exe)) {
             throw new LaunchException(LaunchException.Reason.EXECUTABLE_NOT_FOUND,
-                    "No se encuentra el ejecutable:\n" + exe + "\n¿Has movido o desinstalado el juego?");
+                    "No se encuentra el ejecutable:\n" + exe + "\n¿Has movido o desinstalado el juego?", exe);
         }
         Path gameDir = exe.toAbsolutePath().getParent();
 
-        List<String> command = buildCommand(entry, exe);
+        boolean useLe = entry.useLocaleEmulator() && !withoutLocaleEmulator;
+        List<String> command = buildCommand(useLe, entry.leProfile(), exe);
         Instant now = clock.instant();
-        LaunchedGame launched = start(vnId, command, exe, gameDir, now, !entry.useLocaleEmulator());
+        LaunchedGame launched = start(vnId, command, exe, gameDir, now, !useLe);
         library.updateLastPlayed(vnId, now);
         tracker.track(launched);
         return launched;
     }
 
     /** Construye el comando según la configuración (con o sin Locale Emulator). */
-    List<String> buildCommand(LibraryEntry entry, Path exe) throws LaunchException, SQLException {
+    List<String> buildCommand(boolean useLocaleEmulator, String leProfile, Path exe)
+            throws LaunchException, SQLException {
         List<String> command = new ArrayList<>();
-        if (entry.useLocaleEmulator()) {
+        if (useLocaleEmulator) {
             Optional<Path> leProc = settings.localeEmulatorPath();
             if (leProc.isEmpty()) {
                 throw new LaunchException(LaunchException.Reason.LOCALE_EMULATOR_NOT_CONFIGURED,
@@ -107,12 +117,12 @@ public class LaunchService {
             }
             if (!Files.isRegularFile(leProc.get())) {
                 throw new LaunchException(LaunchException.Reason.LOCALE_EMULATOR_NOT_FOUND,
-                        "No se encuentra LEProc.exe en:\n" + leProc.get());
+                        "No se encuentra LEProc.exe en:\n" + leProc.get(), leProc.get());
             }
             command.add(leProc.get().toString());
-            if (entry.leProfile() != null && !entry.leProfile().isBlank()) {
+            if (leProfile != null && !leProfile.isBlank()) {
                 command.add("-runas");
-                command.add(entry.leProfile());
+                command.add(leProfile);
             } else {
                 command.add("-run");
             }

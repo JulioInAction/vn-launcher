@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
+import java.util.List;
 
 /**
  * Descarga imágenes de VNDB a la carpeta local y sabe dónde están.
@@ -74,6 +75,48 @@ public class ImageCacheService {
     /** true si la ruta no es null y el fichero existe (puede haberse borrado a mano). */
     public boolean isCached(String relativePath) {
         return relativePath != null && Files.exists(resolve(relativePath));
+    }
+
+    /** Carpeta con todas las imágenes descargadas (la "caché"). */
+    public Path cacheDir() {
+        return paths.imagesDir();
+    }
+
+    /** Lo que ocupan en disco todas las imágenes descargadas, en bytes. */
+    public long cacheSizeBytes() throws IOException {
+        if (!Files.isDirectory(paths.imagesDir())) {
+            return 0;
+        }
+        // Files.walk recorre la carpeta y todas sus subcarpetas; hay que cerrar el Stream (try)
+        try (var files = Files.walk(paths.imagesDir())) {
+            return files.filter(Files::isRegularFile).mapToLong(file -> {
+                try {
+                    return Files.size(file);
+                } catch (IOException e) {
+                    return 0; // un archivo que desaparece mientras contamos: no pasa nada
+                }
+            }).sum();
+        }
+    }
+
+    /**
+     * Borra todas las imágenes descargadas (deja las carpetas). No hay que tocar la base de datos:
+     * isCached() comprueba si el archivo existe, así que lo que falte se vuelve a descargar solo
+     * (portadas al abrir la biblioteca, personajes al abrir su ficha).
+     *
+     * @return cuántos archivos se han borrado
+     */
+    public int clearCache() throws IOException {
+        if (!Files.isDirectory(paths.imagesDir())) {
+            return 0;
+        }
+        try (var files = Files.walk(paths.imagesDir())) {
+            List<Path> toDelete = files.filter(Files::isRegularFile).toList();
+            for (Path file : toDelete) {
+                Files.deleteIfExists(file);
+            }
+            return toDelete.size();
+        }
     }
 
     /** ".jpg" a partir de "https://t.vndb.org/cv/95/75895.jpg"; ".jpg" si no se puede saber. */

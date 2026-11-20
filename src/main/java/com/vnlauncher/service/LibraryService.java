@@ -19,6 +19,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
 /**
  * Lógica de la biblioteca: añadir/quitar VNs y mantener sus portadas descargadas.
@@ -128,13 +129,32 @@ public class LibraryService {
      * @return cuántas se han descargado
      */
     public int downloadMissingCovers() throws SQLException, InterruptedException {
+        return downloadMissingCovers((done, total) -> { });
+    }
+
+    /**
+     * Igual, avisando del progreso: {@code progress.accept(hechas, total)} al empezar (0 de total)
+     * y tras cada portada (para "Descargando portadas · 3 de 8"). Se llama desde el hilo de fondo.
+     */
+    public int downloadMissingCovers(BiConsumer<Integer, Integer> progress)
+            throws SQLException, InterruptedException {
+        List<LibraryEntry> missing = findAll().stream().filter(e -> isCoverMissing(e.vn())).toList();
         int downloaded = 0;
-        for (LibraryEntry entry : findAll()) {
-            if (isCoverMissing(entry.vn()) && ensureCover(entry.vn())) {
+        if (!missing.isEmpty()) {
+            progress.accept(0, missing.size()); // que el aviso salga ya, no al acabar la primera
+        }
+        for (int i = 0; i < missing.size(); i++) {
+            if (ensureCover(missing.get(i).vn())) {
                 downloaded++;
             }
+            progress.accept(i + 1, missing.size());
         }
         return downloaded;
+    }
+
+    /** true si esta VN tiene portada en VNDB que aún no está en disco (para dibujar un hueco). */
+    public boolean coverPending(VisualNovel vn) {
+        return isCoverMissing(vn);
     }
 
     private boolean isCoverMissing(VisualNovel vn) {

@@ -11,15 +11,18 @@ import com.vnlauncher.service.LibraryService;
 import com.vnlauncher.service.LibrarySort;
 import com.vnlauncher.util.PlayTime;
 import com.vnlauncher.util.RelativeTime;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -52,6 +55,11 @@ public class LibraryController implements PlaytimeAware {
     private final Navigator navigator;
 
     @FXML private Label countLabel;
+    @FXML private Label coversLabel;
+    @FXML private ProgressBar coversBar;
+    @FXML private Button addButton;
+    @FXML private VBox emptyBox;
+    @FXML private HBox filtersRow;
     @FXML private HBox continueCard;
     @FXML private HBox chipsBox;
     @FXML private CheckBox showSensitiveCheck;
@@ -72,6 +80,7 @@ public class LibraryController implements PlaytimeAware {
 
     @FXML
     private void initialize() {
+        showCoversProgress(false);
         grid.setPrefTileWidth(COVER_WIDTH);
         // Un "listener" se ejecuta cada vez que cambia la propiedad (aquí, marcar/desmarcar).
         showSensitiveCheck.selectedProperty().addListener((obs, oldValue, selected) ->
@@ -127,14 +136,57 @@ public class LibraryController implements PlaytimeAware {
                     render();
                     List<LibraryEntry> entries = loaded.items().stream().map(LibraryItem::entry).toList();
                     if (repairCovers && library.hasMissingCovers(entries)) {
-                        BackgroundTasks.run(ctx.background(), library::downloadMissingCovers,
-                                downloaded -> {
-                                    if (downloaded > 0) load(false);
-                                },
-                                this::showError);
+                        downloadCovers();
                     }
                 },
                 this::showError);
+    }
+
+    /**
+     * Descarga las portadas que falten mostrando el progreso ("Descargando portadas · 3 de 8").
+     *
+     * <p>Aquí no basta con BackgroundTasks: hace falta informar del avance DURANTE el trabajo. Un
+     * Task de JavaFX tiene updateMessage/updateProgress, que se pueden llamar desde el hilo de
+     * fondo; enlazando (bind) la etiqueta y la barra a messageProperty/progressProperty, JavaFX
+     * las actualiza en el hilo de la interfaz él solo.
+     */
+    private void downloadCovers() {
+        LibraryService library = ctx.libraryService();
+        Task<Integer> task = new Task<>() {
+            @Override
+            protected Integer call() throws Exception {
+                return library.downloadMissingCovers((done, total) -> {
+                    updateMessage("Descargando portadas · " + done + " de " + total);
+                    updateProgress(done, total);
+                });
+            }
+        };
+        coversLabel.textProperty().bind(task.messageProperty());
+        coversBar.progressProperty().bind(task.progressProperty());
+        showCoversProgress(true);
+        task.setOnSucceeded(event -> {
+            showCoversProgress(false);
+            if (task.getValue() > 0) {
+                load(false);
+                navigator.refreshSidebar(); // las miniaturas de "Recientes" también usan estas portadas
+            }
+        });
+        task.setOnFailed(event -> {
+            showCoversProgress(false);
+            showError(task.getException());
+        });
+        ctx.background().submit(task);
+    }
+
+    private void showCoversProgress(boolean visible) {
+        if (!visible) {
+            coversLabel.textProperty().unbind();
+            coversBar.progressProperty().unbind();
+        }
+        coversLabel.setVisible(visible);
+        coversLabel.setManaged(visible);
+        coversBar.setVisible(visible);
+        coversBar.setManaged(visible);
     }
 
     // =========================================================== dibujo
@@ -142,6 +194,10 @@ public class LibraryController implements PlaytimeAware {
     private void render() {
         List<LibraryItem> all = data.items();
         countLabel.setText(all.size() == 1 ? "1 novela" : all.size() + " novelas");
+        renderEmptyLibrary(all.isEmpty());
+        if (all.isEmpty()) {
+            return;
+        }
         renderContinue();
         renderChips();
 
@@ -156,11 +212,34 @@ public class LibraryController implements PlaytimeAware {
         }
 
         boolean empty = visible.isEmpty();
-        emptyLabel.setText(all.isEmpty()
-                ? "Tu biblioteca está vacía. Ve a \"Buscar en VNDB\" y añade alguna novela."
-                : "No hay novelas en esta estantería.");
+        emptyLabel.setText("No hay novelas en esta estantería.");
         emptyLabel.setVisible(empty);
         emptyLabel.setManaged(empty);
+    }
+
+    /** Con la biblioteca vacía, en vez de franja, filtros y cuadrícula: explicación + botón. */
+    private void renderEmptyLibrary(boolean empty) {
+        emptyBox.getChildren().clear();
+        if (empty) {
+            Button search = new Button("Buscar en VNDB");
+            search.getStyleClass().addAll("primary-button", "big-button");
+            search.setOnAction(event -> navigator.showSearch());
+            emptyBox.getChildren().add(EmptyState.create(EmptyState.booksIcon(),
+                    "Tu biblioteca está vacía", search,
+                    "Busca una novela en VNDB y añádela. Los datos se guardan en tu ordenador, así que "
+                            + "después funciona sin conexión."));
+            continueCard.setVisible(false);
+            continueCard.setManaged(false);
+            grid.getChildren().clear();
+            emptyLabel.setVisible(false);
+            emptyLabel.setManaged(false);
+        }
+        emptyBox.setVisible(empty);
+        emptyBox.setManaged(empty);
+        for (Node n : List.of(filtersRow, showSensitiveCheck, addButton, countLabel)) {
+            n.setVisible(!empty);
+            n.setManaged(!empty);
+        }
     }
 
     /** Franja "Continuar": la VN jugada más recientemente, su ruta en curso y el botón Jugar. */
@@ -205,7 +284,7 @@ public class LibraryController implements PlaytimeAware {
         play.setOnAction(event -> {
             play.setDisable(true);
             play.setText("Lanzando...");
-            new LaunchFlow(ctx, play).play(vn.id(), vn.title(),
+            new LaunchFlow(ctx, navigator, play).play(vn.id(), vn.title(),
                     () -> {
                         load(false);
                         navigator.refreshSidebar();
@@ -255,7 +334,10 @@ public class LibraryController implements PlaytimeAware {
 
     private VBox createTile(LibraryItem item) {
         VisualNovel vn = item.entry().vn();
-        CoverView cover = new CoverView(coverFile(vn), isSensitive(vn), COVER_WIDTH, COVER_HEIGHT, vn.title());
+        // Portada aún sin descargar: hueco vacío (marcador de posición) en vez de iniciales
+        CoverView cover = ctx.libraryService().coverPending(vn)
+                ? new CoverView((String) null, false, COVER_WIDTH, COVER_HEIGHT, null)
+                : new CoverView(coverFile(vn), isSensitive(vn), COVER_WIDTH, COVER_HEIGHT, vn.title());
         cover.setRevealed(showSensitiveCheck.isSelected());
         covers.add(cover);
 

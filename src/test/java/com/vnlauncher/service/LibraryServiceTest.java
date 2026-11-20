@@ -92,6 +92,21 @@ class LibraryServiceTest {
     }
 
     @Test
+    void downloadMissingCoversReportsProgress() throws Exception {
+        server.respondWith(404);
+        service.addToLibrary(searchResult("v1", server.url("/cv/1.jpg")));
+        service.addToLibrary(searchResult("v2", server.url("/cv/2.jpg")));
+        service.addToLibrary(searchResult("v3", null)); // sin portada: no cuenta
+        server.respondWith(200);
+
+        List<String> steps = new java.util.ArrayList<>();
+        int downloaded = service.downloadMissingCovers((done, total) -> steps.add(done + "/" + total));
+
+        assertEquals(2, downloaded);
+        assertEquals(List.of("0/2", "1/2", "2/2"), steps);
+    }
+
+    @Test
     void deletedCoverFileIsDownloadedAgain() throws Exception {
         service.addToLibrary(searchResult("v4", server.url("/cv/1.jpg")));
         Files.delete(images.resolve("images/vn/v4.jpg")); // el usuario borra la carpeta de imágenes

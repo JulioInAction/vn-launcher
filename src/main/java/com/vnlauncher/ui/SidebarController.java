@@ -73,6 +73,7 @@ public class SidebarController {
     @FXML private ProgressBar vndbCountBar;
     @FXML private Button themeButton;
 
+    private ThemeManager themeManager;
     private final Map<Section, Button> navButtons = new EnumMap<>(Section.class);
     private final Map<PlayStatus, Label> shelfCounts = new EnumMap<>(PlayStatus.class);
 
@@ -244,17 +245,19 @@ public class SidebarController {
         return new Image(SidebarController.class.getResource(resource).toExternalForm());
     }
 
+    /** Lo conecta MainController; el botón de tema lo usa. */
+    void setThemeManager(ThemeManager themeManager) {
+        this.themeManager = themeManager;
+        // Cada vez que cambie el tema que se ve (botón, Ajustes o Windows), adaptar la barra
+        themeManager.addListener(this::showTheme);
+    }
+
+    /**
+     * El botón fija el tema contrario al que se ve ahora (claro u oscuro). Si estaba en
+     * "Según Windows", deja de seguir al sistema: es una elección explícita.
+     */
     @FXML
     private void onToggleTheme() {
-        Theme next = Themes.current(themeButton).toggled();
-        Themes.apply(themeButton.getScene().getRoot(), next);
-        showTheme(next);
-        // Guardar en la tabla setting (clave "theme") en segundo plano
-        BackgroundTasks.run(ctx.background(), () -> {
-                    ctx.settingsService().setTheme(next);
-                    return null;
-                },
-                ignored -> { },
-                error -> Dialogs.error(themeButton, "No se pudo guardar el tema: " + error.getMessage()));
+        themeManager.choose(themeManager.effective().toggled());
     }
 }
