@@ -207,7 +207,7 @@ public class VnDetailController implements PlaytimeAware {
         }
         // Debajo, a 6 px, el control para cambiarla: siempre ocupa sus 44 px (50 en total con la
         // separación), así que al abrirse no mueve nada
-        CoverChanger changer = new CoverChanger(cover, 220, () -> CoverGallery.show(playButton, ctx, loaded, () -> {
+        CoverChanger changer = new CoverChanger(220, () -> CoverGallery.show(playButton, ctx, loaded, () -> {
             loadHeader();               // pinta la portada nueva
             navigator.refreshSidebar(); // y en «Recientes»
         }));

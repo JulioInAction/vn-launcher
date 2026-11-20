@@ -113,8 +113,8 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
 - **Actualizar desde VNDB:** vuelve a pedir la ficha y los personajes principales (2 peticiones) y
   descarga la portada si ha cambiado. Las rutas, el tiempo de juego y el ejecutable no se tocan. El
   resto del tiempo la aplicación no vuelve a preguntar a VNDB por algo que ya tiene.
-- **Cambiar portada:** bajo la portada hay una franja rosa que, al pasar el ratón (por la portada o
-  por la franja) o al llegar con el tabulador, crece hasta un botón «Cambiar portada»
+- **Cambiar portada:** bajo la portada hay una franja rosa que, al pasar el ratón por ella o al
+  llegar con el tabulador, crece hasta un botón «Cambiar portada»
   (`CoverChanger`: una `Timeline` de 180 ms y un clip redondeado). Abre una galería
   (`CoverGallery`) con la portada de VNDB, las imágenes de cada edición (1 petición a `/release`;
   las miniaturas se descargan al abrirla y la imagen grande solo al confirmar) y «Elegir

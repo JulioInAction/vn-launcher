@@ -12,7 +12,6 @@ import javafx.geometry.Pos;
 import javafx.scene.AccessibleRole;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
-import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
@@ -27,7 +26,7 @@ import javafx.util.Duration;
  * <ul>
  *   <li><b>En reposo:</b> una franja rosa de 8 px (radio 4) con una lengüeta central de 40 × 15 px
  *       que lleva una flecha hacia abajo.</li>
- *   <li><b>Ratón encima</b> (de la portada o de la franja) <b>o foco del teclado:</b> crece hasta un
+ *   <li><b>Ratón encima de la franja o foco del teclado:</b> crece hasta un
  *       botón de 44 px (radio 10) con «Cambiar portada»; con el foco lleva además un contorno.</li>
  * </ul>
  *
@@ -78,11 +77,10 @@ final class CoverChanger extends Pane {
     private final PauseTransition closeDelay = new PauseTransition(CLOSE_DELAY);
 
     /**
-     * @param cover  la portada de encima: pasar el ratón por ella también abre el control
      * @param width  ancho, el de la portada
      * @param onOpen qué hacer al pulsarlo (abrir la galería)
      */
-    CoverChanger(Node cover, double width, Runnable onOpen) {
+    CoverChanger(double width, Runnable onOpen) {
         getStyleClass().add("cover-changer");
         setPrefSize(width, OPEN_HEIGHT);
         setMinSize(width, OPEN_HEIGHT);
@@ -170,16 +168,16 @@ final class CoverChanger extends Pane {
                         new KeyValue(arrow.opacityProperty(), 0, easeOut)));
         closeDelay.setOnFinished(event -> play(false));
 
-        // --- Cuándo abrir: ratón sobre la portada o sobre el control, o foco del teclado
+        // --- Cuándo abrir: ratón sobre la franja (o la lengüeta) o foco del teclado. La portada no
+        //     lo abre: al bajar de ella a la franja, el hueco de 6 px lo cerraba y abría a saltos.
         InvalidationListener update = observable -> {
-            if (cover.isHover() || isHover() || isFocusVisible()) {
+            if (isHover() || isFocusVisible()) {
                 closeDelay.stop();
                 play(true);
             } else {
-                closeDelay.playFromStart(); // espera 150 ms: pasar de la portada a la franja no lo cierra
+                closeDelay.playFromStart(); // espera 150 ms antes de cerrarse
             }
         };
-        cover.hoverProperty().addListener(update);
         hoverProperty().addListener(update);
         focusVisibleProperty().addListener(update);
 
