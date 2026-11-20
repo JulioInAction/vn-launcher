@@ -9,6 +9,12 @@ Guía visual para la interfaz JavaFX. Las capturas de `docs/diseno/capturas/` so
 | `biblioteca-oscuro.png` / `biblioteca-claro.png` | Biblioteca: franja «Continuar», filtros por estado, cuadrícula de portadas | 2 |
 | `ficha-oscuro.png` / `ficha-claro.png` | Ficha de la VN: datos, Jugar, rutas en orden, personajes «primary» | 2, 3 y 4 |
 | `buscar-oscuro.png` / `buscar-claro.png` | Búsqueda en VNDB con vista previa del resultado | 1 (rehacer al aplicar el diseño) |
+| `ajustes.png` | Ajustes: Locale Emulator, tema, contenido, datos, cuenta de VNDB, acerca de | 5 |
+| `dialogo-ruta.png` | Diálogo para crear o editar una ruta | 4 |
+| `vacio-biblioteca.png`, `vacio-busqueda.png`, `vacio-personajes.png` | Estados vacíos | 2, 1 y 3 |
+| `cargando-portadas.png` | Carga de portadas con marcadores de posición | 2 |
+| `error-sin-conexion.png`, `error-limite.png` | Avisos de la búsqueda: sin conexión y límite de 200 peticiones | 1 |
+| `error-ejecutable.png`, `error-locale-emulator.png` | Diálogos al lanzar: falta el .exe o falta LEProc.exe | 5 |
 
 ## Temas y colores
 
@@ -39,7 +45,7 @@ Cambiar de tema = añadir o quitar `tema-claro` de `scene.getRoot().getStyleClas
 | `-vn-faint` | Decorativo (números de orden, asas) | `#6E7280` | `#7D7A86` |
 | `-vn-accent` | Rosa: fondo del botón principal y marcapáginas | `#F2A0B5` | `#F2A0B5` |
 | `-vn-accent-ink` | Rosa para texto y enlaces | `#F2A0B5` | `#B0365E` |
-| `-vn-onaccent` | Texto sobre el botón rosa | `#2A1219` | `#2A1219` |
+| `-vn-on-accent` | Texto sobre el botón rosa | `#2A1219` | `#2A1219` |
 | `-vn-blue` | Estado Completada / Tiene ruta | `#8CC8FF` | `#1E66AD` |
 | `-vn-blue-bg` | Fondo de la etiqueta azul | `rgba(140,200,255,0.14)` | `rgba(30,102,173,0.10)` |
 | `-vn-orange` | Estado Jugando / En curso | `#F3B76B` | `#9A5600` |
@@ -47,10 +53,13 @@ Cambiar de tema = añadir o quitar `tema-claro` de `scene.getRoot().getStyleClas
 | `-vn-grey` | Estado Pendiente | `#B4B8C5` | `#5E5B68` |
 | `-vn-grey-bg` | Fondo de la etiqueta gris | `rgba(164,168,182,0.14)` | `rgba(94,91,104,0.10)` |
 | `-vn-chip-on-bg` | Filtro activo (fondo) | `#ECEDF2` | `#1D1B22` |
-| `-vn-chip-ontext` | Filtro activo (texto) | `#121318` | `#FFFFFF` |
+| `-vn-chip-on-text` | Filtro activo (texto) | `#121318` | `#FFFFFF` |
 | `-vn-track` | Fondo de barras de progreso | `#30333E` | `#E6E0DB` |
 | `-vn-watermark` | Texto japonés de fondo en la barra lateral | `rgba(242,160,181,0.07)` | `rgba(176,54,94,0.07)` |
 | `-vn-overlay` | Capa sobre imágenes con spoiler | `rgba(18,19,24,0.55)` | `rgba(247,244,241,0.62)` |
+| `-vn-danger` | Errores y acciones destructivas (eliminar) | `#FF8F85` | `#B3261E` |
+| `-vn-danger-bg` | Fondo de avisos de error | `rgba(255,143,133,0.12)` | `rgba(179,38,30,0.08)` |
+| `-vn-backdrop` | Fondo detrás de los diálogos | `#0B0C10` | `#DCD5D0` |
 
 Notas:
 - El rosa `#F2A0B5` se usa igual en los dos temas como **fondo** del botón principal. Como **texto** sobre fondo claro no se lee bien, por eso existe `-vn-accent-ink` (`#B0365E` en el tema claro).
@@ -82,10 +91,21 @@ De arriba abajo:
 5. Abajo del todo: contador de peticiones a VNDB («14/200», barra fina) y botón para cambiar de tema.
 6. De fondo, «ビジュアルノベル» en vertical, 58 px, color `-vn-watermark`. Puramente decorativo.
 
+## Ajustes, diálogos y estados
+
+- **Ajustes:** cada bloque es una tarjeta con filas de «etiqueta + explicación» a la izquierda y el control a la derecha. Los grupos de opciones (tema, difuminar imágenes, estado de ruta) son botones segmentados: un `ToggleGroup` de `ToggleButton` con estilo propio. Los interruptores de sí/no son un `ToggleButton` con forma de pastilla.
+- **Tema «Según Windows»:** JavaFX 22 o superior lo da con `Platform.getPreferences().getColorScheme()`, y se puede escuchar para cambiar al momento.
+- **Difuminar imágenes:** «No difuminar», «Solo explícitas» y «Sugerentes y explícitas» corresponden a la valoración `image.sexual` de VNDB (1 = sugerente, 2 = explícita; es una media, así que se compara con un umbral).
+- **Diálogos:** ventana modal (`Stage` con `initModality(Modality.WINDOW_MODAL)` o un `Dialog`) con esquinas de 16 px, sombra y `-vn-backdrop` detrás. Los botones van abajo a la derecha, con la acción principal en rosa a la derecha del todo. «Eliminar ruta» va abajo a la izquierda en `-vn-danger`.
+- **Diálogo de ruta:** la heroína se elige con tarjetas de radio (avatar + nombre) entre los personajes «primary», más «Sin heroína» para rutas comunes o True End.
+- **Estados vacíos:** siempre explican qué ha pasado y qué hacer, con un botón para hacerlo.
+- **Errores:** los de red son avisos dentro de la pantalla (naranja si es un problema, azul si solo hay que esperar); los que bloquean una acción, como lanzar el juego, son diálogos con icono en `-vn-danger`.
+
 ## Logo
 
 Archivos en `docs/diseno/logo/`:
 - `vn-launcher-app.png` (512 px): icono de la ventana → `stage.getIcons().add(...)`.
+- `vn-launcher.ico` (de 16 a 256 px): icono del instalador y del acceso directo → opción `--icon` de `jpackage`.
 - `vn-launcher-logo-oscuro.svg` / `-claro.svg`: logo completo para el README.
 - Dentro de la interfaz, el icono se dibuja como vector con `SVGPath`. Son cuatro formas (libro delantero, lomo, libro trasero y marcapáginas) definidas en `vn-launcher-icono.svg`, en una caja de 64 × 64. Las tres primeras van con trazo (`stroke`) y el marcapáginas, relleno, todo en `-vn-accent-ink`.
 
