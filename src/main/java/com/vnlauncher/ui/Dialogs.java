@@ -15,12 +15,14 @@ final class Dialogs {
     }
 
     /**
-     * Aplica nuestro CSS y asocia el diálogo a la ventana de {@code owner}
+     * Aplica nuestro CSS y el tema actual, y asocia el diálogo a la ventana de {@code owner}
      * (así sale centrado encima de ella y no como una ventana suelta).
      */
     static void prepare(Dialog<?> dialog, Node owner) {
         dialog.getDialogPane().getStylesheets()
                 .add(Views.class.getResource("styles.css").toExternalForm());
+        // El DialogPane es la raíz de la escena del diálogo: le copiamos el tema de la ventana
+        Themes.apply(dialog.getDialogPane(), Themes.current(owner));
         if (owner != null && owner.getScene() != null) {
             dialog.initOwner(owner.getScene().getWindow());
         }

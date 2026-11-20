@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Hyperlink?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.HBox?>
@@ -8,25 +10,26 @@
 <?import javafx.scene.layout.TilePane?>
 <?import javafx.scene.layout.VBox?>
 
-<!-- Biblioteca: cabecera (título, contador, casilla de imágenes sensibles) y una cuadrícula
-     de portadas. TilePane coloca los hijos en filas y salta de línea cuando no caben. -->
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.vnlauncher.ui.LibraryController"
-      spacing="12" styleClass="content">
+<!-- Biblioteca: cabecera (título, contador, filtro activo, "Añadir VN") y la cuadrícula de portadas.
+     TilePane coloca los hijos en filas y salta de línea cuando no caben.
+     En la Fase 6 se añadirán la franja "Continuar", los filtros por estado y el orden. -->
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.vnlauncher.ui.LibraryController"
+            fitToWidth="true" styleClass="plain-scroll">
 
-    <HBox spacing="12" alignment="BASELINE_LEFT">
-        <Label text="Biblioteca" styleClass="section-title"/>
-        <Label fx:id="countLabel" styleClass="muted"/>
-        <!-- Region vacía que crece: empuja la casilla hacia la derecha -->
-        <Region HBox.hgrow="ALWAYS"/>
-        <CheckBox fx:id="showSensitiveCheck" text="Mostrar imágenes sensibles"/>
-    </HBox>
+    <VBox spacing="24" styleClass="content">
+        <HBox spacing="12" alignment="CENTER_LEFT">
+            <Label fx:id="titleLabel" text="Biblioteca" styleClass="page-title"/>
+            <Label fx:id="countLabel" styleClass="meta"/>
+            <Hyperlink fx:id="clearFilterLink" text="Ver todas" onAction="#onClearFilter"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <CheckBox fx:id="showSensitiveCheck" text="Mostrar imágenes sensibles"/>
+            <Button text="+  Añadir VN" onAction="#onAddVn"/>
+        </HBox>
 
-    <Label fx:id="emptyLabel" styleClass="muted" wrapText="true"
-           text="Tu biblioteca está vacía. Ve a &quot;Buscar en VNDB&quot; y añade alguna novela."/>
+        <Label fx:id="emptyLabel" styleClass="muted" wrapText="true"/>
 
-    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="plain-scroll">
-        <TilePane fx:id="grid" hgap="18" vgap="18"/>
-    </ScrollPane>
-</VBox>
+        <TilePane fx:id="grid" hgap="22" vgap="26"/>
+    </VBox>
+</ScrollPane>

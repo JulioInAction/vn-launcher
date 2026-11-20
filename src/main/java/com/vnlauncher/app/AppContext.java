@@ -108,7 +108,9 @@ public final class AppContext {
         LibraryRepository libraryRepository = new LibraryRepository(database);
         ImageCacheService imageCache = new ImageCacheService(httpClient, paths);
         Clock clock = Clock.systemUTC();
-        LibraryService libraryService = new LibraryService(vnRepository, libraryRepository, imageCache, clock);
+        RouteRepository routeRepository = new RouteRepository(database);
+        LibraryService libraryService = new LibraryService(
+                vnRepository, libraryRepository, routeRepository, imageCache, clock);
         CharacterService characterService = new CharacterService(
                 vndb, new CharacterRepository(database), imageCache, clock);
         SettingsService settingsService = new SettingsService(new SettingsRepository(database));
@@ -117,7 +119,7 @@ public final class AppContext {
 
         return new AppContext(paths, database, httpClient, background,
                 new CatalogService(vndb), libraryService, imageCache, ContentFilter.withDefaults(),
-                characterService, new RouteService(new RouteRepository(database), clock),
+                characterService, new RouteService(routeRepository, clock),
                 settingsService, launchService, rateLimiter);
     }
 

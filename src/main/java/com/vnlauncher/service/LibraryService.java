@@ -1,15 +1,21 @@
 package com.vnlauncher.service;
 
 import com.vnlauncher.db.repo.LibraryRepository;
+import com.vnlauncher.db.repo.RouteRepository;
 import com.vnlauncher.db.repo.VnRepository;
 import com.vnlauncher.model.LibraryEntry;
+import com.vnlauncher.model.LibraryItem;
+import com.vnlauncher.model.PlayStatus;
+import com.vnlauncher.model.RouteSummary;
 import com.vnlauncher.model.VisualNovel;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -24,13 +30,15 @@ public class LibraryService {
 
     private final VnRepository vnRepository;
     private final LibraryRepository libraryRepository;
+    private final RouteRepository routeRepository;
     private final ImageCacheService imageCache;
     private final Clock clock; // inyectado para que los tests puedan fijar la hora
 
     public LibraryService(VnRepository vnRepository, LibraryRepository libraryRepository,
-                          ImageCacheService imageCache, Clock clock) {
+                          RouteRepository routeRepository, ImageCacheService imageCache, Clock clock) {
         this.vnRepository = vnRepository;
         this.libraryRepository = libraryRepository;
+        this.routeRepository = routeRepository;
         this.imageCache = imageCache;
         this.clock = clock;
     }
@@ -63,6 +71,28 @@ public class LibraryService {
 
     public List<LibraryEntry> findAll() throws SQLException {
         return libraryRepository.findAll();
+    }
+
+    /** Toda la biblioteca con el estado de cada VN (Jugando / Pendiente / Completada). */
+    public List<LibraryItem> findAllWithStatus() throws SQLException {
+        Map<String, RouteSummary> routes = routeRepository.summariesByVn(); // 1 consulta para todas
+        return findAll().stream()
+                .map(e -> {
+                    RouteSummary summary = routes.getOrDefault(e.vn().id(), RouteSummary.NONE);
+                    return new LibraryItem(e, PlayStatus.of(summary, e.lastPlayedAt()), summary);
+                })
+                .toList();
+    }
+
+    /** Las {@code limit} VNs jugadas más recientemente (para "Recientes" de la barra lateral). */
+    public static List<LibraryEntry> recentlyPlayed(List<LibraryItem> items, int limit) {
+        return items.stream()
+                .map(LibraryItem::entry)
+                .filter(e -> e.lastPlayedAt() != null)
+                // Comparator.comparing(...).reversed(): de la más reciente a la más antigua
+                .sorted(Comparator.comparing(LibraryEntry::lastPlayedAt).reversed())
+                .limit(limit)
+                .toList();
     }
 
     public Optional<LibraryEntry> find(String vnId) throws SQLException {

@@ -1,6 +1,7 @@
 package com.vnlauncher.service;
 
 import com.vnlauncher.db.repo.SettingsRepository;
+import com.vnlauncher.model.Theme;
 
 import java.nio.file.Path;
 import java.sql.SQLException;
@@ -14,6 +15,7 @@ import java.util.Optional;
 public class SettingsService {
 
     static final String LOCALE_EMULATOR_PATH = "locale_emulator.path";
+    static final String THEME = "theme";
 
     private final SettingsRepository repository;
 
@@ -24,6 +26,15 @@ public class SettingsService {
     /** Ruta de LEProc.exe, si el usuario la ha configurado. */
     public Optional<Path> localeEmulatorPath() throws SQLException {
         return repository.get(LOCALE_EMULATOR_PATH).filter(s -> !s.isBlank()).map(Path::of);
+    }
+
+    /** Tema elegido por el usuario; oscuro si nunca ha elegido. */
+    public Theme theme() throws SQLException {
+        return Theme.fromSetting(repository.get(THEME).orElse(null));
+    }
+
+    public void setTheme(Theme theme) throws SQLException {
+        repository.put(THEME, theme.settingValue());
     }
 
     public void setLocaleEmulatorPath(Path path) throws SQLException {

@@ -2,8 +2,12 @@ package com.vnlauncher.service;
 
 import com.vnlauncher.db.Database;
 import com.vnlauncher.db.repo.LibraryRepository;
+import com.vnlauncher.db.repo.RouteRepository;
 import com.vnlauncher.db.repo.VnRepository;
 import com.vnlauncher.model.LibraryEntry;
+import com.vnlauncher.model.LibraryItem;
+import com.vnlauncher.model.PlayStatus;
+import com.vnlauncher.model.RouteStatus;
 import com.vnlauncher.model.VisualNovel;
 import com.vnlauncher.testutil.FakeImageServer;
 import com.vnlauncher.util.AppPaths;
@@ -41,9 +45,14 @@ class LibraryServiceTest {
         db.migrate();
         images = new ImageCacheService(HttpClient.newHttpClient(), new AppPaths(tempDir));
         // Clock.fixed: un reloj parado, para saber exactamente qué fecha se guardará.
-        service = new LibraryService(new VnRepository(db), new LibraryRepository(db), images,
-                Clock.fixed(NOW, ZoneOffset.UTC));
+        library = new LibraryRepository(db);
+        routes = new RouteService(new RouteRepository(db), Clock.fixed(NOW, ZoneOffset.UTC));
+        service = new LibraryService(new VnRepository(db), library, new RouteRepository(db),
+                images, Clock.fixed(NOW, ZoneOffset.UTC));
     }
+
+    private LibraryRepository library;
+    private RouteService routes;
 
     @AfterEach
     void tearDown() {
@@ -105,5 +114,41 @@ class LibraryServiceTest {
         service.remove("v4");
 
         assertFalse(service.isInLibrary("v4"));
+    }
+
+    @Test
+    void statusIsComputedFromRoutesAndLastPlayed() throws Exception {
+        service.addToLibrary(searchResult("v1", null)); // nada: pendiente
+        service.addToLibrary(searchResult("v2", null)); // una ruta en curso: jugando
+        service.addToLibrary(searchResult("v3", null)); // todas completadas
+        service.addToLibrary(searchResult("v4", null)); // lanzada sin rutas: jugando
+        routes.setStatus(routes.addRoute("v2", null, "A", null).id(), RouteStatus.IN_PROGRESS);
+        routes.setStatus(routes.addRoute("v3", null, "A", null).id(), RouteStatus.COMPLETED);
+        library.updateLastPlayed("v4", NOW);
+
+        var byId = new java.util.HashMap<String, PlayStatus>();
+        for (LibraryItem item : service.findAllWithStatus()) {
+            byId.put(item.entry().vn().id(), item.status());
+        }
+
+        assertEquals(PlayStatus.PENDING, byId.get("v1"));
+        assertEquals(PlayStatus.PLAYING, byId.get("v2"));
+        assertEquals(PlayStatus.COMPLETED, byId.get("v3"));
+        assertEquals(PlayStatus.PLAYING, byId.get("v4"));
+    }
+
+    @Test
+    void recentlyPlayedIsSortedNewestFirstAndLimited() throws Exception {
+        for (String id : List.of("v1", "v2", "v3", "v4")) {
+            service.addToLibrary(searchResult(id, null));
+        }
+        library.updateLastPlayed("v1", NOW.minusSeconds(300));
+        library.updateLastPlayed("v2", NOW);
+        library.updateLastPlayed("v3", NOW.minusSeconds(100));
+        library.updateLastPlayed("v4", NOW.minusSeconds(900));
+
+        List<LibraryEntry> recent = LibraryService.recentlyPlayed(service.findAllWithStatus(), 3);
+
+        assertEquals(List.of("v2", "v3", "v1"), recent.stream().map(e -> e.vn().id()).toList());
     }
 }

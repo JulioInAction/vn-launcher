@@ -5,11 +5,7 @@ import javafx.scene.control.Label;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.StackPane;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 
@@ -19,57 +15,66 @@ import java.nio.file.Path;
 /**
  * Una imagen (portada o personaje) de tamaño fijo que:
  * <ul>
- *   <li>se carga desde disco en segundo plano (no congela la interfaz con muchas portadas),</li>
- *   <li>si no hay fichero, muestra las iniciales del nombre sobre un color propio de ese nombre
- *       (o "Sin imagen" si no se da nombre),</li>
+ *   <li>se carga en segundo plano (no congela la interfaz con muchas portadas),</li>
+ *   <li>si no hay imagen, muestra las iniciales del nombre sobre un color propio de ese nombre
+ *       (o un hueco vacío si no se da nombre),</li>
  *   <li>si es sensible, se difumina y lleva una etiqueta, hasta que se llame a setRevealed(true).</li>
  * </ul>
  * StackPane apila sus hijos uno encima de otro: imagen abajo, etiqueta "Sensible" encima.
+ *
+ * <p>Aquí no hay ningún color: el fondo de las iniciales es una clase CSS (avatar-1 ... avatar-6)
+ * cuyos colores define styles.css para cada tema.
  */
 public class CoverView extends StackPane {
 
     /** Radio del desenfoque. 63 es el máximo que admite GaussianBlur. */
     private static final double BLUR_RADIUS = 63;
+    /** Número de colores de avatar definidos en styles.css (.avatar-1 ... .avatar-6). */
+    private static final int AVATAR_COLORS = 6;
 
     private final ImageView imageView = new ImageView();
     private final Label sensitiveBadge = new Label("Sensible");
     private final boolean sensitive;
 
+    /** Imagen guardada en disco (o null). */
     public CoverView(Path file, boolean sensitive, double width, double height) {
         this(file, sensitive, width, height, null);
     }
 
-    /**
-     * @param file      imagen en disco, o null si no hay
-     * @param sensitive si debe mostrarse difuminada por defecto
-     * @param name      nombre para las iniciales cuando no hay imagen (null = "Sin imagen")
-     */
     public CoverView(Path file, boolean sensitive, double width, double height, String name) {
+        this(file != null && Files.exists(file) ? file.toUri().toString() : null,
+                sensitive, width, height, name);
+    }
+
+    /**
+     * @param imageUrl  URL de la imagen: "file:/..." (descargada) o "https://..." (resultados de
+     *                  búsqueda, que no se guardan). null = sin imagen.
+     * @param sensitive si debe mostrarse difuminada por defecto
+     * @param name      nombre para las iniciales cuando no hay imagen (null = hueco vacío)
+     */
+    public CoverView(String imageUrl, boolean sensitive, double width, double height, String name) {
         this.sensitive = sensitive;
         getStyleClass().add("cover");
         setMinSize(width, height);
         setPrefSize(width, height);
         setMaxSize(width, height);
-        // Recorte con esquinas redondeadas: sin él, el desenfoque "se derrama" por fuera como un halo.
+        // Recorte con esquinas redondeadas (radio 10 = 20 de "arco"). Sin él, la imagen tendría
+        // esquinas cuadradas y el desenfoque "se derramaría" por fuera como un halo.
         Rectangle clip = new Rectangle(width, height);
-        clip.setArcWidth(14);
-        clip.setArcHeight(14);
+        clip.setArcWidth(20);
+        clip.setArcHeight(20);
         setClip(clip);
 
-        if (file != null && Files.exists(file)) {
+        if (imageUrl != null) {
             // Parámetros: url, ancho, alto, conservar proporción, suavizado, cargar en segundo plano.
             // Pedir ya el tamaño final ahorra memoria: no guardamos la imagen original entera.
-            imageView.setImage(new Image(file.toUri().toString(), width, height, true, true, true));
+            imageView.setImage(new Image(imageUrl, width, height, true, true, true));
             getChildren().add(imageView);
-        } else if (name != null) {
-            setBackground(new Background(new BackgroundFill(colorFor(name), CornerRadii.EMPTY, null)));
+        } else if (name != null && !name.isBlank()) {
+            getStyleClass().add(avatarClass(name));
             Label initials = new Label(initials(name));
             initials.getStyleClass().add(width < 60 ? "initials-small" : "initials");
             getChildren().add(initials);
-        } else {
-            Label placeholder = new Label("Sin imagen");
-            placeholder.getStyleClass().add("muted");
-            getChildren().add(placeholder);
         }
 
         sensitiveBadge.getStyleClass().add("sensitive-badge");
@@ -115,11 +120,10 @@ public class CoverView extends StackPane {
     }
 
     /**
-     * Color apagado que depende del nombre: el mismo nombre da siempre el mismo color.
-     * hashCode() convierte el texto en un número; lo usamos como tono (0-360 grados) en HSB.
+     * Clase CSS de color para un nombre: el mismo nombre da siempre la misma clase.
+     * hashCode() convierte el texto en un número; floorMod lo deja entre 0 y 5 (aunque sea negativo).
      */
-    static Color colorFor(String name) {
-        double hue = Math.floorMod(name.hashCode(), 360);
-        return Color.hsb(hue, 0.35, 0.42);
+    static String avatarClass(String name) {
+        return "avatar-" + (Math.floorMod(name.hashCode(), AVATAR_COLORS) + 1);
     }
 }

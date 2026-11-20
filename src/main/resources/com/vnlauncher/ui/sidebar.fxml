@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.Group?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.SVGPath?>
+
+<!-- Barra lateral común a todas las pantallas (docs/DISEÑO.md, "Barra lateral").
+     StackPane: abajo la marca de agua japonesa, encima el contenido.
+     Las entradas de navegación, estanterías y recientes las crea SidebarController en código. -->
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.vnlauncher.ui.SidebarController"
+           styleClass="sidebar">
+
+    <!-- 1. Marca de agua: ビジュアルノベル ("novela visual") en vertical, puramente decorativa.
+         mouseTransparent: los clics la atraviesan y llegan a los botones de encima. -->
+    <VBox fx:id="watermark" mouseTransparent="true" StackPane.alignment="TOP_RIGHT" maxWidth="-Infinity">
+        <StackPane.margin>
+            <Insets top="96" right="4"/>
+        </StackPane.margin>
+    </VBox>
+
+    <VBox styleClass="sidebar-content" spacing="0">
+        <!-- 2. Logo: icono vectorial (4 formas de vn-launcher-icono.svg, caja de 64x64 a escala 0.5) -->
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="sidebar-block">
+            <!-- Group dentro de Group: el exterior mide al interior YA escalado; si no, el HBox
+                 reservaría los 64 px originales aunque se vea a 32 -->
+            <Group>
+            <Group scaleX="0.5" scaleY="0.5">
+                <!-- Libro delantero (rectángulo redondeado), lomo, libro trasero y marcapáginas -->
+                <SVGPath styleClass="logo-stroke" strokeWidth="4"
+                         content="M13 6H33A5 5 0 0 1 38 11V43A5 5 0 0 1 33 48H13A5 5 0 0 1 8 43V11A5 5 0 0 1 13 6Z"/>
+                <SVGPath styleClass="logo-stroke" strokeWidth="3" content="M15 8V46"/>
+                <SVGPath styleClass="logo-stroke" strokeWidth="4"
+                         content="M43 14H50A5 5 0 0 1 55 19V53A5 5 0 0 1 50 58H26A5 5 0 0 1 21 53V52.5"/>
+                <SVGPath styleClass="logo-fill" content="M24 4V21L28 17.5L32 21V4Z"/>
+            </Group>
+            </Group>
+            <Label text="VN Launcher" styleClass="logo-text"/>
+        </HBox>
+
+        <Region minHeight="28"/>
+
+        <!-- 3. Navegación numerada -->
+        <VBox fx:id="navBox" spacing="2"/>
+
+        <Region minHeight="26"/>
+
+        <!-- 4. Estanterías -->
+        <Label text="ESTANTERÍAS" styleClass="caps, sidebar-block">
+            <VBox.margin><Insets bottom="4"/></VBox.margin>
+        </Label>
+        <VBox fx:id="shelvesBox" spacing="0"/>
+
+        <Region minHeight="22"/>
+
+        <!-- 5. Recientes -->
+        <Label text="RECIENTES" styleClass="caps, sidebar-block">
+            <VBox.margin><Insets bottom="10"/></VBox.margin>
+        </Label>
+        <HBox fx:id="recentBox" spacing="10" styleClass="sidebar-block"/>
+
+        <!-- Hueco que crece: empuja lo siguiente hasta abajo del todo -->
+        <Region VBox.vgrow="ALWAYS"/>
+
+        <!-- 6. Contador de peticiones a VNDB y botón de tema -->
+        <VBox spacing="8" styleClass="sidebar-block">
+            <HBox alignment="CENTER_LEFT">
+                <Label text="VNDB · últimos 5 min" styleClass="muted, small"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="vndbCountLabel" text="0/200" styleClass="counter-value"/>
+            </HBox>
+            <ProgressBar fx:id="vndbCountBar" progress="0" maxWidth="Infinity" styleClass="thin-bar"/>
+            <Region minHeight="8"/>
+            <Button fx:id="themeButton" maxWidth="Infinity" onAction="#onToggleTheme"
+                    alignment="CENTER_LEFT" graphicTextGap="12"/>
+        </VBox>
+    </VBox>
+</StackPane>

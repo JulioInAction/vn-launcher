@@ -1,332 +1,540 @@
 /* =====================================================================
-   Estilos de VN Launcher (JavaFX CSS: como CSS web, pero con propiedades -fx-).
-   Paleta basada en el prototipo: fondo muy oscuro, tarjetas con borde fino,
-   acento rosa para la acción principal y "pastillas" de color para los estados.
-   Los colores con nombre (-bg, -accent...) se definen en .root y se reutilizan abajo.
+   VN Launcher — hoja de estilos (ver docs/DISEÑO.md)
+
+   CÓMO FUNCIONAN LOS TEMAS
+   Todos los colores se definen UNA vez como "looked-up colors" (variables -vn-...) en .root.
+   El tema claro solo vuelve a definir esas variables en .root.tema-claro. Cambiar de tema =
+   añadir o quitar la clase "tema-claro" del nodo raíz de la escena (lo hace Themes.java).
+   Regla: debajo de la sección "Temas" ningún control lleva un color escrito a mano.
+
+   Tipografía: "Zen Kaku Gothic New" (bold) para títulos/nombres/navegación e Inter para el
+   resto. Los pesos 500 y 600 de Inter son las familias "Inter Medium" e "Inter SemiBold"
+   (así se registran en JavaFX; ver Fonts.java).
    ===================================================================== */
 
+/* ===================================================================== Temas */
+
 .root {
+    -vn-bg: #121318;
+    -vn-side: #16171D;
+    -vn-surface: #1F2129;
+    -vn-surface2: #282B35;
+    -vn-sel: #262833;
+    -vn-border: #2A2D37;
+    -vn-border2: #3A3D49;
+    -vn-text: #ECEDF2;
+    -vn-text2: #C9CCD6;
+    -vn-muted: #A4A8B6;
+    -vn-faint: #6E7280;
+    -vn-accent: #F2A0B5;
+    -vn-accent-ink: #F2A0B5;
+    -vn-onaccent: #2A1219;
+    -vn-blue: #8CC8FF;
+    -vn-blue-bg: rgba(140, 200, 255, 0.14);
+    -vn-orange: #F3B76B;
+    -vn-orange-bg: rgba(243, 183, 107, 0.14);
+    -vn-grey: #B4B8C5;
+    -vn-grey-bg: rgba(164, 168, 182, 0.14);
+    -vn-chip-on-bg: #ECEDF2;
+    -vn-chip-ontext: #121318;
+    -vn-track: #30333E;
+    -vn-watermark: rgba(242, 160, 181, 0.07);
+    -vn-overlay: rgba(18, 19, 24, 0.55);
+
+    /* Variables propias, no están en DISEÑO.md: botón de borrar y fondos de las iniciales */
+    -vn-danger: #FF8F8F;
+    -vn-danger-bg: rgba(255, 143, 143, 0.10);
+    -vn-avatar-text: #F3F1F5;
+    -vn-avatar-1: #4A4F7A;
+    -vn-avatar-2: #6B3A44;
+    -vn-avatar-3: #4E3A5E;
+    -vn-avatar-4: #3E4A3C;
+    -vn-avatar-5: #2F3E52;
+    -vn-avatar-6: #533C47;
+
+    -fx-font-family: "Inter";
     -fx-font-size: 14px;
-
-    -bg: #131419;            /* fondo general */
-    -bg-sidebar: #18191f;    /* menú lateral */
-    -bg-card: #1d1e25;       /* tarjetas y filas */
-    -bg-light: #2a2b34;      /* controles (campos, botones secundarios) */
-    -border: #2c2d36;        /* borde fino de tarjetas */
-    -text: #e8e8ec;
-    -text-muted: #9b9ca6;
-    -accent: #f2a2b8;        /* rosa del prototipo */
-    -accent-text: #2a1520;   /* texto oscuro sobre el rosa */
-    -blue: #8cc0ff;
-    -blue-bg: #22344f;
-    -orange: #ffb37a;
-    -orange-bg: #47311f;
-
-    -fx-background-color: -bg;
+    -fx-background-color: -vn-bg;
 }
+
+.root.tema-claro {
+    -vn-bg: #F7F4F1;
+    -vn-side: #FFFFFF;
+    -vn-surface: #FFFFFF;
+    -vn-surface2: #F0EBE7;
+    -vn-sel: #FDF1F4;
+    -vn-border: #E6E0DB;
+    -vn-border2: #D3CBC5;
+    -vn-text: #1D1B22;
+    -vn-text2: #3F3C47;
+    -vn-muted: #5E5B68;
+    -vn-faint: #7D7A86;
+    -vn-accent: #F2A0B5;
+    -vn-accent-ink: #B0365E;
+    -vn-onaccent: #2A1219;
+    -vn-blue: #1E66AD;
+    -vn-blue-bg: rgba(30, 102, 173, 0.10);
+    -vn-orange: #9A5600;
+    -vn-orange-bg: rgba(196, 122, 20, 0.13);
+    -vn-grey: #5E5B68;
+    -vn-grey-bg: rgba(94, 91, 104, 0.10);
+    -vn-chip-on-bg: #1D1B22;
+    -vn-chip-ontext: #FFFFFF;
+    -vn-track: #E6E0DB;
+    -vn-watermark: rgba(176, 54, 94, 0.07);
+    -vn-overlay: rgba(247, 244, 241, 0.62);
+
+    -vn-danger: #B3261E;
+    -vn-danger-bg: rgba(179, 38, 30, 0.08);
+    /* Las iniciales van sobre colores oscuros también en el tema claro (como en las capturas) */
+}
+
+/* ===================================================================== Texto */
 
 .label {
-    -fx-text-fill: -text;
+    -fx-text-fill: -vn-text;
 }
 
-.muted {
-    -fx-text-fill: -text-muted;
+.text2  { -fx-text-fill: -vn-text2; }
+.muted  { -fx-text-fill: -vn-muted; }
+.faint  { -fx-text-fill: -vn-faint; }
+.small  { -fx-font-size: 12px; }
+.meta   { -fx-font-size: 13px; -fx-text-fill: -vn-muted; }
+
+/* Etiqueta en mayúsculas pequeñas ("ESTANTERÍAS"). JavaFX no tiene letter-spacing en CSS,
+   así que el espaciado del diseño no se puede reproducir exactamente. */
+.caps {
+    -fx-font-family: "Inter SemiBold";
+    -fx-font-size: 11px;
+    -fx-text-fill: -vn-muted;
 }
 
-.small {
-    -fx-font-size: 12px;
+.field-label {
+    -fx-font-family: "Inter Medium";
+    -fx-font-size: 13px;
+    -fx-text-fill: -vn-text;
 }
 
-/* ---------------------------------------------------------------- estructura */
-
-.sidebar {
-    -fx-background-color: -bg-sidebar;
-    -fx-padding: 18 12 12 12;
-    -fx-pref-width: 210;
-    -fx-border-color: transparent -border transparent transparent;
-}
-
-.app-title {
-    -fx-font-size: 17px;
+/* Títulos y nombres: Zen Kaku Gothic New Bold */
+.page-title, .detail-title, .section-title, .card-title, .tile-title,
+.route-name, .character-name, .result-title, .nav-text, .logo-text {
+    -fx-font-family: "Zen Kaku Gothic New";
     -fx-font-weight: bold;
-    -fx-padding: 0 0 14 6;
-    -fx-graphic-text-gap: 10;
+    -fx-text-fill: -vn-text;
 }
 
-.app-logo {
-    -fx-fill: transparent;
-    -fx-stroke: -accent;
-    -fx-stroke-width: 1.8;
+.page-title    { -fx-font-size: 32px; }
+.detail-title  { -fx-font-size: 40px; }
+.section-title { -fx-font-size: 24px; }
+.card-title    { -fx-font-size: 20px; }
+.result-title  { -fx-font-size: 16px; }
+.tile-title    { -fx-font-size: 14px; }
+.logo-text     { -fx-font-size: 18px; }
+
+.description {
+    -fx-text-fill: -vn-text2;
+    -fx-line-spacing: 3px;
 }
+
+/* ===================================================================== Estructura */
 
 .content {
-    -fx-padding: 28 32;
+    -fx-padding: 32 40 32 40;   /* arriba, derecha, abajo, izquierda */
 }
 
-.section-title {
-    -fx-font-size: 19px;
-    -fx-font-weight: bold;
+.card {
+    -fx-background-color: -vn-surface;
+    -fx-background-radius: 14;
+    -fx-border-color: -vn-border;
+    -fx-border-radius: 14;
 }
 
-.page-title {
-    -fx-font-size: 26px;
-    -fx-font-weight: bold;
+.divider {
+    -fx-background-color: -vn-border;
+    -fx-min-height: 1;
+    -fx-pref-height: 1;
+    -fx-max-height: 1;
 }
 
-/* ---------------------------------------------------------------- menú lateral */
+/* ===================================================================== Barra lateral */
 
-/* ".button.nav-button" (dos clases) y no solo ".nav-button": la regla general ".button" está
-   escrita más abajo, y en CSS, a igual especificidad, gana la que va después. Con dos clases
-   esta regla es más específica y gana siempre. */
-.button.nav-button {
-    -fx-background-color: transparent;
-    -fx-text-fill: -text-muted;
-    -fx-alignment: center-left;
-    -fx-padding: 9 12;
-    -fx-graphic-text-gap: 10;
-    -fx-background-radius: 8;
+.sidebar {
+    -fx-background-color: -vn-side;
+    -fx-border-color: transparent -vn-border transparent transparent;
+    -fx-pref-width: 230;
+    -fx-min-width: 230;
 }
 
-.button.nav-button:hover {
-    -fx-background-color: -bg-card;
-    -fx-text-fill: -text;
+.sidebar-content {
+    -fx-padding: 28 20 20 0;   /* sin margen izquierdo: el marcapáginas va pegado al borde */
 }
 
-.button.nav-button.active {
-    -fx-background-color: -bg-light;
-    -fx-text-fill: -text;
-    -fx-font-weight: bold;
+.sidebar-block {
+    -fx-padding: 0 0 0 26;
 }
 
-/* Iconos dibujados con SVGPath: solo contorno, sin relleno */
-.nav-icon {
+.logo-stroke {
+    -fx-stroke: -vn-accent-ink;
     -fx-fill: transparent;
-    -fx-stroke: -text-muted;
-    -fx-stroke-width: 1.6;
+    -fx-stroke-line-cap: round;
 }
 
-.nav-button.active .nav-icon,
-.nav-button:hover .nav-icon {
-    -fx-stroke: -text;
+.logo-fill {
+    -fx-fill: -vn-accent-ink;
 }
 
-.vndb-counter {
-    -fx-background-color: -bg-card;
-    -fx-background-radius: 10;
-    -fx-border-color: -border;
-    -fx-border-radius: 10;
-    -fx-padding: 12;
-    -fx-spacing: 4;
+/* Cada entrada de navegación: marcapáginas + número + texto, 44 px de alto como mínimo */
+.nav-item {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-min-height: 44;
+    -fx-cursor: hand;
+    -fx-alignment: center-left;
 }
 
-.vndb-counter-value {
+.nav-number {
+    -fx-font-family: "Inter SemiBold";
+    -fx-font-size: 11px;
+    -fx-text-fill: -vn-muted;
+}
+
+.nav-text {
+    -fx-font-size: 17px;
+    -fx-text-fill: -vn-muted;
+}
+
+.nav-item:hover .nav-text,
+.nav-item.active .nav-text {
+    -fx-text-fill: -vn-text;
+}
+
+.nav-item.active .nav-number {
+    -fx-text-fill: -vn-accent-ink;
+}
+
+/* Marcapáginas rosa de 8 × 40 px con muesca en V abajo. -fx-shape recorta el fondo con un
+   trazado SVG; -fx-scale-shape: false para que no se deforme. */
+.bookmark {
+    -fx-background-color: -vn-accent;
+    -fx-shape: "M0 0 H8 V40 L4 34 L0 40 Z";
+    -fx-scale-shape: false;
+    -fx-min-width: 8;
+    -fx-min-height: 40;
+    -fx-max-width: 8;
+    -fx-max-height: 40;
+}
+
+/* El marcapáginas ocupa siempre su hueco (así el texto no "salta"), pero solo se ve en la activa */
+.nav-item .bookmark        { -fx-opacity: 0; }
+.nav-item.active .bookmark { -fx-opacity: 1; }
+
+.shelf-item {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0 8 8 0;
+    -fx-padding: 0 8 0 26;
+    -fx-min-height: 44;
+    -fx-cursor: hand;
+    -fx-alignment: center-left;
+}
+
+.shelf-item:hover {
+    -fx-background-color: -vn-sel;
+}
+
+.shelf-count {
+    -fx-font-size: 12px;
+    -fx-text-fill: -vn-muted;
+}
+
+.dot-playing   { -fx-fill: -vn-orange; }
+.dot-pending   { -fx-fill: -vn-grey; }
+.dot-completed { -fx-fill: -vn-blue; }
+
+.recent-cover {
+    -fx-cursor: hand;
+}
+
+/* Texto japonés decorativo en vertical, al fondo de la barra */
+.watermark {
+    -fx-font-family: "Zen Kaku Gothic New";
     -fx-font-weight: bold;
-    -fx-font-size: 15px;
+    -fx-font-size: 58px;
+    -fx-text-fill: -vn-watermark;
 }
 
-/* ---------------------------------------------------------------- botones */
+.counter-value {
+    -fx-font-family: "Inter SemiBold";
+    -fx-font-size: 12px;
+    -fx-text-fill: -vn-text;
+}
 
+.thin-bar {
+    -fx-pref-height: 4;
+    -fx-max-height: 4;
+}
+
+.icon-stroke {
+    -fx-stroke: -vn-text;
+    -fx-fill: transparent;
+    -fx-stroke-width: 1.6;
+    -fx-stroke-line-cap: round;
+}
+
+/* ===================================================================== Botones */
+
+/* Botón normal = secundario del diseño: transparente con borde */
 .button {
-    -fx-background-color: -bg-light;
-    -fx-text-fill: -text;
-    -fx-background-radius: 8;
-    -fx-padding: 7 14;
+    -fx-background-color: transparent;
+    -fx-background-radius: 10;
+    -fx-border-color: -vn-border2;
+    -fx-border-radius: 10;
+    -fx-text-fill: -vn-text;
+    -fx-font-family: "Inter SemiBold";
+    -fx-font-size: 14px;
+    -fx-padding: 0 18 0 18;
+    -fx-min-height: 44;
     -fx-cursor: hand;
 }
 
 .button:hover {
-    -fx-background-color: derive(-bg-light, 18%);
+    -fx-background-color: -vn-sel;
+}
+
+.button:focused {
+    -fx-border-color: -vn-accent-ink;
 }
 
 .button:disabled {
-    -fx-opacity: 0.45;
+    -fx-opacity: 0.5;
 }
 
-/* Acción principal (Jugar, Buscar, Añadir): rosa con texto oscuro */
+/* Acción principal (Jugar, Buscar, Añadir a la biblioteca): fondo rosa */
 .primary-button,
 .button:default {
-    -fx-background-color: -accent;
-    -fx-text-fill: -accent-text;
-    -fx-font-weight: bold;
+    -fx-background-color: -vn-accent;
+    -fx-border-color: -vn-accent;
+    -fx-text-fill: -vn-onaccent;
 }
 
 .primary-button:hover,
 .button:default:hover {
-    -fx-background-color: derive(-accent, 12%);
+    -fx-background-color: derive(-vn-accent, 8%);
 }
 
 .big-button {
     -fx-font-size: 16px;
-    -fx-padding: 11 30;
+    -fx-padding: 0 30 0 30;
+    -fx-min-height: 48;
 }
 
-/* Botón secundario: transparente con borde */
-.secondary-button {
-    -fx-background-color: transparent;
-    -fx-border-color: -border;
-    -fx-border-radius: 8;
-    -fx-font-weight: bold;
-}
-
-.secondary-button:hover {
-    -fx-background-color: -bg-card;
-}
-
+/* Enlace sin borde ("‹ Biblioteca") */
 .link-button {
     -fx-background-color: transparent;
-    -fx-text-fill: -text-muted;
-    -fx-padding: 0;
+    -fx-border-color: transparent;
+    -fx-text-fill: -vn-muted;
+    -fx-font-family: "Inter Medium";
+    -fx-padding: 0 4 0 0;
 }
 
 .link-button:hover {
     -fx-background-color: transparent;
-    -fx-text-fill: -text;
+    -fx-text-fill: -vn-text;
 }
 
 .hyperlink {
-    -fx-text-fill: -accent;
+    -fx-text-fill: -vn-accent-ink;
     -fx-border-color: transparent;
     -fx-padding: 0;
+    -fx-underline: true;
+}
+
+.hyperlink:visited {
+    -fx-text-fill: -vn-accent-ink;
 }
 
 .danger-button {
-    -fx-background-color: transparent;
-    -fx-text-fill: #ff8f8f;
-    -fx-border-color: #5a2a2e;
-    -fx-border-radius: 8;
+    -fx-text-fill: -vn-danger;
+    -fx-border-color: -vn-danger;
 }
 
 .danger-button:hover {
-    -fx-background-color: #3a1d20;
+    -fx-background-color: -vn-danger-bg;
 }
 
 .small-button {
-    -fx-font-size: 12px;
-    -fx-padding: 6 10;
-    -fx-background-color: transparent;
-    -fx-border-color: -border;
-    -fx-border-radius: 8;
-}
-
-.small-button:hover {
-    -fx-background-color: -bg-light;
+    -fx-font-size: 13px;
+    -fx-padding: 0 12 0 12;
 }
 
 .icon-button {
-    -fx-background-color: transparent;
-    -fx-border-color: -border;
-    -fx-border-radius: 8;
-    -fx-padding: 5 9;
-    -fx-min-width: 32;
+    -fx-padding: 0;
+    -fx-min-width: 44;
+    -fx-pref-width: 44;
 }
 
-.icon-button:hover {
-    -fx-background-color: -bg-light;
+/* "✓ En tu biblioteca": texto azul sin borde */
+.in-library {
+    -fx-text-fill: -vn-blue;
+    -fx-font-family: "Inter Medium";
+    -fx-font-size: 13px;
 }
 
-/* ---------------------------------------------------------------- pastillas de estado */
+/* ===================================================================== Etiquetas de estado */
 
 .pill {
+    -fx-font-family: "Inter SemiBold";
     -fx-font-size: 11px;
-    -fx-font-weight: bold;
-    -fx-padding: 2 8;
-    -fx-background-radius: 10;
+    -fx-padding: 2 9 2 9;
+    -fx-background-radius: 999;   /* totalmente redondeada */
 }
 
-.pill-completed, .pill-route { -fx-background-color: -blue-bg;   -fx-text-fill: -blue; }
-.pill-in-progress            { -fx-background-color: -orange-bg; -fx-text-fill: -orange; }
-.pill-pending                { -fx-background-color: -bg-light;  -fx-text-fill: #c9cad1; }
-.pill-spoiler                { -fx-background-color: #4a3d1c;    -fx-text-fill: #ffe2a0; }
+.pill-completed, .pill-route { -fx-background-color: -vn-blue-bg;   -fx-text-fill: -vn-blue; }
+.pill-in-progress            { -fx-background-color: -vn-orange-bg; -fx-text-fill: -vn-orange; }
+.pill-pending                { -fx-background-color: -vn-grey-bg;   -fx-text-fill: -vn-grey; }
+.pill-spoiler                { -fx-background-color: -vn-orange-bg; -fx-text-fill: -vn-orange; }
 
 .badge {
     -fx-font-size: 11px;
-    -fx-padding: 2 8;
-    -fx-background-radius: 10;
-    -fx-border-color: -border;
-    -fx-border-radius: 10;
-    -fx-text-fill: -text-muted;
+    -fx-padding: 2 8 2 8;
+    -fx-background-radius: 999;
+    -fx-border-color: -vn-border2;
+    -fx-border-radius: 999;
+    -fx-text-fill: -vn-muted;
 }
 
-/* ---------------------------------------------------------------- campos de texto y casillas */
+/* ===================================================================== Campos y casillas */
 
 .text-field {
-    -fx-background-color: -bg-card;
-    -fx-text-fill: -text;
-    -fx-prompt-text-fill: -text-muted;
-    -fx-background-radius: 8;
-    -fx-border-color: -border;
-    -fx-border-radius: 8;
-    -fx-padding: 8 12;
+    -fx-background-color: -vn-surface;
+    -fx-background-radius: 10;
+    -fx-border-color: -vn-border2;
+    -fx-border-radius: 10;
+    -fx-text-fill: -vn-text;
+    -fx-prompt-text-fill: -vn-faint;
+    -fx-highlight-fill: -vn-accent;
+    -fx-highlight-text-fill: -vn-onaccent;
+    -fx-padding: 0 14 0 14;
+    -fx-min-height: 46;
+    -fx-font-size: 15px;
 }
 
 .text-field:focused {
-    -fx-border-color: derive(-accent, -25%);
+    -fx-border-color: -vn-accent-ink;
 }
 
 .text-area {
-    -fx-text-fill: -text;
-    -fx-prompt-text-fill: -text-muted;
+    -fx-text-fill: -vn-text;
+    -fx-prompt-text-fill: -vn-faint;
+    -fx-background-color: -vn-border2;
+    -fx-background-radius: 10;
 }
 
 .text-area .content {
-    -fx-background-color: -bg-card;
+    -fx-background-color: -vn-surface;
+    -fx-background-radius: 10;
 }
 
 .check-box {
-    -fx-text-fill: -text;
+    -fx-text-fill: -vn-text;
+    -fx-min-height: 44;
+    -fx-cursor: hand;
 }
 
 .check-box > .box {
-    -fx-background-color: -bg-light;
+    -fx-background-color: -vn-surface;
+    -fx-border-color: -vn-border2;
+    -fx-border-radius: 4;
     -fx-background-radius: 4;
 }
 
 .check-box:selected > .box {
-    -fx-background-color: -accent;
+    -fx-background-color: -vn-accent;
+    -fx-border-color: -vn-accent;
 }
 
 .check-box:selected > .box > .mark {
-    -fx-background-color: -accent-text;
+    -fx-background-color: -vn-onaccent;
 }
 
-/* ---------------------------------------------------------------- listas y scroll */
+/* ===================================================================== Desplegables y menús */
 
-.split-pane {
+.combo-box-base {
     -fx-background-color: transparent;
-    -fx-padding: 0;
-}
-
-.split-pane > .split-pane-divider {
-    -fx-background-color: -bg;
-    -fx-padding: 0 3;
-}
-
-.list-view {
-    -fx-background-color: -bg-card;
-    -fx-background-insets: 0;
     -fx-background-radius: 10;
+    -fx-border-color: -vn-border2;
+    -fx-border-radius: 10;
+    -fx-min-height: 44;
 }
 
-.list-cell {
-    -fx-background-color: -bg-card;
-    -fx-padding: 9 12;
+.combo-box > .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: -vn-text;
+    -fx-padding: 0 8 0 12;
 }
 
-.list-cell:filled:hover {
-    -fx-background-color: -bg-light;
+.combo-box > .arrow-button > .arrow {
+    -fx-background-color: -vn-muted;
 }
 
-.list-cell:filled:selected {
-    -fx-background-color: derive(-accent, -62%);
+.combo-box-popup > .list-view {
+    -fx-background-color: -vn-surface;
+    -fx-border-color: -vn-border;
 }
 
-.result-title {
-    -fx-font-weight: bold;
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell {
+    -fx-background-color: -vn-surface;
+    -fx-text-fill: -vn-text;
+    -fx-padding: 10 12 10 12;
 }
 
-.result-subtitle {
-    -fx-text-fill: -text-muted;
-    -fx-font-size: 12px;
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:hover,
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:selected {
+    -fx-background-color: -vn-sel;
+}
+
+.context-menu {
+    -fx-background-color: -vn-surface;
+    -fx-border-color: -vn-border;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+}
+
+.context-menu .menu-item .label {
+    -fx-text-fill: -vn-text;
+}
+
+.context-menu .menu-item:focused {
+    -fx-background-color: -vn-sel;
+}
+
+.context-menu .separator .line {
+    -fx-border-color: -vn-border;
+}
+
+.tooltip {
+    -fx-background-color: -vn-surface;
+    -fx-text-fill: -vn-text;
+    -fx-font-size: 13px;
+    -fx-background-radius: 8;
+}
+
+/* ===================================================================== Barras, scroll, listas */
+
+.progress-indicator {
+    -fx-progress-color: -vn-accent-ink;
+}
+
+.progress-bar > .track {
+    -fx-background-color: -vn-track;
+    -fx-background-insets: 0;
+    -fx-background-radius: 3;
+}
+
+.progress-bar > .bar {
+    -fx-background-color: -vn-blue;
+    -fx-background-insets: 0;
+    -fx-background-radius: 3;
+    -fx-padding: 2;
 }
 
 .scroll-bar {
@@ -334,7 +542,7 @@
 }
 
 .scroll-bar .thumb {
-    -fx-background-color: -bg-light;
+    -fx-background-color: -vn-border2;
     -fx-background-radius: 4;
 }
 
@@ -349,227 +557,204 @@
     -fx-padding: 0;
 }
 
-/* ScrollPane sin fondo blanco ni borde */
+/* ScrollPane sin fondo propio ni borde */
 .plain-scroll,
 .plain-scroll > .viewport {
-    -fx-background-color: -bg;
+    -fx-background-color: transparent;
     -fx-background-insets: 0;
     -fx-padding: 0;
 }
 
-.detail-scroll,
-.detail-scroll > .viewport {
-    -fx-background-color: -bg-card;
-    -fx-background-insets: 0;
+/* ===================================================================== Imágenes */
+
+.cover {
+    -fx-background-color: -vn-surface2;
+    -fx-background-radius: 10;
 }
 
-.detail-pane {
-    -fx-padding: 16 20;
+/* Fondo de las iniciales cuando no hay imagen (la clase la elige CoverView según el nombre) */
+.cover.avatar-1 { -fx-background-color: -vn-avatar-1; }
+.cover.avatar-2 { -fx-background-color: -vn-avatar-2; }
+.cover.avatar-3 { -fx-background-color: -vn-avatar-3; }
+.cover.avatar-4 { -fx-background-color: -vn-avatar-4; }
+.cover.avatar-5 { -fx-background-color: -vn-avatar-5; }
+.cover.avatar-6 { -fx-background-color: -vn-avatar-6; }
+
+.initials, .initials-small {
+    -fx-font-family: "Zen Kaku Gothic New";
+    -fx-font-weight: bold;
+    -fx-text-fill: -vn-avatar-text;
 }
 
-.progress-bar > .track {
-    -fx-background-color: -bg-light;
-    -fx-background-insets: 0;
-    -fx-background-radius: 3;
+.initials       { -fx-font-size: 32px; }
+.initials-small { -fx-font-size: 13px; }
+
+.sensitive-badge {
+    -fx-background-color: -vn-overlay;
+    -fx-text-fill: -vn-text;
+    -fx-font-size: 11px;
+    -fx-padding: 2 6 2 6;
 }
 
-.progress-bar > .bar {
-    -fx-background-color: -blue;
-    -fx-background-insets: 0;
-    -fx-background-radius: 3;
-    -fx-padding: 2;
+/* ===================================================================== Búsqueda */
+
+.result-card {
+    -fx-background-color: -vn-surface;
+    -fx-background-radius: 14;
+    -fx-border-color: -vn-border;
+    -fx-border-radius: 14;
+    -fx-padding: 14;
+    -fx-cursor: hand;
 }
 
-/* ---------------------------------------------------------------- biblioteca */
+.result-card:hover {
+    -fx-border-color: -vn-border2;
+}
+
+.result-card.selected {
+    -fx-background-color: -vn-sel;
+    -fx-border-color: -vn-accent-ink;
+}
+
+.preview-card {
+    -fx-padding: 20;
+}
+
+.preview-heading {
+    -fx-font-family: "Inter SemiBold";
+    -fx-text-fill: -vn-text;
+}
+
+/* ===================================================================== Biblioteca */
 
 .tile {
     -fx-padding: 6;
-    -fx-background-radius: 10;
+    -fx-background-radius: 14;
+    -fx-cursor: hand;
 }
 
 .tile:hover {
-    -fx-background-color: -bg-card;
+    -fx-background-color: -vn-surface;
 }
 
-.tile-title {
-    -fx-font-size: 13px;
-    -fx-font-weight: bold;
-}
-
-.cover {
-    -fx-background-color: -bg-card;
-    -fx-background-radius: 8;
-}
-
-.sensitive-badge {
-    -fx-background-color: rgba(0, 0, 0, 0.7);
-    -fx-text-fill: #ffb4b4;
-    -fx-font-size: 11px;
-    -fx-padding: 2 6;
-}
-
-/* Iniciales ("Sa") cuando no hay imagen; el color de fondo lo pone el código */
-.initials {
-    -fx-font-size: 30px;
-    -fx-font-weight: bold;
-    -fx-text-fill: rgba(255, 255, 255, 0.85);
-}
-
-.initials-small {
-    -fx-font-size: 13px;
-    -fx-font-weight: bold;
-    -fx-text-fill: rgba(255, 255, 255, 0.9);
-}
-
-/* ---------------------------------------------------------------- ficha de VN */
-
-.detail-title {
-    -fx-font-size: 30px;
-    -fx-font-weight: bold;
-}
-
-.description {
-    -fx-line-spacing: 3px;
-    -fx-text-fill: #c9cad1;
-}
+/* ===================================================================== Ficha de VN */
 
 .stat-card {
-    -fx-background-color: -bg-card;
-    -fx-background-radius: 10;
-    -fx-border-color: -border;
-    -fx-border-radius: 10;
-    -fx-padding: 10 14;
+    -fx-background-color: -vn-surface;
+    -fx-background-radius: 12;
+    -fx-border-color: -vn-border;
+    -fx-border-radius: 12;
+    -fx-padding: 10 14 10 14;
     -fx-spacing: 4;
     -fx-min-width: 160;
 }
 
 .stat-label {
     -fx-font-size: 12px;
-    -fx-text-fill: -text-muted;
+    -fx-text-fill: -vn-muted;
 }
 
 .stat-value {
-    -fx-font-size: 16px;
-    -fx-font-weight: bold;
+    -fx-font-family: "Inter SemiBold";
+    -fx-font-size: 17px;
+    -fx-text-fill: -vn-text;
 }
 
 .exe-path {
     -fx-font-size: 12px;
-    -fx-text-fill: -text-muted;
+    -fx-text-fill: -vn-muted;
 }
 
-/* ---------------------------------------------------------------- personajes */
+/* ===================================================================== Personajes */
 
 .character-card {
-    -fx-background-color: -bg-card;
-    -fx-background-radius: 10;
-    -fx-border-color: -border;
-    -fx-border-radius: 10;
+    -fx-background-color: -vn-surface;
+    -fx-background-radius: 14;
+    -fx-border-color: -vn-border;
+    -fx-border-radius: 14;
     -fx-padding: 8;
 }
 
 .character-name {
-    -fx-font-weight: bold;
-    -fx-font-size: 13px;
+    -fx-font-size: 14px;
 }
 
 .spoiler-placeholder {
-    -fx-background-color: #24252d;
-    -fx-background-radius: 8;
+    -fx-background-color: -vn-surface2;
+    -fx-background-radius: 10;
 }
 
-.tooltip {
-    -fx-font-size: 13px;
-    -fx-background-color: #0d0e12;
-    -fx-text-fill: -text;
-}
-
-/* ---------------------------------------------------------------- rutas */
+/* ===================================================================== Rutas */
 
 .route-row {
-    -fx-background-color: -bg-card;
-    -fx-background-radius: 10;
-    -fx-border-color: -border;
-    -fx-border-radius: 10;
-    -fx-padding: 10 14;
+    -fx-background-color: -vn-surface;
+    -fx-background-radius: 12;
+    -fx-border-color: -vn-border;
+    -fx-border-radius: 12;
+    -fx-padding: 10 14 10 14;
 }
 
 /* Mientras se arrastra otra ruta por encima: línea rosa arriba o abajo */
-.route-row.drop-above { -fx-border-color: -accent -border -border -border; -fx-border-width: 3 1 1 1; }
-.route-row.drop-below { -fx-border-color: -border -border -accent -border; -fx-border-width: 1 1 3 1; }
+.route-row.drop-above { -fx-border-color: -vn-accent -vn-border -vn-border -vn-border; -fx-border-width: 3 1 1 1; }
+.route-row.drop-below { -fx-border-color: -vn-border -vn-border -vn-accent -vn-border; -fx-border-width: 1 1 3 1; }
 .route-row.dragging   { -fx-opacity: 0.4; }
 
 .drag-handle {
-    -fx-text-fill: -text-muted;
+    -fx-text-fill: -vn-faint;
     -fx-font-size: 16px;
     -fx-cursor: move;
 }
 
 .route-order {
+    -fx-font-family: "Inter Medium";
     -fx-font-size: 18px;
-    -fx-font-weight: bold;
-    -fx-text-fill: -text-muted;
+    -fx-text-fill: -vn-faint;
     -fx-min-width: 22;
 }
 
 .route-name {
-    -fx-font-weight: bold;
-    -fx-font-size: 15px;
+    -fx-font-size: 16px;
 }
 
 .route-notes {
     -fx-font-size: 12px;
-    -fx-text-fill: #b9bac3;
+    -fx-text-fill: -vn-text2;
 }
 
-/* Desplegable de estado de cada ruta, con aspecto de pastilla */
-.status-box {
-    -fx-background-radius: 12;
-    -fx-font-size: 12px;
-    -fx-font-weight: bold;
-}
-
-.status-box.pill-completed   > .list-cell { -fx-text-fill: -blue; }
-.status-box.pill-in-progress > .list-cell { -fx-text-fill: -orange; }
-.status-box.pill-pending     > .list-cell { -fx-text-fill: #c9cad1; }
-
-/* ---------------------------------------------------------------- desplegables */
-
-.combo-box-base {
-    -fx-background-color: -bg-light;
-    -fx-background-radius: 8;
-}
-
-.combo-box > .list-cell {
+/* Desplegable de estado de cada ruta: zona clicable de 44 px y, dentro, una pastilla */
+.combo-box-base.status-box {
+    -fx-border-color: transparent;
     -fx-background-color: transparent;
-    -fx-text-fill: -text;
-    -fx-padding: 3 8;
+    -fx-padding: 9 0 9 0;   /* 44 px de zona clicable, pero la pastilla de dentro queda pequeña */
 }
 
-.combo-box > .arrow-button > .arrow {
-    -fx-background-color: -text-muted;
+.status-box > .list-cell {
+    -fx-font-family: "Inter SemiBold";
+    -fx-font-size: 12px;
+    -fx-padding: 3 10 3 10;
+    -fx-background-radius: 999;
 }
 
-.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell {
-    -fx-text-fill: -text;
-    -fx-padding: 6 10;
-}
+.status-box.pill-completed   > .list-cell { -fx-background-color: -vn-blue-bg;   -fx-text-fill: -vn-blue; }
+.status-box.pill-in-progress > .list-cell { -fx-background-color: -vn-orange-bg; -fx-text-fill: -vn-orange; }
+.status-box.pill-pending     > .list-cell { -fx-background-color: -vn-grey-bg;   -fx-text-fill: -vn-grey; }
 
-/* ---------------------------------------------------------------- diálogos */
+/* ===================================================================== Diálogos */
 
 .dialog-pane {
-    -fx-background-color: -bg;
+    -fx-background-color: -vn-bg;
 }
 
 .dialog-pane > .header-panel {
-    -fx-background-color: -bg-sidebar;
+    -fx-background-color: -vn-side;
 }
 
 .dialog-pane > .header-panel .label {
-    -fx-font-size: 15px;
+    -fx-font-family: "Zen Kaku Gothic New";
     -fx-font-weight: bold;
+    -fx-font-size: 17px;
 }
 
 .dialog-pane > .content.label {
-    -fx-text-fill: -text;
+    -fx-text-fill: -vn-text;
 }

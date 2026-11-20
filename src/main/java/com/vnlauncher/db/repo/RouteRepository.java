@@ -3,6 +3,7 @@ package com.vnlauncher.db.repo;
 import com.vnlauncher.db.Database;
 import com.vnlauncher.model.Route;
 import com.vnlauncher.model.RouteStatus;
+import com.vnlauncher.model.RouteSummary;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -12,7 +13,9 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /** Acceso a la tabla route. Aquí solo hay SQL: las reglas (orden, fecha de completado...) están en RouteService. */
@@ -110,6 +113,30 @@ public class RouteRepository {
                 }
             }
             return routes;
+        }
+    }
+
+    /**
+     * Recuento de rutas por VN con una sola consulta. GROUP BY agrupa las filas de cada vn_id;
+     * SUM(status = 'COMPLETED') cuenta las completadas porque en SQLite una comparación vale 1 o 0.
+     */
+    public Map<String, RouteSummary> summariesByVn() throws SQLException {
+        try (Connection conn = db.getConnection();
+             PreparedStatement ps = conn.prepareStatement("""
+                     SELECT vn_id,
+                            COUNT(*)                     AS total,
+                            SUM(status = 'COMPLETED')    AS completed,
+                            SUM(status = 'IN_PROGRESS')  AS in_progress
+                     FROM route
+                     GROUP BY vn_id
+                     """);
+             ResultSet rs = ps.executeQuery()) {
+            Map<String, RouteSummary> result = new HashMap<>();
+            while (rs.next()) {
+                result.put(rs.getString("vn_id"), new RouteSummary(
+                        rs.getInt("total"), rs.getInt("completed"), rs.getInt("in_progress")));
+            }
+            return result;
         }
     }
 

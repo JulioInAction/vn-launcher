@@ -123,6 +123,7 @@ public class VnDetailController {
         routesPane.setOnRoutesChanged(changed -> {
             routes = changed;
             renderRouteStats();
+            navigator.refreshSidebar(); // las estanterías dependen de las rutas
             renderCharacters(); // actualizar "Tiene ruta" / "Marcar con ruta"
         });
         routesContainer.getChildren().add(routesPane);
@@ -165,7 +166,7 @@ public class VnDetailController {
         titleLabel.setText(vn.title());
         altTitleLabel.setText(vn.altTitle() == null ? "" : vn.altTitle());
         altTitleLabel.setManaged(vn.altTitle() != null);
-        metaLabel.setText(SearchResultCell.subtitle(vn));
+        metaLabel.setText(SearchController.meta(vn));
         renderDescription(vn.description());
 
         renderLaunchInfo(loaded);
@@ -249,6 +250,7 @@ public class VnDetailController {
                             ? "Juego lanzado con permisos de administrador. ¡A jugar!"
                             : "Juego lanzado. ¡A jugar!");
                     reloadLaunchInfo();
+                    navigator.refreshSidebar(); // "Recientes" y estantería "Jugando"
                     // Volver a habilitar "Jugar" pasados unos segundos (evita lanzarlo dos veces
                     // con un doble clic). En la Fase 6 mostrará "Jugando..." mientras siga abierto.
                     PauseTransition pause = new PauseTransition(Duration.seconds(4));
