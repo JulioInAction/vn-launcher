@@ -30,7 +30,6 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 
-import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -255,7 +254,7 @@ public class LibraryController implements PlaytimeAware {
         LibraryEntry entry = recent.getFirst();
         VisualNovel vn = entry.vn();
 
-        CoverView cover = new CoverView(coverFile(vn), isSensitive(vn), 62, 93, vn.title());
+        CoverView cover = new CoverView(Covers.file(ctx, entry), Covers.sensitive(ctx, entry), 62, 93, vn.title());
         cover.setRevealed(showSensitiveCheck.isSelected());
 
         Label caps = new Label("CONTINUAR");
@@ -337,11 +336,13 @@ public class LibraryController implements PlaytimeAware {
     }
 
     private VBox createTile(LibraryItem item) {
-        VisualNovel vn = item.entry().vn();
-        // Portada aún sin descargar: hueco vacío (marcador de posición) en vez de iniciales
-        CoverView cover = ctx.libraryService().coverPending(vn)
+        LibraryEntry entry = item.entry();
+        VisualNovel vn = entry.vn();
+        // Portada de VNDB aún sin descargar (y ninguna elegida): hueco vacío en vez de iniciales
+        CoverView cover = ctx.libraryService().coverPending(vn) && !ctx.coverService().hasOverride(entry)
                 ? new CoverView((String) null, false, COVER_WIDTH, COVER_HEIGHT, null)
-                : new CoverView(coverFile(vn), isSensitive(vn), COVER_WIDTH, COVER_HEIGHT, vn.title());
+                : new CoverView(Covers.file(ctx, entry), Covers.sensitive(ctx, entry), COVER_WIDTH, COVER_HEIGHT,
+                vn.title());
         cover.setRevealed(showSensitiveCheck.isSelected());
         covers.add(cover);
 
@@ -377,13 +378,7 @@ public class LibraryController implements PlaytimeAware {
         return tile;
     }
 
-    private Path coverFile(VisualNovel vn) {
-        return vn.imagePath() == null ? null : ctx.imageCache().resolve(vn.imagePath());
-    }
 
-    private boolean isSensitive(VisualNovel vn) {
-        return ctx.contentFilter().isSensitive(vn.imageSexual(), vn.imageViolence());
-    }
 
     /** Texto en singular para la pastilla de cada tarjeta. */
     static String statusLabel(PlayStatus status) {

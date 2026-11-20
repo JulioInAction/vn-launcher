@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.vnlauncher.api.dto.CharacterDto;
+import com.vnlauncher.api.dto.ReleaseDto;
 import com.vnlauncher.api.dto.VnDto;
 import com.vnlauncher.api.dto.VndbQuery;
 import com.vnlauncher.api.dto.VndbResponse;
@@ -46,6 +47,11 @@ public class VndbClient {
     static final String CHARACTER_FIELDS = "id, name, original, description, "
             + "image.url, image.sexual, image.violence, "
             + "vns.id, vns.role, vns.spoiler";
+
+    /** Campos de las ediciones para la galería de portadas: sus imágenes con idioma, tipo y valoración. */
+    static final String RELEASE_IMAGE_FIELDS = "id, title, released, languages.lang, "
+            + "images.id, images.url, images.thumbnail, images.type, images.languages, images.vn, "
+            + "images.sexual, images.violence";
 
     /** Tope de páginas por consulta, por si acaso: 10 páginas = 1000 personajes. */
     static final int MAX_PAGES = 10;
@@ -92,6 +98,17 @@ public class VndbClient {
     public Optional<VnDto> vnById(String id) throws VndbException {
         VndbQuery query = new VndbQuery(List.of("id", "=", id), VN_FIELDS, null, 1, null);
         return post("vn", query, VnDto.class).results().stream().findFirst();
+    }
+
+    /**
+     * Ediciones de una VN con sus imágenes (cajas, discos, portadas digitales), de la más antigua
+     * a la más nueva. UNA sola petición de hasta 100 ediciones: casi ninguna VN tiene más
+     * (CLANNAD, con todas sus versiones, tiene 66).
+     */
+    public List<ReleaseDto> releasesWithImages(String vnId) throws VndbException {
+        VndbQuery query = new VndbQuery(List.of("vn", "=", List.of("id", "=", vnId)),
+                RELEASE_IMAGE_FIELDS, "released", 100, null);
+        return post("release", query, ReleaseDto.class).results();
     }
 
     /**

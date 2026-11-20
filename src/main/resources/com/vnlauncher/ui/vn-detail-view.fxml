@@ -33,7 +33,8 @@
             <!-- Aquí VnDetailController pone un CoverView cuando carga la VN.
                  alignment TOP_CENTER: el HBox estira este hueco a toda la altura de la fila
                  y sin esto la portada saldría centrada en vertical. -->
-            <StackPane fx:id="coverBox" alignment="TOP_CENTER" minWidth="220" minHeight="330"/>
+            <!-- 330 de portada + 50 reservados debajo para el control «Cambiar portada» -->
+            <StackPane fx:id="coverBox" alignment="TOP_CENTER" minWidth="220" minHeight="380"/>
 
             <VBox spacing="12" HBox.hgrow="ALWAYS">
                 <VBox spacing="4">

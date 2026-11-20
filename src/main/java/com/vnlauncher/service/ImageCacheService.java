@@ -46,7 +46,15 @@ public class ImageCacheService {
         // Barras "/" también en Windows: Path las acepta, y así la ruta guardada en la BD
         // es la misma en cualquier sistema.
         String relative = "images/" + folder + "/" + id + extensionOf(url);
-        Path target = resolve(relative);
+        downloadTo(url, resolve(relative));
+        return relative;
+    }
+
+    /**
+     * Descarga {@code url} en {@code target} (ruta absoluta), reemplazando lo que hubiera.
+     * La usan download() y las portadas elegidas en la galería, que van fuera de images/.
+     */
+    public void downloadTo(String url, Path target) throws IOException, InterruptedException {
         Files.createDirectories(target.getParent());
 
         // Se descarga a un fichero temporal ".part" y al terminar se renombra. Si la descarga
@@ -64,8 +72,7 @@ public class ImageCacheService {
             throw new IOException("Error " + response.statusCode() + " descargando " + url);
         }
         Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        LOG.log(System.Logger.Level.INFO, "Imagen descargada: {0}", relative);
-        return relative;
+        LOG.log(System.Logger.Level.INFO, "Imagen descargada: {0}", target.getFileName());
     }
 
     /** Ruta relativa de la BD → ruta absoluta en disco. */

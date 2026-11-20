@@ -793,6 +793,141 @@
     -fx-font-size: 16px;
 }
 
+/* ===================================================================== Cambiar portada
+   Control bajo la portada de la ficha (CoverChanger) y galería (CoverGallery).
+   portada-estados.png y portada-galeria.png */
+
+.cover-changer-bar {
+    -fx-fill: -vn-accent;
+}
+
+.cover-changer-arrow {
+    -fx-fill: transparent;
+    -fx-stroke: -vn-on-accent;
+    -fx-stroke-width: 1.8;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+}
+
+.cover-changer-arrow-box {
+    -fx-fill: transparent;   /* solo marca la caja de 14 × 14 para que la flecha gire sobre su centro */
+}
+
+.cover-changer-icon {
+    -fx-fill: transparent;
+    -fx-stroke: -vn-on-accent;
+    -fx-stroke-width: 1.6;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+}
+
+.cover-changer-text {
+    -fx-font-family: "Inter SemiBold";
+    -fx-text-fill: -vn-on-accent;
+}
+
+/* Contorno del foco del teclado, separado 4 px del botón */
+.cover-changer-focus {
+    -fx-fill: transparent;
+    -fx-stroke: -vn-text;
+    -fx-stroke-width: 2;
+}
+
+/* --- Galería */
+.gallery-tile {
+    -fx-cursor: hand;
+}
+
+/* Marco de la miniatura: borde rosa cuando está elegida */
+.gallery-frame {
+    -fx-background-color: transparent;
+    -fx-background-radius: 13;
+    -fx-border-color: transparent;
+    -fx-border-width: 2;
+    -fx-border-radius: 13;
+    -fx-padding: 3;
+}
+
+.gallery-tile:selected .gallery-frame {
+    -fx-border-color: -vn-accent-ink;
+}
+
+.gallery-tile:focused .gallery-frame {
+    -fx-border-color: -vn-border2;
+}
+
+.gallery-tile:selected:focused .gallery-frame {
+    -fx-border-color: -vn-accent-ink;
+}
+
+.gallery-name {
+    -fx-font-family: "Inter SemiBold";
+    -fx-font-size: 15px;   /* más pequeño que el texto normal: las tarjetas miden 138 px */
+    -fx-text-fill: -vn-text;
+}
+
+.gallery-detail {
+    -fx-font-size: 14px;
+    -fx-text-fill: -vn-muted;
+}
+
+/* Círculo con la marca de la elegida, arriba a la izquierda */
+.gallery-check {
+    -fx-background-color: -vn-accent;
+    -fx-background-radius: 999;
+    -fx-min-width: 24;
+    -fx-min-height: 24;
+    -fx-max-width: 24;
+    -fx-max-height: 24;
+}
+
+.gallery-check-mark {
+    -fx-fill: transparent;
+    -fx-stroke: -vn-on-accent;
+    -fx-stroke-width: 2;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+}
+
+/* «Actual»: pastilla oscura abajo a la izquierda de la portada que se usa ahora */
+.gallery-current {
+    -fx-background-color: -vn-bg;
+    -fx-text-fill: -vn-text;
+    -fx-background-radius: 999;
+    -fx-padding: 2 9 2 9;
+    -fx-font-family: "Inter SemiBold";
+    -fx-font-size: 14px;
+}
+
+/* Tarjeta «Elegir archivo…»: recuadro discontinuo */
+.gallery-file {
+    -fx-background-color: -vn-surface;
+    -fx-background-radius: 10;
+    -fx-border-color: -vn-border2;
+    -fx-border-style: dashed;
+    -fx-border-radius: 10;
+}
+
+.gallery-file-text {
+    -fx-text-fill: -vn-muted;
+}
+
+/* «Volver a la de VNDB»: enlace en el color de acento */
+.button.accent-link {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: -vn-accent-ink;
+    -fx-padding: 0 10 0 6;
+}
+
+.button.accent-link:hover {
+    -fx-underline: true;
+}
+
+.button.accent-link:disabled {
+    -fx-text-fill: -vn-faint;
+}
+
 /* ===================================================================== Personajes */
 
 .character-card {

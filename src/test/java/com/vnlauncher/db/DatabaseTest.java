@@ -73,9 +73,9 @@ class DatabaseTest {
             throw new IllegalStateException(e);
         }
 
-        old.migrate(); // aplica las que faltan: 002 y 003
+        old.migrate(); // aplica las que faltan: de la 002 en adelante
 
-        assertEquals(3, old.schemaVersion());
+        assertEquals(Database.latestVersion(), old.schemaVersion());
         try (Connection c = old.getConnection(); Statement st = c.createStatement();
              ResultSet rs = st.executeQuery("SELECT duration_seconds, last_seen_at FROM play_session")) {
             assertTrue(rs.next());

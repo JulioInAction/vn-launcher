@@ -42,6 +42,7 @@ public final class AppPaths {
         try {
             Files.createDirectories(root);
             Files.createDirectories(imagesDir());
+            Files.createDirectories(coversDir());
         } catch (IOException e) {
             // UncheckedIOException: si no podemos crear la carpeta de datos la app no puede funcionar,
             // no tiene sentido obligar a cada llamador a capturar una excepción comprobada.
@@ -59,5 +60,13 @@ public final class AppPaths {
 
     public Path imagesDir() {
         return root.resolve("images");
+    }
+
+    /**
+     * Portadas elegidas por el usuario en la galería. Fuera de images/ a propósito: "Vaciar caché"
+     * borra images/, y un archivo propio no se podría volver a descargar.
+     */
+    public Path coversDir() {
+        return root.resolve("covers");
     }
 }

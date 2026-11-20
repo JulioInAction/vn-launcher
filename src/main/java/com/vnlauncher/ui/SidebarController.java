@@ -25,7 +25,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import javafx.util.Duration;
 
-import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -192,9 +191,7 @@ public class SidebarController {
         }
         for (LibraryEntry entry : recent) {
             var vn = entry.vn();
-            Path file = vn.imagePath() == null ? null : ctx.imageCache().resolve(vn.imagePath());
-            CoverView cover = new CoverView(file,
-                    ctx.contentFilter().isSensitive(vn.imageSexual(), vn.imageViolence()), 48, 72, vn.title());
+            CoverView cover = new CoverView(Covers.file(ctx, entry), Covers.sensitive(ctx, entry), 48, 72, vn.title());
             cover.getStyleClass().add("recent-cover");
             Tooltip.install(cover, new Tooltip(vn.title()));
             cover.setOnMouseClicked(event -> navigator.showVnDetail(vn.id()));

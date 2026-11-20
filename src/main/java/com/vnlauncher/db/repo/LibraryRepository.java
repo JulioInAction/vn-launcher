@@ -20,7 +20,8 @@ public class LibraryRepository {
 
     /** SELECT común: datos de la VN + columnas propias de la biblioteca. */
     private static final String SELECT_ENTRIES =
-            "SELECT " + VnRows.COLUMNS + ", l.added_at, l.exe_path, l.config_exe_path, l.use_locale_emulator, "
+            "SELECT " + VnRows.COLUMNS + ", l.added_at, l.exe_path, l.config_exe_path, l.cover_override, "
+                    + "l.use_locale_emulator, "
                     + "l.le_profile, l.last_played_at "
                     + "FROM library_entry l JOIN vn v ON v.id = l.vn_id ";
 
@@ -137,6 +138,21 @@ public class LibraryRepository {
         }
     }
 
+    /**
+     * Guarda la portada elegida en la galería.
+     *
+     * @param coverOverride ruta relativa a la carpeta de datos, o null para volver a la de VNDB
+     */
+    public void updateCoverOverride(String vnId, String coverOverride) throws SQLException {
+        try (Connection conn = db.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "UPDATE library_entry SET cover_override = ? WHERE vn_id = ?")) {
+            ps.setString(1, coverOverride);
+            ps.setString(2, vnId);
+            ps.executeUpdate();
+        }
+    }
+
     /** Cambia solo la opción de Locale Emulator (conserva el ejecutable). */
     public void updateUseLocaleEmulator(String vnId, boolean use) throws SQLException {
         try (Connection conn = db.getConnection();
@@ -167,6 +183,7 @@ public class LibraryRepository {
                 Instant.ofEpochSecond(rs.getLong("added_at")),
                 rs.getString("exe_path"),
                 rs.getString("config_exe_path"),
+                rs.getString("cover_override"),
                 rs.getInt("use_locale_emulator") == 1,
                 rs.getString("le_profile"),
                 lastPlayedAt);

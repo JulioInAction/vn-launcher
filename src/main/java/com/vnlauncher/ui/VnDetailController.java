@@ -174,7 +174,7 @@ public class VnDetailController implements PlaytimeAware {
                         navigator.showLibrary(); // ya no está en la biblioteca
                         return;
                     }
-                    renderVn(header.entry().get().vn());
+                    renderVn(header.entry().get());
                     renderLaunchInfo(header.entry().get());
                     removeButton.setDisable(false);
                     String when = header.fetchedAt()
@@ -186,11 +186,13 @@ public class VnDetailController implements PlaytimeAware {
                 error -> titleLabel.setText("Error: " + error.getMessage()));
     }
 
-    /** Datos de la VN que vienen de VNDB: portada, títulos, desarrollador y descripción. */
-    private void renderVn(VisualNovel vn) {
-        Path file = vn.imagePath() == null ? null : ctx.imageCache().resolve(vn.imagePath());
-        CoverView cover = new CoverView(file,
-                ctx.contentFilter().isSensitive(vn.imageSexual(), vn.imageViolence()), 220, 330, vn.title());
+    /**
+     * Portada (la elegida en la galería o la de VNDB) con su control «Cambiar portada» debajo, y
+     * los datos de la VN que vienen de VNDB: títulos, desarrollador y descripción.
+     */
+    private void renderVn(LibraryEntry loaded) {
+        VisualNovel vn = loaded.vn();
+        CoverView cover = new CoverView(Covers.file(ctx, loaded), Covers.sensitive(ctx, loaded), 220, 330, vn.title());
         if (cover.isSensitive()) {
             // Clic en la portada para mostrarla u ocultarla. Usamos un array de 1 elemento porque
             // una lambda solo puede usar variables locales "efectivamente finales": no podemos
@@ -203,7 +205,13 @@ public class VnDetailController implements PlaytimeAware {
                 cover.setRevealed(revealed[0]);
             });
         }
-        coverBox.getChildren().setAll(cover);
+        // Debajo, a 6 px, el control para cambiarla: siempre ocupa sus 44 px (50 en total con la
+        // separación), así que al abrirse no mueve nada
+        CoverChanger changer = new CoverChanger(cover, 220, () -> CoverGallery.show(playButton, ctx, loaded, () -> {
+            loadHeader();               // pinta la portada nueva
+            navigator.refreshSidebar(); // y en «Recientes»
+        }));
+        coverBox.getChildren().setAll(new VBox(CoverChanger.GAP, cover, changer));
 
         titleLabel.setText(vn.title());
         routesPane.setVnTitle(vn.title());

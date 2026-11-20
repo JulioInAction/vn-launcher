@@ -37,7 +37,11 @@ import javafx.stage.Window;
 class ModalDialog {
 
     /** Tipos de botón: dónde va y qué estilo tiene. */
-    enum ButtonKind { PRIMARY, SECONDARY, DANGER }
+    /**
+     * Tipos de botón: dónde va y qué estilo tiene. DANGER y LINK van abajo a la izquierda, como
+     * enlaces (rojo para "Eliminar ruta", color de acento para "Volver a la de VNDB").
+     */
+    enum ButtonKind { PRIMARY, SECONDARY, DANGER, LINK }
 
     private static final String ERROR_ICON = "M12 3A9 9 0 1 0 12.01 3Z M12 7.5V13 M12 16.4V16.6";
 
@@ -163,6 +167,10 @@ class ModalDialog {
             }
             case DANGER -> {
                 button.getStyleClass().add("danger-link");
+                leftButtons.getChildren().add(button);
+            }
+            case LINK -> {
+                button.getStyleClass().add("accent-link");
                 leftButtons.getChildren().add(button);
             }
         }

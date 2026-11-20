@@ -31,7 +31,8 @@ public class Database {
     private static final List<String> MIGRATIONS = List.of(
             "migration/001_initial.sql",
             "migration/002_play_session_last_seen.sql",
-            "migration/003_library_config_exe.sql"
+            "migration/003_library_config_exe.sql",
+            "migration/004_library_cover_override.sql"
     );
 
     private final String url;
