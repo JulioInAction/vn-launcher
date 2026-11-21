@@ -2,10 +2,12 @@ package com.vnlauncher.app;
 
 import com.vnlauncher.model.Theme;
 import com.vnlauncher.model.WindowBounds;
+import com.vnlauncher.service.RestoreService;
 import com.vnlauncher.ui.DebugFailures;
 import com.vnlauncher.ui.ErrorReporter;
 import com.vnlauncher.ui.Fonts;
 import com.vnlauncher.ui.MainController;
+import com.vnlauncher.ui.StartupNotices;
 import com.vnlauncher.ui.Views;
 import com.vnlauncher.util.AppPaths;
 import javafx.application.Application;
@@ -20,6 +22,7 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.Optional;
 
 /**
@@ -43,24 +46,41 @@ public class Main extends Application {
 
     private AppContext context;
     private Stage stage;
+    /** El bloqueo de instancia única; se suelta al cerrar. null si no se pudo crear el archivo. */
+    private SingleInstance instance;
 
     @Override
     public void start(Stage stage) {
         this.stage = stage;
-        // 1. Lo primero, el registro: así queda constancia hasta de un fallo al arrancar
         AppPaths paths = AppPaths.fromEnvironment();
+        // 1. Si es un reinicio (tras preparar una copia para restaurar), esperar a que se cierre la
+        //    ventana anterior: hasta entonces la base de datos sigue siendo suya
+        String previousPid = getParameters().getNamed().get(Relauncher.WAIT_FOR_PID);
+        Relauncher.waitForPrevious(previousPid);
+        // 2. Solo una VN Launcher a la vez. Antes que el registro: dos procesos no deben escribir
+        //    en el mismo archivo
+        if (!acquireInstance(paths, previousPid != null)) {
+            Fonts.load();
+            StartupNotices.alreadyRunning();
+            Platform.exit();
+            return;
+        }
+        // 3. El registro: así queda constancia hasta de un fallo al arrancar
         Path logFile = setUpLogging(paths);
-        // 2. Manejador global de errores. Abre carpetas con getHostServices (el explorador de archivos)
+        // 4. Manejador global de errores. Abre carpetas con getHostServices (el explorador de archivos)
         ErrorReporter.install(logFile, uri -> getHostServices().showDocument(uri));
         // Las fuentes tienen que estar registradas antes de que se aplique el CSS (también el del
         // diálogo de error si falla el arranque)
         Fonts.load();
+        // 5. Lo que quedó pendiente (restaurar una copia) se termina ANTES de abrir la base de datos
+        Optional<RestoreService.Outcome> pending = RestoreService.applyPending(paths);
+        boolean restored = pending.filter(RestoreService.Outcome.Done.class::isInstance).isPresent();
 
         Theme theme;
         Optional<WindowBounds> savedWindow;
         try {
             DebugFailures.atStartup(); // solo con -Dvnlauncher.debug.fallo=arranque
-            context = AppContext.create(paths);
+            context = AppContext.create(paths, !restored);
             LOG.log(System.Logger.Level.INFO, "Arranque\n{0}",
                     SystemInfo.current(context.database().schemaVersion(), paths.root()));
             // Leer el tema guardado ANTES de crear la ventana, para que no se vea un "parpadeo"
@@ -76,7 +96,8 @@ public class Main extends Application {
             // getHostServices().showDocument(url) abre una URL en el navegador del sistema.
             // Se lo pasamos al controlador como una función, para no atarlo a la clase Application.
             Parent root = Views.load("main-view.fxml",
-                    new MainController(context, url -> getHostServices().showDocument(url), theme));
+                    new MainController(context, url -> getHostServices().showDocument(url), theme,
+                            Relauncher::start));
 
             // Sin tamaño: lo pone placeWindow (el de la última vez, o uno grande la primera)
             Scene scene = new Scene(root);
@@ -96,11 +117,31 @@ public class Main extends Application {
             context.startBackgroundMaintenance(); // copia semanal, si toca
             context.preMigrationBackupError().ifPresent(error ->
                     ErrorReporter.notifyUser(BACKUP_FAILED, BACKUP_FAILED_ADVICE, error));
+            pending.ifPresent(outcome -> StartupNotices.afterPendingOperation(root, outcome));
             DebugFailures.afterStartup(context); // solo con -Dvnlauncher.debug.fallo=fx|tarea|hilo
         } catch (Exception e) {
             // Un error aquí suele ser un fallo en el FXML (fx:id mal escrito, etc.)
             ErrorReporter.showStartupError("No se ha podido cargar la interfaz.", e);
             Platform.exit();
+        }
+    }
+
+    /**
+     * Se queda con el bloqueo de instancia única. Al reiniciar se reintenta un rato, por si la
+     * ventana anterior aún no lo ha soltado.
+     *
+     * @return false si ya hay otra VN Launcher abierta
+     */
+    private boolean acquireInstance(AppPaths paths, boolean relaunched) {
+        try {
+            instance = SingleInstance.acquire(paths.lockFile(), relaunched ? Relauncher.MAX_WAIT : Duration.ZERO)
+                    .orElse(null);
+            return instance != null;
+        } catch (IOException e) {
+            // Ni siquiera se puede crear el archivo (carpeta sin permisos...). Se sigue sin bloqueo:
+            // si la carpeta de datos no sirve, el arranque fallará enseguida con su propio aviso
+            LOG.log(System.Logger.Level.WARNING, "No se pudo crear el bloqueo de instancia única", e);
+            return true;
         }
     }
 
@@ -127,6 +168,10 @@ public class Main extends Application {
             context.shutdown();
         }
         LOG.log(System.Logger.Level.INFO, "Cierre");
+        // Lo último: desde aquí puede abrirse otra VN Launcher (la del reinicio está esperando)
+        if (instance != null) {
+            instance.close();
+        }
     }
 
     // ------------------------------------------------------------------ posición de la ventana

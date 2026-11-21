@@ -62,6 +62,21 @@ public final class AppPaths {
         return root.resolve("images");
     }
 
+    /** Bloqueo para que solo haya una VN Launcher abierta a la vez. Ver SingleInstance. */
+    public Path lockFile() {
+        return root.resolve("vn-launcher.lock");
+    }
+
+    /** Operación que se aplica al arrancar (restaurar una copia, importar un perfil). Ver PendingOperations. */
+    public Path pendingOperationFile() {
+        return root.resolve("operacion-pendiente.properties");
+    }
+
+    /** Base de datos que espera a sustituir a la actual en el próximo arranque. */
+    public Path stagedDatabaseFile() {
+        return root.resolve("restaurar.db");
+    }
+
     /** Copias de seguridad automáticas de la base de datos. Ver BackupService. */
     public Path backupsDir() {
         return root.resolve("backups");

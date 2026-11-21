@@ -6,6 +6,8 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.sqlite.SQLiteConfig;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -118,6 +120,42 @@ public class Database {
         }
         int version = schemaVersion();
         return version > 0 && version < latestVersion();
+    }
+
+    /**
+     * Resultado de comprobar un archivo de base de datos sin tocarlo (ver {@link #inspect}).
+     *
+     * @param intact        true si SQLite lo abre y {@code PRAGMA integrity_check} dice "ok"
+     * @param schemaVersion su versión del esquema (0 si no está intacto)
+     */
+    public record FileCheck(boolean intact, int schemaVersion) {
+    }
+
+    /**
+     * Comprueba otro archivo de base de datos (una copia de seguridad, un perfil importado) abriéndolo
+     * en SOLO LECTURA: no lo modifica ni le crea archivos -wal. Un archivo que no es una base de datos
+     * (o está dañado) da {@code intact = false}.
+     */
+    public static FileCheck inspect(Path file) {
+        if (!Files.isRegularFile(file)) {
+            return new FileCheck(false, 0);
+        }
+        SQLiteConfig config = new SQLiteConfig();
+        config.setReadOnly(true);
+        try (Connection conn = DriverManager.getConnection("jdbc:sqlite:" + file.toAbsolutePath(),
+                config.toProperties());
+             Statement st = conn.createStatement()) {
+            try (ResultSet rs = st.executeQuery("PRAGMA integrity_check")) {
+                if (!rs.next() || !"ok".equalsIgnoreCase(rs.getString(1))) {
+                    return new FileCheck(false, 0);
+                }
+            }
+            try (ResultSet rs = st.executeQuery("PRAGMA user_version")) {
+                return new FileCheck(true, rs.next() ? rs.getInt(1) : 0);
+            }
+        } catch (SQLException notADatabase) {
+            return new FileCheck(false, 0);
+        }
     }
 
     /**

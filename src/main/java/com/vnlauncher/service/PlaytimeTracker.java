@@ -96,6 +96,11 @@ public class PlaytimeTracker {
         return active.containsKey(vnId);
     }
 
+    /** ¿Hay algún juego abierto? (Restaurar una copia espera a que se cierren.) */
+    public boolean isAnyRunning() {
+        return !active.isEmpty();
+    }
+
     /** Empieza a vigilar un juego recién lanzado: crea su sesión "en curso". */
     public synchronized void track(LaunchedGame game) throws SQLException {
         long id = sessions.start(game.vnId(), game.startedAt());

@@ -97,9 +97,9 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
   de carga y de error, tema «Según el sistema»
 - [x] Fase 7: pulido («Actualizar desde VNDB», programa de configuración, instalador)
 - [ ] Fase 8: Discord Rich Presence
-- [ ] Versión 1.0 (en curso): registro de errores ✓, copias de seguridad automáticas ✓ (falta
-  restaurar), exportar e importar el perfil, estado manual, estanterías, ejecutables perdidos, vista previa de la ficha, búsqueda en
-  la biblioteca, aviso de actualizaciones
+- [ ] Versión 1.0 (en curso): registro de errores ✓, copias de seguridad automáticas ✓, restaurar
+  una copia ✓, exportar e importar el perfil, estado manual, estanterías, ejecutables perdidos,
+  vista previa de la ficha, búsqueda en la biblioteca, aviso de actualizaciones
 - Después de la 1.0: GitHub Action que construya el instalador al subir una etiqueta; en la 1.1,
   traducción completa al inglés (ResourceBundle, selector de idioma, plurales con MessageFormat y
   fechas según el idioma). Por eso el código nuevo escribe cada frase como una plantilla completa
@@ -203,7 +203,7 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
 
 - Copias automáticas de la base de datos en `backups/` dentro de la carpeta de datos
   (`BackupService`): antes de aplicar migraciones nuevas (al arrancar una versión nueva de la app),
-  una cada semana y, en las fases siguientes, antes de importar un perfil o de restaurar una copia.
+  una cada semana, antes de restaurar una copia y (en la fase siguiente) antes de importar un perfil.
   Se guardan las 5 últimas, de todos los tipos juntos.
 - Se hacen con `VACUUM INTO`: SQLite escribe una base nueva y compacta con el contenido de ese
   momento (también lo que aún está en el WAL) sin bloquear la app. Se escribe con otro nombre
@@ -219,6 +219,33 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
   se hacen siempre), se ven las copias que hay y se abre su carpeta.
 - Fechas en la interfaz con un patrón numérico fijo (`dd/MM/yyyy, HH:mm`, en `Formats`): no
   dependen de los datos de idioma de Java, que el instalador no incluye.
+
+### Restaurar una copia
+
+«Restaurar» en cada fila de la lista. La app **se reinicia** para aplicarla, en vez de cambiar la
+base de datos con todo abierto (conexiones, tareas en segundo plano, pantallas con datos viejos):
+al arrancar todavía no hay nada abierto, y el cambio es solo mover archivos.
+
+1. Con la app abierta (`RestoreService.prepare`): no se deja si hay un juego abierto (su tiempo de
+   juego se guardaría en la base que se va a sustituir); se comprueba la copia abriéndola en solo
+   lectura (`PRAGMA integrity_check` y que su esquema no sea más nuevo que el de la app); tras
+   confirmar, se aparta como `restaurar.db` (antes de nada: la copia «Antes de restaurar una
+   copia» puede borrar la más vieja, que podría ser la elegida), se hace esa copia y se apunta la
+   operación en `operacion-pendiente.properties`.
+2. Reinicio (`Relauncher`): se abre un proceso nuevo con `--esperar-pid=<pid>` y este se cierra. El
+   nuevo espera a que el viejo termine. Instalada, la app se vuelve a abrir con su `.exe` (jpackage
+   deja la ruta en la propiedad `jpackage.app-path`); en desarrollo, con el mismo `java` y los
+   mismos argumentos. Si no se puede, se avisa de que hay que abrirla a mano: lo pendiente se
+   termina igualmente en el siguiente arranque.
+3. Al arrancar, antes de abrir la base (`RestoreService.applyPending`): `library.db` se aparta como
+   `library.db.anterior` (con su `-wal`, que tiene cambios de la base vieja y estropearía la nueva),
+   se pone la copia y se comprueba que SQLite la lee. Si algo falla, vuelve la de antes. Se intenta
+   una sola vez, y al abrir la ventana se avisa de cómo ha ido («Copia restaurada» o el diálogo de
+   error). Si la copia es de una versión anterior, las migraciones la ponen al día.
+
+**Una sola ventana a la vez** (`SingleInstance`): al arrancar se coge un bloqueo del sistema sobre
+`vn-launcher.lock` (`FileChannel.tryLock`). Si otra VN Launcher lo tiene, sale «VN Launcher ya está
+abierto» y esta se cierra. Si la app se cierra de golpe, el sistema suelta el bloqueo solo.
 
 ## Pendiente
 

@@ -12,6 +12,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 
 import java.time.Duration;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 /**
@@ -29,6 +30,7 @@ public class MainController implements Navigator {
     @FXML private StackPane appRoot;
     @FXML private BorderPane root;
 
+    private final BooleanSupplier relauncher;
     private SidebarController sidebar;
     private ThemeManager themeManager;
     /** Controlador de la pantalla visible, para avisarle de cambios en el tiempo de juego. */
@@ -42,10 +44,16 @@ public class MainController implements Navigator {
     private Parent searchView;
     private SearchController searchController;
 
-    public MainController(AppContext context, Consumer<String> urlOpener, Theme initialTheme) {
+    /**
+     * @param relauncher abre una VN Launcher nueva que espera a que se cierre esta (para restaurar una
+     *                   copia); devuelve false si no ha podido
+     */
+    public MainController(AppContext context, Consumer<String> urlOpener, Theme initialTheme,
+                          BooleanSupplier relauncher) {
         this.context = context;
         this.urlOpener = urlOpener;
         this.initialTheme = initialTheme;
+        this.relauncher = relauncher;
     }
 
     /** FXMLLoader llama a initialize() automáticamente cuando ya ha rellenado los campos @FXML. */
@@ -159,7 +167,7 @@ public class MainController implements Navigator {
     @Override
     public void showSettings() {
         leaveSearch();
-        SettingsController settings = new SettingsController(context, themeManager, urlOpener);
+        SettingsController settings = new SettingsController(context, themeManager, urlOpener, relauncher);
         root.setCenter(Views.load("settings-view.fxml", settings));
         currentController = settings;
         sidebar.setActive(SidebarController.Section.SETTINGS);

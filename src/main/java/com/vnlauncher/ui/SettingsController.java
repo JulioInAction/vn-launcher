@@ -6,8 +6,10 @@ import com.vnlauncher.app.SystemInfo;
 import com.vnlauncher.model.BackupInfo;
 import com.vnlauncher.model.BlurLevel;
 import com.vnlauncher.model.Theme;
+import com.vnlauncher.service.InvalidBackupException;
 import com.vnlauncher.util.Formats;
 import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -17,6 +19,7 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -27,9 +30,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 /**
@@ -46,12 +51,29 @@ public class SettingsController {
     private static final String NO_BACKUPS = "Todavía no hay copias. La primera semanal se hace al abrir la app.";
     /** «Antes de actualizar a 1.0.0 · 2,4 MB» */
     private static final String BACKUP_DETAILS = "%s · %s";
+    private static final String RESTORE = "Restaurar";
+    private static final String GAME_RUNNING_TITLE = "Hay un juego abierto";
+    private static final String GAME_RUNNING = "Cierra el juego antes de restaurar una copia: VN Launcher "
+            + "se reinicia para aplicarla y se perdería el tiempo de juego de esta partida.";
+    private static final String CANNOT_RESTORE_TITLE = "No se puede restaurar esta copia";
+    private static final String CONFIRM_RESTORE_TITLE = "¿Restaurar esta copia?";
+    /** «… como estaba el 21/11/2026, 10:42 (Semanal). …» */
+    private static final String CONFIRM_RESTORE = "Tu biblioteca volverá a estar como estaba el %s (%s). "
+            + "Lo que hayas cambiado después no estará, pero antes se guarda una copia de cómo está ahora, "
+            + "por si quieres volver atrás. VN Launcher se reiniciará para aplicarla.";
+    private static final String CONFIRM_RESTORE_BUTTON = "Restaurar y reiniciar";
+    private static final String RESTART_MANUALLY_TITLE = "Vuelve a abrir VN Launcher";
+    private static final String RESTART_MANUALLY = "La copia está lista, pero VN Launcher no ha podido "
+            + "reiniciarse solo. Se va a cerrar: ábrelo otra vez para terminar de restaurarla.";
     private static final String COPY_SYSTEM_INFO = "Copiar información del sistema";
     private static final String COPIED = "✓  Copiada";
 
     private final AppContext ctx;
     private final ThemeManager themeManager;
     private final Consumer<String> urlOpener;
+    private final BooleanSupplier relauncher;
+    /** Los botones «Restaurar»: se desactivan todos mientras se prepara una. */
+    private final List<Button> restoreButtons = new ArrayList<>();
 
     @FXML private TextField lePathField;
     @FXML private Label leStatusLabel;
@@ -75,10 +97,12 @@ public class SettingsController {
     private final Segmented<BlurLevel> blur =
             new Segmented<>(Arrays.asList(BlurLevel.values()), BlurLevel::label);
 
-    SettingsController(AppContext ctx, ThemeManager themeManager, Consumer<String> urlOpener) {
+    SettingsController(AppContext ctx, ThemeManager themeManager, Consumer<String> urlOpener,
+                       BooleanSupplier relauncher) {
         this.ctx = ctx;
         this.themeManager = themeManager;
         this.urlOpener = urlOpener;
+        this.relauncher = relauncher;
     }
 
     @FXML
@@ -224,9 +248,10 @@ public class SettingsController {
 
     // =========================================================== Copias de seguridad
 
-    /** Una fila por copia: «21/11/2026, 10:42   Antes de actualizar a 1.0.0 · 2,4 MB». */
+    /** Una fila por copia: «21/11/2026, 10:42   Antes de actualizar a 1.0.0 · 2,4 MB   [Restaurar]». */
     private void renderBackups(List<BackupInfo> backups) {
         backupList.getChildren().clear();
+        restoreButtons.clear();
         if (backups.isEmpty()) {
             Label none = new Label(NO_BACKUPS);
             none.getStyleClass().add("muted");
@@ -235,12 +260,17 @@ public class SettingsController {
         }
         for (BackupInfo backup : backups) {
             Label date = new Label(Formats.DATE_TIME.format(backup.createdAt()));
-            date.getStyleClass().add("backup-date");
-            date.setMinWidth(Region.USE_PREF_SIZE);
+            date.getStyleClass().add("backup-date"); // ancho fijo en el CSS: las descripciones, en columna
             Label what = new Label(String.format(BACKUP_DETAILS, backup.description(),
                     Formats.fileSize(backup.sizeBytes())));
             what.getStyleClass().add("text2");
-            HBox row = new HBox(24, date, what);
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+            Button restore = new Button(RESTORE);
+            restore.setMinWidth(Region.USE_PREF_SIZE);
+            restore.setOnAction(event -> onRestore(backup));
+            restoreButtons.add(restore);
+            HBox row = new HBox(24, date, what, spacer, restore);
             row.setAlignment(Pos.CENTER_LEFT);
             row.getStyleClass().add("backup-row");
             if (!backupList.getChildren().isEmpty()) {
@@ -248,6 +278,65 @@ public class SettingsController {
             }
             backupList.getChildren().add(row);
         }
+    }
+
+    /**
+     * «Restaurar»: comprueba la copia, pide confirmación, la deja preparada (con una copia de cómo
+     * está todo ahora) y reinicia la app, que la pone en su sitio al arrancar (ver RestoreService).
+     */
+    private void onRestore(BackupInfo backup) {
+        // El tiempo de la partida en curso se guardaría en la base que se va a sustituir
+        if (ctx.launchService().isAnyRunning()) {
+            Dialogs.info(backupList, GAME_RUNNING_TITLE, GAME_RUNNING);
+            return;
+        }
+        setRestoring(true);
+        // Primero se comprueba (en segundo plano: lee la copia entera), para no preguntar en balde
+        BackgroundTasks.run(ctx.background(),
+                () -> {
+                    ctx.restoreService().check(backup.file());
+                    return backup;
+                },
+                checked -> confirmRestore(checked),
+                this::restoreFailed);
+    }
+
+    private void confirmRestore(BackupInfo backup) {
+        String message = String.format(CONFIRM_RESTORE, Formats.DATE_TIME.format(backup.createdAt()),
+                backup.description());
+        if (!Dialogs.confirm(backupList, CONFIRM_RESTORE_TITLE, message, CONFIRM_RESTORE_BUTTON, false)) {
+            setRestoring(false);
+            return;
+        }
+        BackgroundTasks.run(ctx.background(),
+                () -> {
+                    ctx.restoreService().prepare(backup);
+                    return backup;
+                },
+                prepared -> restart(),
+                this::restoreFailed);
+    }
+
+    /** La copia ya está preparada: se abre una VN Launcher nueva y esta se cierra. */
+    private void restart() {
+        if (!relauncher.getAsBoolean()) {
+            // Lo pendiente se termina igualmente la próxima vez que se abra
+            Dialogs.info(backupList, RESTART_MANUALLY_TITLE, RESTART_MANUALLY);
+        }
+        Platform.exit(); // Main.stop() cierra todo y suelta el bloqueo; la nueva está esperando
+    }
+
+    private void restoreFailed(Throwable error) {
+        setRestoring(false);
+        if (error instanceof InvalidBackupException invalid) {
+            Dialogs.error(backupList, CANNOT_RESTORE_TITLE, invalid.getMessage());
+        } else {
+            ErrorReporter.report(StartupNotices.RESTORE_FAILED, error);
+        }
+    }
+
+    private void setRestoring(boolean restoring) {
+        restoreButtons.forEach(button -> button.setDisable(restoring));
     }
 
     @FXML

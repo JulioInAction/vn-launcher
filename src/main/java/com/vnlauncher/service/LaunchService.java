@@ -74,6 +74,11 @@ public class LaunchService {
         return tracker.isRunning(vnId);
     }
 
+    /** ¿Hay algún juego abierto ahora mismo? */
+    public boolean isAnyRunning() {
+        return tracker.isAnyRunning();
+    }
+
     /**
      * Lanza el juego, apunta la hora como "última partida" y empieza a medir el tiempo de juego.
      *

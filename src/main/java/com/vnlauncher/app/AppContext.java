@@ -22,6 +22,7 @@ import com.vnlauncher.service.PlaytimeTracker;
 import com.vnlauncher.service.ProcessScanner;
 import com.vnlauncher.service.ProcessStarter;
 import com.vnlauncher.service.RefreshService;
+import com.vnlauncher.service.RestoreService;
 import com.vnlauncher.service.RouteService;
 import com.vnlauncher.service.ScreenshotService;
 import com.vnlauncher.service.SettingsService;
@@ -76,6 +77,7 @@ public final class AppContext {
     private final VnDetailsService vnDetailsService;
     private final ScreenshotService screenshotService;
     private final BackupService backupService;
+    private final RestoreService restoreService;
     /** Si falló la copia de antes de actualizar (se avisa al abrir la ventana); si no, null. */
     private final Exception preMigrationBackupError;
 
@@ -109,13 +111,19 @@ public final class AppContext {
         this.coverService = coverService;
         this.vnDetailsService = vnDetailsService;
         this.backupService = backupService;
+        this.restoreService = new RestoreService(paths, backupService);
         this.preMigrationBackupError = preMigrationBackupError;
         // Solo necesita la caché de imágenes: se crea aquí, como RefreshService
         this.screenshotService = new ScreenshotService(imageCache);
     }
 
-    /** Prepara carpetas, base de datos y servicios. Si algo falla aquí la app no puede arrancar. */
-    public static AppContext create(AppPaths paths) throws SQLException {
+    /**
+     * Prepara carpetas, base de datos y servicios. Si algo falla aquí la app no puede arrancar.
+     *
+     * @param backupBeforeMigration false justo después de restaurar una copia: la base ES una copia
+     *                              (y hay otra de cómo estaba antes), no hace falta una más
+     */
+    public static AppContext create(AppPaths paths, boolean backupBeforeMigration) throws SQLException {
         paths.createDirectories();
 
         Database database = new Database(paths.databaseFile());
@@ -124,7 +132,9 @@ public final class AppContext {
         // Si la app se acaba de actualizar (hay migraciones pendientes), copia ANTES de migrar
         Exception backupError = null;
         try {
-            backupService.beforeMigration();
+            if (backupBeforeMigration) {
+                backupService.beforeMigration();
+            }
         } catch (IOException | SQLException e) {
             // Sin copia (disco lleno...) se sigue igualmente: las migraciones van en una transacción, y
             // dejar la app sin arrancar sería peor. Queda en el registro y se avisa al abrir la ventana.
@@ -254,7 +264,6 @@ public final class AppContext {
         return coverService;
     }
 
-    /** "Actualizar desde VNDB" en la ficha. */
     /** El error de la copia de antes de actualizar, si falló al arrancar. */
     public Optional<Exception> preMigrationBackupError() {
         return Optional.ofNullable(preMigrationBackupError);
@@ -263,6 +272,11 @@ public final class AppContext {
     /** Copias de seguridad automáticas de la base de datos. */
     public BackupService backupService() {
         return backupService;
+    }
+
+    /** Restaurar una copia de seguridad (se termina al reiniciar). */
+    public RestoreService restoreService() {
+        return restoreService;
     }
 
     /** Imágenes de las capturas (miniaturas y tamaño completo) en la caché. */
