@@ -50,6 +50,14 @@
        dependen del tema. Pastilla «1 / 12» de la galería de capturas. */
     -vn-scrim: rgba(10, 11, 14, 0.72);
     -vn-on-scrim: #F2F2F5;
+    /* Visor de capturas (visor-capturas.png): fondo casi negro en los dos temas */
+    -vn-viewer-bg: #08090C;
+    -vn-viewer-text: #ECEDF2;
+    -vn-viewer-muted: #8E91A0;
+    -vn-viewer-accent: #F2A0B5;
+    -vn-viewer-control-bg: rgba(255, 255, 255, 0.08);
+    -vn-viewer-control-hover: rgba(255, 255, 255, 0.14);
+    -vn-viewer-control-border: rgba(255, 255, 255, 0.18);
 
     /* Variables propias, no están en DISEÑO.md: sombra de los diálogos y fondos de las
        iniciales cuando no hay imagen */
@@ -944,6 +952,92 @@
     -fx-stroke-width: 2;
     -fx-stroke-line-cap: round;
     -fx-stroke-line-join: round;
+}
+
+/* Visor a pantalla completa (ScreenshotViewer), visor-capturas.png */
+.screenshot-viewer {
+    -fx-background-color: -vn-viewer-bg;
+}
+
+/* El hueco de la captura mientras carga: oscuro también con el tema claro */
+.screenshot-viewer .shot {
+    -fx-background-color: -vn-viewer-control-bg;
+}
+
+.viewer-title {
+    -fx-font-family: "Zen Kaku Gothic New";
+    -fx-font-weight: bold;
+    -fx-font-size: 20px;
+    -fx-text-fill: -vn-viewer-text;
+}
+
+.viewer-counter {
+    -fx-font-size: 16px;
+    -fx-text-fill: -vn-viewer-muted;
+}
+
+.viewer-hint {
+    -fx-font-size: 15px;
+    -fx-text-fill: -vn-viewer-muted;
+}
+
+/* Flechas de 56 px: círculos blancos casi transparentes */
+.button.viewer-arrow {
+    -fx-background-color: -vn-viewer-control-bg;
+    -fx-background-radius: 999;
+    -fx-border-color: -vn-viewer-control-border;
+    -fx-border-radius: 999;
+    -fx-padding: 0;
+    -fx-min-width: 56;
+    -fx-min-height: 56;
+}
+
+.button.viewer-arrow:hover,
+.button.viewer-close:hover {
+    -fx-background-color: -vn-viewer-control-hover;
+}
+
+.button.viewer-close {
+    -fx-background-color: transparent;
+    -fx-background-radius: 999;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+    -fx-min-width: 40;
+    -fx-min-height: 40;
+    -fx-pref-width: 40;
+    -fx-pref-height: 40;
+}
+
+.viewer-icon {
+    -fx-fill: transparent;
+    -fx-stroke: -vn-viewer-text;
+    -fx-stroke-width: 2;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+}
+
+/* «Mostrar» sobre una captura sensible difuminada */
+.button.viewer-reveal {
+    -fx-background-color: -vn-scrim;
+    -fx-border-color: -vn-viewer-control-border;
+    -fx-text-fill: -vn-viewer-text;
+}
+
+.button.viewer-reveal:hover {
+    -fx-background-color: -vn-viewer-bg;
+}
+
+/* Miniaturas de 80 × 45: la actual con un anillo rosa de 2 px, separado 2 px */
+.viewer-thumb {
+    -fx-padding: 4;
+    -fx-border-color: transparent;
+    -fx-border-width: 2;
+    -fx-border-radius: 10;
+    -fx-cursor: hand;
+}
+
+.viewer-thumb.current {
+    -fx-border-color: -vn-viewer-accent;
 }
 
 /* ===================================================================== Cambiar portada

@@ -157,6 +157,15 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
   carpeta `images/shots/` de la caché; el nombre sale de la URL, así que no hace falta guardar la
   ruta en la base de datos). Las sensibles van difuminadas según «Difuminar imágenes». Sin capturas,
   no hay galería.
+- **Visor de capturas:** clic en la captura principal (`ScreenshotViewer`): una capa encima de toda
+  la ventana (el StackPane raíz), con fondo `#08090C` en los dos temas, la captura grande sin
+  deformar, flechas, todas las miniaturas y las teclas ← → (dan la vuelta) y Esc. Las sensibles
+  salen difuminadas con «Mostrar», y lo que se destapa sigue destapado en la ficha. Al cerrar, la
+  galería se queda en la última captura vista. Carga la imagen grande al mostrarla y precarga la
+  anterior y la siguiente (una caché pequeña en memoria, `ScreenshotSet`).
+- **Difuminado barato:** las capturas sensibles no usan `GaussianBlur` sobre la imagen grande (sin
+  tarjeta gráfica, p. ej. en una máquina virtual, eso tarda segundos por fotograma). Se difumina una
+  vez una copia de 64 px con `BoxBlur` y se muestra ampliada.
 - **Programa de configuración:** además del juego, cada VN puede tener su `config.exe` (o como se
   llame). Se abre con el botón «Configuración», desde su carpeta y con Locale Emulator si la VN lo
   usa. No cuenta como partida.

@@ -91,6 +91,10 @@ final class ScreenshotSet {
         thumbnailListeners.add(listener);
     }
 
+    void removeThumbnailListener(IntConsumer listener) {
+        thumbnailListeners.remove(listener);
+    }
+
     /**
      * Miniaturas: las que ya están en disco se cargan enseguida; las que faltan se descargan una
      * detrás de otra en segundo plano. Sin conexión se quedan vacías (sin error a la vista).
@@ -128,7 +132,7 @@ final class ScreenshotSet {
         double width = THUMB_WIDTH * CoverView.outputScale();
         Image image = new Image(file.toUri().toString(), width, 0, true, true, true);
         thumbnails[index] = image;
-        whenLoaded(image, loaded -> thumbnailListeners.forEach(listener -> listener.accept(index)));
+        whenLoaded(image, loaded -> List.copyOf(thumbnailListeners).forEach(listener -> listener.accept(index)));
     }
 
     /**

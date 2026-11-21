@@ -252,8 +252,13 @@ public class VnDetailController implements PlaytimeAware {
         }
         ScreenshotSet shots = new ScreenshotSet(details.screenshots(), ctx.screenshotService(),
                 ctx.background(), ctx.contentFilter());
-        gallery = new ScreenshotGallery(shots);
-        gallery.setMaxHeight(Region.USE_PREF_SIZE); // en la fila de la cabecera, que no la estire
+        ScreenshotGallery created = new ScreenshotGallery(shots);
+        created.setMaxHeight(Region.USE_PREF_SIZE); // en la fila de la cabecera, que no la estire
+        // Clic en la captura principal: visor a pantalla completa. Al cerrarlo, la galería se queda
+        // en la última captura que se vio.
+        created.setOnOpen(index -> ScreenshotViewer.show(scroll, titleLabel.getText(), shots, index,
+                created::select));
+        gallery = created;
         galleryWide = null; // colocarla aunque no cambie el ancho
         placeGallery();
     }
