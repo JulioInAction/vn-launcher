@@ -13,6 +13,8 @@ final class Icons {
 
     /** Engranaje de 20 px: 8 dientes y el agujero del centro, con trazo. */
     private static final String GEAR = gearPath(8, 12, 12, 9.5, 7.2, 3);
+    /** Cuerpo del lápiz (con la punta) y la raya de la goma. */
+    private static final String PENCIL = "M15.6 4.4 A2.1 2.1 0 0 1 18.6 7.4 L8.2 17.8 L4 19 L5.2 14.8 Z M14 6 L17 9";
 
     private Icons() {
     }
@@ -23,6 +25,17 @@ final class Icons {
         gear.setContent(GEAR);
         gear.getStyleClass().add("icon-stroke");
         return gear;
+    }
+
+    /**
+     * Lápiz («Editar»), con trazo como el engranaje: el cuerpo inclinado con la punta abajo a la
+     * izquierda y una raya donde empieza la goma. Caja de 24 × 24, unos 17 px de lado a lado.
+     */
+    static Node pencil() {
+        SVGPath pencil = new SVGPath();
+        pencil.setContent(PENCIL);
+        pencil.getStyleClass().add("icon-stroke");
+        return pencil;
     }
 
     /** «⋯» (Más opciones): tres puntos. */

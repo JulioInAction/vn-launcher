@@ -1623,23 +1623,39 @@
     -fx-text-fill: -vn-text2;
 }
 
-/* Desplegable de estado de cada ruta: zona clicable de 44 px y, dentro, una pastilla */
+/* Desplegable de estado de cada ruta: una sola pastilla con el texto y la flecha ▼ dentro.
+   El fondo de color es el del desplegable entero, metido 8 px arriba y abajo: la zona clicable
+   sigue siendo de 44 px y la pastilla que se ve, de 28. */
 .combo-box-base.status-box {
     -fx-border-color: transparent;
-    -fx-background-color: transparent;
-    -fx-padding: 9 0 9 0;   /* 44 px de zona clicable, pero la pastilla de dentro queda pequeña */
+    -fx-background-radius: 999;
+    -fx-background-insets: 8 0 8 0;
+    -fx-padding: 8 0 8 0;
 }
 
 .status-box > .list-cell {
+    -fx-background-color: transparent;
     -fx-font-family: "Inter SemiBold";
     -fx-font-size: 16px;
-    -fx-padding: 3 10 3 10;
-    -fx-background-radius: 999;
+    -fx-padding: 0 2 0 12;
 }
 
-.status-box.pill-completed   > .list-cell { -fx-background-color: -vn-blue-bg;   -fx-text-fill: -vn-blue; }
-.status-box.pill-in-progress > .list-cell { -fx-background-color: -vn-orange-bg; -fx-text-fill: -vn-orange; }
-.status-box.pill-pending     > .list-cell { -fx-background-color: -vn-grey-bg;   -fx-text-fill: -vn-grey; }
+.status-box > .arrow-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0 12 0 6;
+}
+
+.status-box.pill-completed   { -fx-background-color: -vn-blue-bg; }
+.status-box.pill-in-progress { -fx-background-color: -vn-orange-bg; }
+.status-box.pill-pending     { -fx-background-color: -vn-grey-bg; }
+
+/* El texto y la flecha, del color del estado */
+.status-box.pill-completed   > .list-cell { -fx-text-fill: -vn-blue; }
+.status-box.pill-in-progress > .list-cell { -fx-text-fill: -vn-orange; }
+.status-box.pill-pending     > .list-cell { -fx-text-fill: -vn-grey; }
+.status-box.pill-completed   > .arrow-button > .arrow { -fx-background-color: -vn-blue; }
+.status-box.pill-in-progress > .arrow-button > .arrow { -fx-background-color: -vn-orange; }
+.status-box.pill-pending     > .arrow-button > .arrow { -fx-background-color: -vn-grey; }
 
 /* ===================================================================== Diálogos */
 

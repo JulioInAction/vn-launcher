@@ -231,10 +231,14 @@ class RoutesPane extends VBox {
             avatar = empty;
         }
 
-        // Textos: nombre, heroína (si se llama distinto que la ruta) y notas
+        // Textos: nombre, heroína (si se llama distinto que la ruta) y notas. Solo se añade lo que
+        // tiene texto: una etiqueta vacía ocuparía su hueco y subiría el nombre
         Label name = new Label(route.name());
         name.getStyleClass().add("route-name");
         VBox texts = new VBox(2, name);
+        // Centrado en vertical: el HBox estira este VBox a todo el alto de la fila (lo marcan el
+        // desplegable y el botón, de 44 px) y, sin esto, el nombre se quedaría arriba
+        texts.setAlignment(Pos.CENTER_LEFT);
         String heroine = route.characterId() == null ? "Sin heroína"
                 : vc != null ? vc.character().name() : "Personaje " + route.characterId();
         if (!heroine.equals(route.name())) {
@@ -242,7 +246,7 @@ class RoutesPane extends VBox {
             sub.getStyleClass().add("muted");
             texts.getChildren().add(sub);
         }
-        if (route.notes() != null) {
+        if (route.notes() != null && !route.notes().isBlank()) {
             Label notes = new Label(route.notes());
             notes.setWrapText(true);
             notes.getStyleClass().add("route-notes");
@@ -250,7 +254,7 @@ class RoutesPane extends VBox {
         }
         HBox.setHgrow(texts, Priority.ALWAYS);
 
-        Button edit = new Button("✎");
+        Button edit = new Button(null, Icons.pencil());
         edit.getStyleClass().add("icon-button");
         edit.setTooltip(new Tooltip("Editar o borrar la ruta"));
         edit.setOnAction(e -> openEditDialog(route));
@@ -264,7 +268,10 @@ class RoutesPane extends VBox {
         return row;
     }
 
-    /** Desplegable de estado con aspecto de pastilla del color del estado. */
+    /**
+     * Desplegable de estado con aspecto de pastilla del color del estado. La pastilla es el
+     * desplegable entero (texto y flecha ▼ dentro), no solo su texto: ver .status-box en styles.css.
+     */
     private ComboBox<RouteStatus> statusBox(Route route) {
         ComboBox<RouteStatus> status = new ComboBox<>();
         status.getItems().setAll(RouteStatus.values());
