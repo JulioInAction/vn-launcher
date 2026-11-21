@@ -80,6 +80,8 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
 - Títulos y nombres originales (japonés): clase `.original-text`, con Zen Kaku Gothic New Medium.
 - La ventana se abre la primera vez al 90 % de la pantalla y después recuerda su posición, tamaño
   y si estaba maximizada (ajuste `window`).
+  Ancho mínimo: 1200 px (o el de la pantalla, si es menor), para que en Buscar quepan la lista y
+  el panel de 540 px.
 
 ## Estado
 
@@ -107,6 +109,23 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
 - Cada 30 s se guarda un "latido" (`last_seen_at`). Si el launcher se cierra de golpe, al volver a
   abrirlo la sesión se cierra con el último latido.
 - Limitación: si cierras el launcher con el juego abierto, el tiempo posterior no se cuenta.
+
+## Búsqueda
+
+- Se busca al pulsar Enter: **1 petición** a `/vn` que trae también los datos ligeros del panel
+  (duración, valoración, idiomas, plataformas y estado de desarrollo).
+- A la derecha, un panel fijo de 540 px con el resultado elegido: portada, título original, estado
+  («Terminada», «En desarrollo», «Cancelada»), seis datos en dos columnas, las 5 etiquetas mejor
+  puntuadas sin spoilers, 3 capturas (las sensibles, difuminadas) y la descripción recortada a 6
+  líneas con «Leer más». El panel hace scroll por dentro y el botón de abajo siempre se ve.
+- Las etiquetas, capturas y relaciones se piden **al seleccionar** un resultado (1 petición a `/vn`
+  por su id, tras 250 ms sin cambiar de selección). Se guardan en una caché en memoria
+  (`CatalogService.extras`): volver a elegir el mismo resultado no gasta otra petición.
+- Las etiquetas de contenido sexual solo aparecen con «Difuminar imágenes: No difuminar» (VNDB
+  también las oculta por defecto). De las relaciones se muestra la más importante, prefiriendo las
+  oficiales («Fandisc de Fate/stay night», «Secuela de…»).
+- Los nombres de idiomas y plataformas y los números («8,1 · 5.946 votos») se escriben a mano en
+  `VnFacts`: el instalador no incluye los datos de idioma de Java (`jdk.localedata`).
 
 ## Ficha de una VN
 

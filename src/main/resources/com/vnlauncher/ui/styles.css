@@ -141,7 +141,7 @@
 
 /* Títulos y nombres: Zen Kaku Gothic New Bold */
 .page-title, .detail-title, .section-title, .card-title, .tile-title,
-.route-name, .character-name, .result-title, .nav-text, .logo-text {
+.route-name, .character-name, .result-title, .nav-text, .logo-text, .preview-title {
     -fx-font-family: "Zen Kaku Gothic New";
     -fx-font-weight: bold;
     -fx-text-fill: -vn-text;
@@ -462,7 +462,8 @@
     -fx-background-radius: 999;   /* totalmente redondeada */
 }
 
-.pill-completed, .pill-route { -fx-background-color: -vn-blue-bg;   -fx-text-fill: -vn-blue; }
+.pill-completed, .pill-route,
+.pill-devstatus              { -fx-background-color: -vn-blue-bg;   -fx-text-fill: -vn-blue; }
 .pill-in-progress            { -fx-background-color: -vn-orange-bg; -fx-text-fill: -vn-orange; }
 .pill-pending                { -fx-background-color: -vn-grey-bg;   -fx-text-fill: -vn-grey; }
 .pill-spoiler                { -fx-background-color: -vn-orange-bg; -fx-text-fill: -vn-orange; }
@@ -707,13 +708,53 @@
     -fx-border-color: -vn-accent-ink;
 }
 
+/* Panel de detalles (buscar-oscuro.png): sin margen propio. El scroll de dentro lleva el margen de
+   arriba y de la izquierda; el de la derecha sale del ancho fijo de cada bloque, y ahí cabe la barra
+   de scroll cuando aparece. El pie (el botón) queda fuera del scroll. */
 .preview-card {
-    -fx-padding: 20;
+    -fx-padding: 0;
 }
 
-.preview-heading {
-    -fx-font-family: "Inter SemiBold";
+.preview-content {
+    -fx-padding: 24 0 0 24;
+}
+
+.preview-footer {
+    -fx-padding: 20 24 24 24;
+}
+
+.preview-title {
+    -fx-font-size: 24px;
+}
+
+.preview-meta {
+    -fx-text-fill: -vn-text2;
+}
+
+/* Los seis datos: etiqueta pequeña y el valor debajo */
+.fact-label {
+    -fx-font-size: 15px;
+    -fx-text-fill: -vn-muted;
+}
+
+.fact-value {
+    -fx-font-family: "Inter Medium";
     -fx-text-fill: -vn-text;
+}
+
+/* Etiquetas de VNDB ("Drama", "Romance"...) */
+.tag-chip {
+    -fx-background-color: -vn-surface2;
+    -fx-background-radius: 999;
+    -fx-border-color: -vn-border;
+    -fx-border-radius: 999;
+    -fx-padding: 4 12 4 12;
+    -fx-font-size: 16px;
+    -fx-text-fill: -vn-text2;
+}
+
+.preview-action {
+    -fx-min-height: 48;
 }
 
 /* ===================================================================== Biblioteca */

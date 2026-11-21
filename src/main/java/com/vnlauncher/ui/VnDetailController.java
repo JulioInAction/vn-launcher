@@ -11,7 +11,6 @@ import com.vnlauncher.util.PlayTime;
 import com.vnlauncher.util.RelativeTime;
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
-import javafx.scene.Cursor;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Hyperlink;
@@ -192,19 +191,9 @@ public class VnDetailController implements PlaytimeAware {
      */
     private void renderVn(LibraryEntry loaded) {
         VisualNovel vn = loaded.vn();
-        CoverView cover = new CoverView(Covers.file(ctx, loaded), Covers.sensitive(ctx, loaded), 220, 330, vn.title());
-        if (cover.isSensitive()) {
-            // Clic en la portada para mostrarla u ocultarla. Usamos un array de 1 elemento porque
-            // una lambda solo puede usar variables locales "efectivamente finales": no podemos
-            // reasignar un boolean, pero sí cambiar el contenido del array.
-            boolean[] revealed = {false};
-            cover.setCursor(Cursor.HAND);
-            Tooltip.install(cover, new Tooltip("Clic para mostrar u ocultar la imagen"));
-            cover.setOnMouseClicked(event -> {
-                revealed[0] = !revealed[0];
-                cover.setRevealed(revealed[0]);
-            });
-        }
+        // Si es sensible, clic en la portada para mostrarla u ocultarla
+        CoverView cover = new CoverView(Covers.file(ctx, loaded), Covers.sensitive(ctx, loaded), 220, 330, vn.title())
+                .revealOnClick();
         // Debajo, a 6 px, el control para cambiarla: siempre ocupa sus 44 px (50 en total con la
         // separación), así que al abrirse no mueve nada
         CoverChanger changer = new CoverChanger(220, () -> CoverGallery.show(playButton, ctx, loaded, () -> {

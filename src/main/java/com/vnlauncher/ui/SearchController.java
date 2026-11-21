@@ -1,20 +1,28 @@
 package com.vnlauncher.ui;
 
 import com.vnlauncher.app.AppContext;
+import com.vnlauncher.model.BlurLevel;
 import com.vnlauncher.model.LibraryEntry;
+import com.vnlauncher.model.SearchHit;
 import com.vnlauncher.model.VisualNovel;
+import com.vnlauncher.model.VnExtras;
+import com.vnlauncher.model.VnStats;
+import com.vnlauncher.util.VnFacts;
 import javafx.animation.KeyFrame;
+import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
-import javafx.beans.binding.Bindings;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
-import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -27,11 +35,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Vista "Buscar": campo de búsqueda, resultados como tarjetas y vista previa.
+ * Vista "Buscar": campo de búsqueda, resultados como tarjetas y un panel con los detalles del
+ * resultado elegido.
  *
  * <p>Regla de oro de JavaFX: el hilo de la interfaz (FX Application Thread) solo debe hacer
  * trabajo rápido. Si hiciéramos la petición HTTP aquí directamente, la ventana se quedaría
@@ -42,11 +52,36 @@ import java.util.stream.Collectors;
  *   <li>el resultado (o el error) se recibe después en el hilo de la interfaz, y ahí sí
  *       podemos actualizar la lista y las etiquetas.</li>
  * </ul>
+ *
+ * <p>Peticiones a VNDB: la búsqueda es UNA petición que ya trae los datos ligeros del panel
+ * (duración, valoración, idiomas...). Las etiquetas, capturas y relaciones se piden aparte al
+ * seleccionar un resultado (1 petición, que se guarda en una caché en memoria).
  */
 public class SearchController {
 
+    /** Ancho útil del panel: 540 menos 1 px de borde y 24 de margen a cada lado. */
+    static final double INNER_WIDTH = 540 - 2 - 2 * 24;
+    private static final double COVER_WIDTH = 180;
+    private static final double COVER_HEIGHT = 270;
+    private static final double HEADER_GAP = 20;
+    private static final double COLUMN_GAP = 16;
+    private static final double COLUMN_WIDTH = (INNER_WIDTH - COLUMN_GAP) / 2;
+    private static final double SHOT_GAP = 8;
+    /** Tres capturas en 16:9 que llenan el ancho: 158 × 89. */
+    private static final double SHOT_WIDTH = Math.floor((INNER_WIDTH - 2 * SHOT_GAP) / 3);
+    private static final double SHOT_HEIGHT = Math.round(SHOT_WIDTH * 9 / 16);
+    /** Por debajo de este ancho, la tarjeta de resultado pone el botón bajo el título. */
+    private static final double COMPACT_CARD_WIDTH = 480;
+    private static final int MAX_TAGS = 5;
+    private static final int DESCRIPTION_LINES = 6;
+    /**
+     * Espera antes de pedir los detalles de un resultado: si se pasa por varios seguidos, solo se
+     * pide el del último en el que se para.
+     */
+    private static final javafx.util.Duration EXTRAS_DELAY = javafx.util.Duration.millis(250);
+
     /** Lo que devuelve la tarea de búsqueda: resultados + ids que ya están en la biblioteca. */
-    private record SearchResult(List<VisualNovel> results, Set<String> inLibrary) {
+    private record SearchResult(List<SearchHit> hits, Set<String> inLibrary) {
     }
 
     private final AppContext ctx;
@@ -57,23 +92,38 @@ public class SearchController {
     @FXML private ProgressIndicator progress;
     @FXML private Label statusLabel;
     @FXML private VBox resultsBox;
-    @FXML private VBox previewCard;
+    @FXML private VBox resultsArea;
     @FXML private VBox noticeBox;
     @FXML private VBox emptyBox;
-    @FXML private HBox resultsRow;
     @FXML private VBox hintCard;
+    @FXML private ScrollPane previewScroll;
+    @FXML private VBox previewContent;
+    @FXML private VBox previewFooter;
 
     /** Búsqueda en curso (para poder cancelarla desde el aviso de límite). */
     private Task<SearchResult> searchTask;
     /** Cuenta atrás del aviso de límite. */
     private Timeline countdown;
 
-    private List<VisualNovel> results = List.of();
+    private List<SearchHit> hits = List.of();
     /** Ids de VN que están en la biblioteca (para "✓ En tu biblioteca"). */
     private final Set<String> inLibrary = new HashSet<>();
     /** Tarjeta de cada resultado, para marcar la seleccionada. */
     private final Map<String, Node> cards = new HashMap<>();
-    private VisualNovel selected;
+    private SearchHit selected;
+
+    // --- Detalles que se piden al seleccionar (etiquetas, capturas y relación)
+    private final PauseTransition extrasDelay = new PauseTransition(EXTRAS_DELAY);
+    /** Ids cuyos detalles se están pidiendo ahora mismo (para no pedirlos dos veces a la vez). */
+    private final Set<String> extrasLoading = new HashSet<>();
+    /** Ids cuyos detalles fallaron (se muestra "Reintentar"). */
+    private final Set<String> extrasFailed = new HashSet<>();
+    /**
+     * Partes del panel que se rellenan cuando llegan los detalles. Solo se cambian ellas, no el
+     * panel entero: así no se pierde el scroll ni la descripción desplegada.
+     */
+    private Label relationValue;
+    private VBox extrasBox;
 
     public SearchController(AppContext ctx, Navigator navigator) {
         this.ctx = ctx;
@@ -84,13 +134,9 @@ public class SearchController {
     private void initialize() {
         setBusy(false);
         showEmpty(null);
-        // La vista previa ocupa como mucho el 42 % de la fila: con la ventana estrecha, la columna
-        // de resultados no se queda tan apretada que cada título ocupe cuatro líneas
-        previewCard.prefWidthProperty().bind(
-                Bindings.min(440, resultsRow.widthProperty().multiply(0.42)));
-        // Antes de buscar nada solo se ve la pista bajo la barra (sin la columna de resultados)
-        resultsRow.setVisible(false);
-        resultsRow.setManaged(false);
+        // Antes de buscar nada solo se ve la pista bajo la barra (sin resultados ni panel)
+        resultsArea.setVisible(false);
+        resultsArea.setManaged(false);
         renderPreview();
     }
 
@@ -119,14 +165,14 @@ public class SearchController {
                 () -> new SearchResult(ctx.catalogService().search(query), libraryIds()), // en segundo plano
                 result -> {                                                              // en la interfaz
                     clearNotice();
-                    results = result.results();
+                    hits = result.hits();
                     inLibrary.clear();
                     inLibrary.addAll(result.inLibrary());
-                    selected = results.isEmpty() ? null : results.getFirst();
-                    statusLabel.setText(results.size() == 1 ? "1 resultado" : results.size() + " resultados");
-                    showEmpty(results.isEmpty() ? query : null);
+                    statusLabel.setText(hits.size() == 1 ? "1 resultado" : hits.size() + " resultados");
+                    showEmpty(hits.isEmpty() ? query : null);
                     renderResults();
-                    renderPreview();
+                    selected = null; // búsqueda nueva: el panel se dibuja de cero
+                    select(hits.isEmpty() ? null : hits.getFirst());
                     setBusy(false);
                 },
                 error -> {
@@ -171,9 +217,9 @@ public class SearchController {
         // Sin resultados anteriores que enseñar, el aviso va solo (sin la columna de resultados vacía)
         emptyBox.setVisible(false);
         emptyBox.setManaged(false);
-        boolean hasResults = results != null && !results.isEmpty();
-        resultsRow.setVisible(hasResults);
-        resultsRow.setManaged(hasResults);
+        boolean hasResults = !hits.isEmpty();
+        resultsArea.setVisible(hasResults);
+        resultsArea.setManaged(hasResults);
     }
 
     private void clearNotice() {
@@ -198,8 +244,8 @@ public class SearchController {
         }
         emptyBox.setVisible(empty);
         emptyBox.setManaged(empty);
-        resultsRow.setVisible(!empty);
-        resultsRow.setManaged(!empty);
+        resultsArea.setVisible(!empty);
+        resultsArea.setManaged(!empty);
     }
 
     /** Ids de la biblioteca. Se llama en segundo plano, junto con la búsqueda. */
@@ -232,31 +278,32 @@ public class SearchController {
                     inLibrary.add(vn.id());
                     statusLabel.setText("\"" + vn.title() + "\" añadida a tu biblioteca");
                     renderResults();
-                    renderPreview();
+                    renderFooter();
                     navigator.refreshSidebar(); // cambia el número de "Pendientes"
                 },
                 error -> {
                     statusLabel.setText("Error al añadir: " + error.getMessage());
                     renderResults();
-                    renderPreview();
+                    renderFooter();
                 });
     }
 
-    // =========================================================== dibujo
+    // =========================================================== lista de resultados
 
     private void renderResults() {
         cards.clear();
         resultsBox.getChildren().clear();
-        for (VisualNovel vn : results) {
-            Node card = resultCard(vn);
-            cards.put(vn.id(), card);
+        for (SearchHit hit : hits) {
+            Node card = resultCard(hit);
+            cards.put(hit.vn().id(), card);
             resultsBox.getChildren().add(card);
         }
         markSelected();
     }
 
     /** Tarjeta de un resultado: miniatura · título y desarrollador/año · Añadir o ✓ En tu biblioteca. */
-    private Node resultCard(VisualNovel vn) {
+    private Node resultCard(SearchHit hit) {
+        VisualNovel vn = hit.vn();
         CoverView thumb = new CoverView(vn.imageUrl(), isSensitive(vn), 56, 84, vn.title());
 
         Label title = new Label(vn.title());
@@ -286,10 +333,21 @@ public class SearchController {
         HBox card = new HBox(16, thumb, texts, action);
         card.setAlignment(Pos.CENTER_LEFT);
         card.getStyleClass().add("result-card");
-        card.setOnMouseClicked(event -> {
-            selected = vn;
-            markSelected();
-            renderPreview();
+        card.setOnMouseClicked(event -> select(hit));
+        // Con la ventana estrecha (la lista comparte fila con el panel de 540 px), el botón o
+        // «✓ En tu biblioteca» pasa debajo del desarrollador: si no, al título le quedarían 70 px y
+        // se partiría letra a letra. El ancho de la tarjeta no depende de dónde vaya el botón, así
+        // que moverlo no vuelve a disparar el listener.
+        VBox.setMargin(action, new Insets(6, 0, 0, 0));
+        card.widthProperty().addListener((obs, old, width) -> {
+            boolean compact = width.doubleValue() < COMPACT_CARD_WIDTH;
+            if (compact && action.getParent() == card) {
+                card.getChildren().remove(action);
+                texts.getChildren().add(action);
+            } else if (!compact && action.getParent() == texts) {
+                texts.getChildren().remove(action);
+                card.getChildren().add(action);
+            }
         });
         return card;
     }
@@ -297,80 +355,299 @@ public class SearchController {
     private void markSelected() {
         cards.forEach((id, card) -> {
             card.getStyleClass().remove("selected");
-            if (selected != null && selected.id().equals(id)) {
+            if (isSelected(id)) {
                 card.getStyleClass().add("selected");
             }
         });
     }
 
-    /** Vista previa del resultado seleccionado y qué supone añadirlo. */
+    // =========================================================== selección y detalles
+
+    /** Elige un resultado: lo marca, dibuja el panel y pide sus detalles si hace falta. */
+    private void select(SearchHit hit) {
+        if (hit != null && selected != null && hit.vn().id().equals(selected.vn().id())) {
+            return; // ya se está viendo: no se redibuja (no se pierde el scroll del panel)
+        }
+        selected = hit;
+        markSelected();
+        if (hit != null) {
+            extrasFailed.remove(hit.vn().id()); // si falló antes, al volver a elegirlo se reintenta
+        }
+        renderPreview();
+        requestExtras();
+    }
+
+    /**
+     * Pide los detalles del seleccionado tras una breve espera (EXTRAS_DELAY), salvo que ya estén en
+     * la caché o pidiéndose. Si antes de que pase la espera se elige otro, se pide solo el otro.
+     */
+    private void requestExtras() {
+        extrasDelay.stop();
+        if (selected == null) {
+            return;
+        }
+        String id = selected.vn().id();
+        if (ctx.catalogService().cachedExtras(id).isPresent() || extrasLoading.contains(id)) {
+            return;
+        }
+        extrasDelay.setOnFinished(event -> loadExtras(id));
+        extrasDelay.playFromStart();
+    }
+
+    /** 1 petición a VNDB (pasa por el RateLimiter); el resultado queda en la caché del servicio. */
+    private void loadExtras(String id) {
+        if (!isSelected(id) || extrasLoading.contains(id)) {
+            return;
+        }
+        extrasLoading.add(id);
+        BackgroundTasks.run(ctx.background(),
+                () -> ctx.catalogService().extras(id),
+                extras -> {
+                    extrasLoading.remove(id);
+                    if (isSelected(id)) { // si ya se ha elegido otro, se queda en la caché para luego
+                        renderExtras();
+                    }
+                },
+                error -> {
+                    extrasLoading.remove(id);
+                    extrasFailed.add(id);
+                    if (isSelected(id)) {
+                        renderExtras();
+                    }
+                });
+    }
+
+    private boolean isSelected(String vnId) {
+        return selected != null && selected.vn().id().equals(vnId);
+    }
+
+    // =========================================================== panel
+
+    /**
+     * Panel del resultado elegido (de arriba abajo): cabecera con portada, título y estado · seis
+     * datos en dos columnas · etiquetas · capturas · descripción · y, fuera del scroll, el botón.
+     */
     private void renderPreview() {
-        previewCard.getChildren().clear();
+        previewContent.getChildren().clear();
+        relationValue = null;
+        extrasBox = null;
+        previewScroll.setVvalue(0);
         if (selected == null) {
             Label hint = new Label("Elige un resultado para ver sus detalles.");
             hint.getStyleClass().add("muted");
             hint.setWrapText(true);
-            previewCard.getChildren().add(hint);
+            hint.setMaxWidth(INNER_WIDTH);
+            previewContent.getChildren().add(hint);
+            renderFooter();
             return;
         }
-        VisualNovel vn = selected;
-        boolean added = inLibrary.contains(vn.id());
+        VisualNovel vn = selected.vn();
+        VnStats stats = selected.stats();
 
-        // Cabecera: portada + título y datos
-        CoverView cover = new CoverView(vn.imageUrl(), isSensitive(vn), 94, 141, vn.title());
+        ExpandableText description = new ExpandableText(vn.description(), DESCRIPTION_LINES);
+        description.setMaxWidth(INNER_WIDTH);
+
+        extrasBox = new VBox(24);
+        extrasBox.setMaxWidth(INNER_WIDTH);
+        previewContent.getChildren().addAll(header(vn, stats), facts(vn, stats), extrasBox, description);
+        renderExtras();
+        renderFooter();
+    }
+
+    /** Portada 180 × 270 y, a su derecha, título, título original, «Desarrollador · año» y estado. */
+    private Node header(VisualNovel vn, VnStats stats) {
+        CoverView cover = new CoverView(vn.imageUrl(), isSensitive(vn), COVER_WIDTH, COVER_HEIGHT, vn.title())
+                .revealOnClick();
+
         Label title = new Label(vn.title());
-        title.getStyleClass().add("card-title");
+        title.getStyleClass().add("preview-title");
         title.setWrapText(true);
+        VBox texts = new VBox(8, title);
+        if (vn.altTitle() != null && !vn.altTitle().isBlank() && !vn.altTitle().equals(vn.title())) {
+            Label original = new Label(vn.altTitle());
+            original.getStyleClass().addAll("meta", "original-text");
+            original.setWrapText(true);
+            texts.getChildren().add(original);
+        }
         Label meta = new Label(meta(vn));
-        meta.getStyleClass().add("meta");
+        meta.getStyleClass().add("preview-meta");
         meta.setWrapText(true);
-        VBox headerTexts = new VBox(6, title, meta);
-        if (vn.altTitle() != null) {
-            Label alt = new Label(vn.altTitle());
-            alt.getStyleClass().addAll("meta", "small", "original-text");
-            alt.setWrapText(true);
-            headerTexts.getChildren().add(1, alt);
+        texts.getChildren().add(meta);
+
+        String status = VnFacts.devStatus(stats.devStatus());
+        if (status != null) {
+            Label pill = new Label(status);
+            pill.getStyleClass().addAll("pill", "pill-devstatus");
+            VBox.setMargin(pill, new Insets(2, 0, 0, 0));
+            texts.getChildren().add(pill);
         }
-        HBox header = new HBox(16, cover, headerTexts);
+        texts.setMinWidth(0);
+        HBox.setHgrow(texts, Priority.ALWAYS);
 
-        // Descripción recortada a unas 5 líneas: con wrapText y alto máximo, JavaFX corta el
-        // texto sobrante y pone "..." al final él solo.
-        Label description = new Label(vn.description() == null ? "Sin descripción." : vn.description());
-        description.getStyleClass().add("description");
-        description.setWrapText(true);
-        description.setTextOverrun(OverrunStyle.ELLIPSIS);
-        description.setMaxHeight(5 * 21);
+        HBox header = new HBox(HEADER_GAP, cover, texts);
+        header.setMaxWidth(INNER_WIDTH);
+        return header;
+    }
 
-        Region divider = new Region();
-        divider.getStyleClass().add("divider");
+    /** Seis datos en dos columnas: etiqueta pequeña y el valor debajo. */
+    private Node facts(VisualNovel vn, VnStats stats) {
+        VBox relation = fact("Relaciones", "");
+        relationValue = (Label) relation.getChildren().get(1);
+        String developers = vn.developerNames().isEmpty() ? "Desconocido" : vn.developerNames();
 
-        Label heading = new Label(added ? "Ya está en tu biblioteca" : "Al añadirla");
-        heading.getStyleClass().add("preview-heading");
-        VBox explanation = new VBox(8, heading);
-        if (!added) {
-            for (String line : List.of(
-                    "Los datos ya vienen en la búsqueda: 0 peticiones.",
-                    "La portada se descarga una vez de t.vndb.org (no cuenta para el límite).",
-                    "Los personajes se piden la primera vez que abras la ficha.")) {
-                Label l = new Label(line);
-                l.getStyleClass().add("text2");
-                l.setWrapText(true);
-                explanation.getChildren().add(l);
-            }
+        VBox grid = new VBox(14,
+                factRow(fact("Duración", VnFacts.length(stats.lengthMinutes(), stats.lengthVotes())),
+                        fact("Valoración", VnFacts.rating(stats.rating(), stats.voteCount()))),
+                factRow(fact("Idiomas", VnFacts.languages(stats.languages(), stats.originalLanguage())),
+                        fact("Plataformas", VnFacts.platforms(stats.platforms()))),
+                factRow(relation, fact("Desarrollador", developers)));
+        grid.setMaxWidth(INNER_WIDTH);
+        return grid;
+    }
+
+    private static HBox factRow(VBox left, VBox right) {
+        return new HBox(COLUMN_GAP, left, right);
+    }
+
+    private static VBox fact(String name, String value) {
+        Label label = new Label(name);
+        label.getStyleClass().add("fact-label");
+        Label text = new Label(value);
+        text.getStyleClass().add("fact-value");
+        text.setWrapText(true);
+        VBox box = new VBox(4, label, text);
+        // Ancho fijo: las dos columnas miden lo mismo aunque un valor sea más largo
+        box.setMinWidth(COLUMN_WIDTH);
+        box.setPrefWidth(COLUMN_WIDTH);
+        box.setMaxWidth(COLUMN_WIDTH);
+        return box;
+    }
+
+    /**
+     * Rellena la relación, las etiquetas y las capturas: con los datos si ya están en la caché,
+     * "Cargando..." mientras se piden, o un aviso con "Reintentar" si fallaron.
+     */
+    private void renderExtras() {
+        if (selected == null || extrasBox == null) {
+            return;
         }
+        String id = selected.vn().id();
+        Optional<VnExtras> cached = ctx.catalogService().cachedExtras(id);
+        extrasBox.getChildren().clear();
+        relationValue.getStyleClass().remove("muted");
 
-        Button action = new Button(added ? "Abrir ficha" : "Añadir a la biblioteca");
-        action.getStyleClass().add("primary-button");
-        action.setMaxWidth(Double.MAX_VALUE);
-        action.setOnAction(event -> {
-            if (added) {
-                navigator.showVnDetail(vn.id());
-            } else {
-                addToLibrary(vn, action);
+        if (cached.isPresent()) {
+            VnExtras extras = cached.get();
+            relationValue.setText(extras.relation() == null ? "Ninguna" : extras.relation());
+            extrasBox.getChildren().add(tagsSection(extras.tags()));
+            if (!extras.screenshots().isEmpty()) {
+                extrasBox.getChildren().add(screenshotsRow(extras.screenshots()));
             }
-        });
+        } else if (extrasFailed.contains(id)) {
+            relationValue.setText("No disponible");
+            relationValue.getStyleClass().add("muted");
+            Label message = new Label("No se han podido cargar las etiquetas ni las capturas.");
+            message.getStyleClass().add("muted");
+            message.setWrapText(true);
+            Hyperlink retry = new Hyperlink("Reintentar");
+            retry.setOnAction(event -> {
+                extrasFailed.remove(id);
+                renderExtras();
+                loadExtras(id);
+            });
+            extrasBox.getChildren().add(new VBox(4, message, retry));
+        } else {
+            // Mientras llegan: los mismos huecos que ocuparán, para que el panel no dé saltos
+            relationValue.setText("Cargando...");
+            relationValue.getStyleClass().add("muted");
+            Label loading = new Label("Cargando...");
+            loading.getStyleClass().add("muted");
+            HBox placeholders = new HBox(SHOT_GAP);
+            for (int i = 0; i < 3; i++) {
+                Region box = new Region();
+                box.getStyleClass().add("cover");
+                box.setMinSize(SHOT_WIDTH, SHOT_HEIGHT);
+                box.setMaxSize(SHOT_WIDTH, SHOT_HEIGHT);
+                placeholders.getChildren().add(box);
+            }
+            extrasBox.getChildren().addAll(new VBox(10, tagsHeading(), loading), placeholders);
+        }
+    }
 
-        previewCard.getChildren().addAll(header, description, divider, explanation, action);
+    /**
+     * «Etiquetas principales (sin spoilers)»: las 5 con mejor puntuación. Las de contenido sexual
+     * solo se ven con «No difuminar» (VNDB también las oculta por defecto).
+     */
+    private Node tagsSection(List<VnExtras.Tag> tags) {
+        boolean showSexual = ctx.contentFilter().level() == BlurLevel.NONE;
+        List<VnExtras.Tag> shown = tags.stream()
+                .filter(tag -> showSexual || !tag.isSexual())
+                .limit(MAX_TAGS)
+                .toList();
+        if (shown.isEmpty()) {
+            Label none = new Label("Sin etiquetas.");
+            none.getStyleClass().add("muted");
+            return new VBox(10, tagsHeading(), none);
+        }
+        // FlowPane: los chips se colocan en fila y saltan a la siguiente si no caben
+        FlowPane chips = new FlowPane(8, 8);
+        chips.setPrefWrapLength(INNER_WIDTH);
+        for (VnExtras.Tag tag : shown) {
+            Label chip = new Label(tag.name());
+            chip.getStyleClass().add("tag-chip");
+            chips.getChildren().add(chip);
+        }
+        return new VBox(10, tagsHeading(), chips);
+    }
+
+    private static Label tagsHeading() {
+        Label heading = new Label("Etiquetas principales (sin spoilers)");
+        heading.getStyleClass().add("fact-label");
+        return heading;
+    }
+
+    /** Capturas en 16:9, enteras (sin recortar). Las sensibles, difuminadas hasta hacer clic. */
+    private Node screenshotsRow(List<VnExtras.Screenshot> screenshots) {
+        HBox row = new HBox(SHOT_GAP);
+        for (VnExtras.Screenshot shot : screenshots) {
+            boolean sensitive = ctx.contentFilter().isSensitive(shot.sexual(), shot.violence());
+            row.getChildren().add(
+                    new CoverView(shot.thumbnailUrl(), sensitive, SHOT_WIDTH, SHOT_HEIGHT, null).revealOnClick());
+        }
+        return row;
+    }
+
+    /**
+     * Pie del panel, fuera del scroll: «Añadir a la biblioteca» a todo el ancho o, si ya está en
+     * ella, «✓ En tu biblioteca» y «Abrir ficha».
+     */
+    private void renderFooter() {
+        previewFooter.getChildren().clear();
+        boolean show = selected != null;
+        previewFooter.setVisible(show);
+        previewFooter.setManaged(show);
+        if (!show) {
+            return;
+        }
+        VisualNovel vn = selected.vn();
+        if (inLibrary.contains(vn.id())) {
+            Label done = new Label("✓  En tu biblioteca");
+            done.getStyleClass().add("in-library");
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+            Button open = new Button("Abrir ficha");
+            open.getStyleClass().add("preview-action");
+            open.setOnAction(event -> navigator.showVnDetail(vn.id()));
+            HBox row = new HBox(16, done, spacer, open);
+            row.setAlignment(Pos.CENTER_LEFT);
+            previewFooter.getChildren().add(row);
+        } else {
+            Button add = new Button("Añadir a la biblioteca");
+            add.getStyleClass().addAll("primary-button", "preview-action");
+            add.setMaxWidth(Double.MAX_VALUE);
+            add.setOnAction(event -> addToLibrary(vn, add));
+            previewFooter.getChildren().add(add);
+        }
     }
 
     // =========================================================== utilidades

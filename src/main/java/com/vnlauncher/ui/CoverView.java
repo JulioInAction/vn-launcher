@@ -1,7 +1,9 @@
 package com.vnlauncher.ui;
 
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -130,6 +132,19 @@ public class CoverView extends StackPane {
 
     public boolean isSensitive() {
         return sensitive;
+    }
+
+    /**
+     * Si es sensible: clic para mostrarla u ocultarla (con cursor de mano y una pista). Si no lo
+     * es, no hace nada. Nunca se destapa sola: solo cuando el usuario hace clic.
+     */
+    public CoverView revealOnClick() {
+        if (sensitive) {
+            setCursor(Cursor.HAND);
+            Tooltip.install(this, new Tooltip("Clic para mostrar u ocultar la imagen"));
+            setOnMouseClicked(event -> setRevealed(sensitiveBadge.isVisible()));
+        }
+        return this;
     }
 
     /** "Rin Tohsaka" → "RT"; "Saber" → "Sa". */

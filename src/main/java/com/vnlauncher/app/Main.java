@@ -25,7 +25,11 @@ public class Main extends Application {
 
     private static final System.Logger LOG = System.getLogger(Main.class.getName());
 
-    private static final double MIN_WIDTH = 1040;
+    /**
+     * Ancho mínimo: menú (250) + márgenes (80) + panel de Buscar (540 + 24) + unos 300 para la lista
+     * de resultados. En una pantalla más estrecha, el de la pantalla (ver {@link #minWidth()}).
+     */
+    private static final double MIN_WIDTH = 1200;
     private static final double MIN_HEIGHT = 680;
 
     private AppContext context;
@@ -68,7 +72,7 @@ public class Main extends Application {
             // Icono de la ventana y de la barra de tareas (docs/diseño/logo/vn-launcher-app.png)
             stage.getIcons().add(new Image(
                     MainController.class.getResource("images/vn-launcher-app.png").toExternalForm()));
-            stage.setMinWidth(MIN_WIDTH);
+            stage.setMinWidth(minWidth());
             stage.setMinHeight(MIN_HEIGHT);
             placeWindow(stage, savedWindow);
             stage.setScene(scene);
@@ -109,7 +113,12 @@ public class Main extends Application {
         // getVisualBounds: la pantalla sin la barra de tareas de Windows
         Rectangle2D screen = Screen.getPrimary().getVisualBounds();
         return WindowBounds.firstTime(screen.getMinX(), screen.getMinY(), screen.getWidth(), screen.getHeight(),
-                MIN_WIDTH, MIN_HEIGHT);
+                minWidth(), MIN_HEIGHT);
+    }
+
+    /** MIN_WIDTH, sin pasar del ancho útil de la pantalla principal (p. ej. un portátil de 1152). */
+    private static double minWidth() {
+        return Math.min(MIN_WIDTH, Screen.getPrimary().getVisualBounds().getWidth());
     }
 
     /** true si la parte de arriba de la ventana (la barra de título) cae dentro de alguna pantalla. */

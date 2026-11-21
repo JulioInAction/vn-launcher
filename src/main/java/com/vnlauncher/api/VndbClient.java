@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.vnlauncher.api.dto.CharacterDto;
 import com.vnlauncher.api.dto.ReleaseDto;
+import com.vnlauncher.api.dto.VnDetailsDto;
 import com.vnlauncher.api.dto.VnDto;
 import com.vnlauncher.api.dto.VndbQuery;
 import com.vnlauncher.api.dto.VndbResponse;
@@ -39,10 +40,21 @@ public class VndbClient {
 
     public static final URI DEFAULT_BASE_URI = URI.create("https://api.vndb.org/kana/");
 
-    /** Campos que pedimos al buscar VNs. Pedir solo lo necesario hace las respuestas más ligeras. */
+    /**
+     * Campos que pedimos al buscar VNs. Pedir solo lo necesario hace las respuestas más ligeras.
+     * La segunda línea son datos "ligeros" para el panel de la búsqueda (duración, valoración,
+     * idiomas, plataformas, estado): vienen en la misma petición, así que no cuestan nada más.
+     */
     static final String VN_FIELDS = "id, title, alttitle, released, description, "
             + "image.url, image.sexual, image.violence, "
-            + "developers.id, developers.name, developers.original";
+            + "developers.id, developers.name, developers.original, "
+            + "olang, length_minutes, length_votes, rating, votecount, languages, platforms, devstatus";
+
+    /** Datos "pesados" del panel de la búsqueda: solo se piden al seleccionar un resultado. */
+    static final String VN_DETAIL_FIELDS = "id, "
+            + "tags.name, tags.rating, tags.spoiler, tags.lie, tags.category, "
+            + "screenshots.url, screenshots.thumbnail, screenshots.sexual, screenshots.violence, "
+            + "relations.id, relations.title, relations.relation, relations.relation_official";
 
     static final String CHARACTER_FIELDS = "id, name, original, description, "
             + "image.url, image.sexual, image.violence, "
@@ -98,6 +110,15 @@ public class VndbClient {
     public Optional<VnDto> vnById(String id) throws VndbException {
         VndbQuery query = new VndbQuery(List.of("id", "=", id), VN_FIELDS, null, 1, null);
         return post("vn", query, VnDto.class).results().stream().findFirst();
+    }
+
+    /**
+     * Etiquetas, capturas y relaciones de una VN (para el panel de la búsqueda). Gasta 1 petición.
+     * Vacío si VNDB no tiene esa VN.
+     */
+    public Optional<VnDetailsDto> vnDetails(String id) throws VndbException {
+        VndbQuery query = new VndbQuery(List.of("id", "=", id), VN_DETAIL_FIELDS, null, 1, null);
+        return post("vn", query, VnDetailsDto.class).results().stream().findFirst();
     }
 
     /**

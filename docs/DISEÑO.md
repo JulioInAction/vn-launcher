@@ -113,4 +113,4 @@ Archivos en `docs/diseno/logo/`:
 
 - **Biblioteca:** los filtros (Todas, Jugando, Pendientes, Completadas) muestran el número de VNs de cada estado. La franja «Continuar» muestra la última VN jugada y su ruta en curso.
 - **Ficha:** las rutas se ordenan arrastrando (asa de seis puntos a la izquierda). Los personajes con spoiler salen difuminados con un botón «Mostrar». Los que no tienen ruta llevan un botón «Marcar con ruta».
-- **Búsqueda:** se busca al pulsar Enter. A la derecha, una vista previa explica qué se descarga al añadir la VN.
+- **Búsqueda:** se busca al pulsar Enter. «N resultados» va encima de la lista y del panel, y el panel empieza a la altura de la primera tarjeta. A la derecha, un panel fijo de 540 px (no hace scroll con la lista): portada de 180 × 270 con título, título original, «Desarrollador · año» y el estado de desarrollo; seis datos en dos columnas; 5 etiquetas sin spoilers; 3 capturas en 16:9; descripción a 6 líneas con «Leer más»; y abajo «Añadir a la biblioteca» o «✓ En tu biblioteca» + «Abrir ficha».

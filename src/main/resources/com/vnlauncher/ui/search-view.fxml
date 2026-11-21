@@ -9,10 +9,11 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<!-- Buscar (docs/diseño/capturas/buscar_*.png):
-       · título, campo de búsqueda con su botón y una nota sobre el coste en peticiones
+<!-- Buscar (docs/diseño/capturas/buscar-oscuro.png y buscar-claro.png):
+       · título y campo de búsqueda con su botón
+       · «N resultados» encima de la lista y del panel
        · a la izquierda, los resultados como tarjetas (las crea SearchController)
-       · a la derecha, la vista previa del resultado elegido y qué se descarga al añadirlo -->
+       · a la derecha, un panel fijo de 540 px con los detalles del resultado elegido -->
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.vnlauncher.ui.SearchController"
@@ -46,18 +47,32 @@
     <!-- Estado vacío "No hay resultados para..." (oculto mientras haya resultados) -->
     <VBox fx:id="emptyBox" alignment="TOP_CENTER" maxWidth="760"/>
 
-    <!-- VBox.vgrow=ALWAYS: esta fila ocupa todo el alto sobrante de la ventana -->
-    <HBox fx:id="resultsRow" spacing="24" VBox.vgrow="ALWAYS">
-        <VBox spacing="12" HBox.hgrow="ALWAYS">
-            <Label fx:id="statusLabel" styleClass="meta"/>
-            <ScrollPane fitToWidth="true" styleClass="plain-scroll" VBox.vgrow="ALWAYS">
+    <!-- «N resultados» y debajo la fila con la lista y el panel. El contador va FUERA de la fila:
+         así la primera tarjeta y el panel empiezan a la misma altura.
+         VBox.vgrow=ALWAYS: ocupa todo el alto sobrante de la ventana. -->
+    <VBox fx:id="resultsArea" spacing="12" VBox.vgrow="ALWAYS">
+        <Label fx:id="statusLabel" styleClass="meta"/>
+
+        <HBox spacing="24" VBox.vgrow="ALWAYS">
+            <!-- La lista hace scroll por su cuenta; el panel de la derecha no se mueve con ella -->
+            <ScrollPane fitToWidth="true" styleClass="plain-scroll" HBox.hgrow="ALWAYS">
                 <VBox fx:id="resultsBox" spacing="12"/>
             </ScrollPane>
-        </VBox>
 
-        <!-- Vista previa: alto según su contenido (no se estira hasta abajo). El ancho lo pone
-             SearchController: el 42 % de la fila, entre 300 y 440 px. -->
-        <VBox fx:id="previewCard" styleClass="card, preview-card" spacing="16"
-              minWidth="300" maxWidth="440" maxHeight="-Infinity"/>
-    </HBox>
+            <!-- Panel de 540 px fijos (min = pref = max). Alto: el de su contenido (maxHeight
+                 -Infinity = USE_PREF_SIZE), sin pasar del de la ventana. Si no cabe, hace scroll por
+                 dentro y el botón de abajo sigue a la vista. -->
+            <VBox fx:id="previewCard" styleClass="card, preview-card"
+                  minWidth="540" prefWidth="540" maxWidth="540" maxHeight="-Infinity">
+                <ScrollPane fx:id="previewScroll" fitToWidth="true" hbarPolicy="NEVER"
+                            styleClass="plain-scroll" VBox.vgrow="ALWAYS">
+                    <!-- Sin margen derecho: lo pone el ancho fijo de cada bloque (ver
+                         SearchController.INNER_WIDTH), y así la barra de scroll cabe sin
+                         estrechar nada -->
+                    <VBox fx:id="previewContent" spacing="24" styleClass="preview-content"/>
+                </ScrollPane>
+                <VBox fx:id="previewFooter" styleClass="preview-footer" minHeight="-Infinity"/>
+            </VBox>
+        </HBox>
+    </VBox>
 </VBox>
