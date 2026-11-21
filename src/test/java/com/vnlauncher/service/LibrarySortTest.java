@@ -18,7 +18,7 @@ class LibrarySortTest {
         VisualNovel vn = new VisualNovel("v-" + title, title, null, null, null, null, null, null, null, List.of());
         LibraryEntry entry = new LibraryEntry(vn, Instant.ofEpochSecond(addedAt), null, null, null, false, null,
                 lastPlayed == null ? null : Instant.ofEpochSecond(lastPlayed), null);
-        return new LibraryItem(entry, PlayStatus.PENDING, RouteSummary.NONE, seconds);
+        return new LibraryItem(entry, PlayStatus.PENDING, RouteSummary.NONE, seconds, false);
     }
 
     private static final List<LibraryItem> ITEMS = List.of(

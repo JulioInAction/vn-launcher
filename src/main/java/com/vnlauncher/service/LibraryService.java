@@ -116,7 +116,8 @@ public class LibraryService {
                 .map(e -> {
                     RouteSummary summary = routes.getOrDefault(e.vn().id(), RouteSummary.NONE);
                     return new LibraryItem(e, PlayStatus.of(summary, e.lastPlayedAt()), summary,
-                            seconds.getOrDefault(e.vn().id(), 0L));
+                            seconds.getOrDefault(e.vn().id(), 0L),
+                            GameFiles.of(e).exeMissing()); // mira el disco: esto va en segundo plano
                 })
                 .toList();
     }

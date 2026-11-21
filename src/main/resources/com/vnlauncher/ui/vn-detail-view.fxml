@@ -57,6 +57,9 @@
                         redondo (ShelfChips). Los pone VnDetailController. -->
                 <FlowPane fx:id="chipsRow" hgap="8" vgap="8" alignment="CENTER_LEFT"/>
 
+                <!-- Aviso «No se encuentra el ejecutable» (fase 7). Solo ocupa sitio si lo hay -->
+                <VBox fx:id="exeNoticeBox"/>
+
                 <!-- 3. Acciones: «Jugar», «Opciones del juego» (engranaje) y «Más opciones» (⋯). A la
                         derecha, lo que pasa al actualizar desde VNDB: no mueve nada al aparecer -->
                 <HBox fx:id="actionsRow" spacing="10" alignment="CENTER_LEFT">

@@ -13,6 +13,7 @@ import com.vnlauncher.model.VisualNovel;
 import com.vnlauncher.model.VnCharacter;
 import com.vnlauncher.model.VnDetails;
 import com.vnlauncher.model.VnTag;
+import com.vnlauncher.service.GameFiles;
 import com.vnlauncher.util.PlayTime;
 import com.vnlauncher.util.RelativeTime;
 import javafx.animation.KeyFrame;
@@ -23,6 +24,7 @@ import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.geometry.Side;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -31,6 +33,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.SeparatorMenuItem;
@@ -43,6 +46,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.SVGPath;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 
@@ -104,6 +108,14 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
     private static final String WAITING = "Esperando al límite de VNDB (%d:%02d)…";
     private static final String REFRESHED = "✓  Actualizado";
 
+    // --- Ejecutable perdido (fase 7)
+    private static final String PLAY = "▶  Jugar";
+    private static final String CHOOSE_EXE = "Elegir ejecutable";
+    private static final String EXE_MISSING_TITLE = "No se encuentra el ejecutable";
+    private static final String FIND_EXE = "Buscar el .exe";
+    /** Un círculo con «!» dentro, de 22 px. */
+    private static final String MISSING_ICON = "M11 1.5A9.5 9.5 0 1 0 11.01 1.5Z M11 6.5V12 M11 15.3V15.5";
+
     private final AppContext ctx;
     private final Navigator navigator;
     private final Consumer<String> urlOpener;
@@ -119,6 +131,7 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
     @FXML private Label altTitleLabel;
     @FXML private Label metaLabel;
     @FXML private FlowPane chipsRow;
+    @FXML private VBox exeNoticeBox;
     @FXML private Button playButton;
     @FXML private Button optionsButton;
     @FXML private Button moreButton;
@@ -147,6 +160,8 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
     private final DoubleProperty pageWidth = new SimpleDoubleProperty();
 
     private LibraryEntry entry;
+    /** Si siguen ahí el ejecutable y el programa de configuración (se mira en segundo plano). */
+    private GameFiles files = new GameFiles(GameFiles.FileStatus.NOT_SET, GameFiles.FileStatus.NOT_SET);
     /** Segundos jugados (suma de sesiones), para la fila de datos. */
     private long playSeconds;
     /** «Opciones del juego» mientras está abierto (para pintarle los cambios); si no, null. */
@@ -367,16 +382,20 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
 
     // =========================================================== cabecera
 
+    /** La VN leída de la base de datos y si siguen ahí sus archivos (mirado en el mismo hilo de fondo). */
+    private record Loaded(LibraryEntry entry, GameFiles files) {
+    }
+
     /** Lee la VN y pinta la cabecera. */
     private void loadHeader() {
         BackgroundTasks.run(ctx.background(),
-                () -> ctx.libraryService().find(vnId),
+                () -> ctx.libraryService().find(vnId).map(e -> new Loaded(e, GameFiles.of(e))),
                 found -> {
                     if (found.isEmpty()) {
                         navigator.showLibrary(); // ya no está en la biblioteca
                         return;
                     }
-                    renderVn(found.get());
+                    renderVn(found.get().entry());
                     renderLaunchInfo(found.get());
                     optionsButton.setDisable(false);
                     moreButton.setDisable(false);
@@ -413,15 +432,51 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
      * Parte de la cabecera que cambia al configurar o lanzar el juego. La ruta del ejecutable ya
      * no se ve en la ficha: va en el tooltip de «Jugar» y en «Opciones del juego».
      */
-    private void renderLaunchInfo(LibraryEntry loaded) {
-        entry = loaded;
-        playButton.setTooltip(loaded.hasExecutable() ? new Tooltip(loaded.exePath()) : null);
+    private void renderLaunchInfo(Loaded loaded) {
+        entry = loaded.entry();
+        files = loaded.files();
+        playButton.setTooltip(entry.hasExecutable() ? new Tooltip(entry.exePath()) : null);
         renderPlayButton();
+        renderExeNotice();
         renderStatus();
         renderStats();
         if (optionsDialog != null) {
-            optionsDialog.update(loaded); // si está abierto, que enseñe lo recién guardado
+            optionsDialog.update(entry, files); // si está abierto, que enseñe lo recién guardado
         }
+    }
+
+    /**
+     * Si el ejecutable ya no está (juego movido o desinstalado): aviso en rojo entre los chips y
+     * las acciones, con la ruta y «Buscar el .exe». Si lo que falta es el programa de
+     * configuración, no se avisa aquí: solo se marca en «Opciones del juego».
+     */
+    private void renderExeNotice() {
+        exeNoticeBox.getChildren().clear();
+        show(exeNoticeBox, files.exeMissing());
+        if (!files.exeMissing()) {
+            return;
+        }
+        SVGPath icon = new SVGPath();
+        icon.setContent(MISSING_ICON);
+        icon.getStyleClass().add("exe-notice-icon");
+        Label title = new Label(EXE_MISSING_TITLE);
+        title.getStyleClass().add("exe-notice-title");
+        Label path = new Label(entry.exePath());
+        path.getStyleClass().addAll("mono", "exe-notice-path");
+        path.setTextOverrun(OverrunStyle.LEADING_ELLIPSIS);
+        path.setTooltip(new Tooltip(entry.exePath()));
+        path.setMinWidth(0);
+        VBox texts = new VBox(2, title, path);
+        texts.setMinWidth(0);
+        HBox.setHgrow(texts, Priority.ALWAYS);
+        Button find = new Button(FIND_EXE);
+        find.setMinWidth(Region.USE_PREF_SIZE);
+        find.setOnAction(event -> launchFlow.chooseExecutable(vnId, entry.vn().title(), entry.exePath(),
+                this::reloadPlayData));
+        HBox notice = new HBox(14, icon, texts, find);
+        notice.setAlignment(Pos.CENTER_LEFT);
+        notice.getStyleClass().add("exe-notice");
+        exeNoticeBox.getChildren().add(notice);
     }
 
     /**
@@ -512,22 +567,29 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
     }
 
     /** "▶ Jugar", "Lanzando..." o "Jugando..." según el estado. */
+    /**
+     * «▶ Jugar», «Lanzando...» o «Jugando...». Sin ejecutable elegido, el botón principal es
+     * «Elegir ejecutable»; con uno que ya no está, «Jugar» se queda desactivado (el aviso de
+     * encima explica por qué y deja buscarlo).
+     */
     private void renderPlayButton() {
         boolean running = ctx.launchService().isRunning(vnId);
-        playButton.setText(running ? "Jugando..." : launching ? "Lanzando..." : "▶  Jugar");
-        playButton.setDisable(entry == null || running || launching);
+        boolean noExe = entry != null && !entry.hasExecutable();
+        playButton.setText(running ? "Jugando..." : launching ? "Lanzando..." : noExe ? CHOOSE_EXE : PLAY);
+        playButton.setDisable(entry == null || running || launching || files.exeMissing());
     }
 
     /** Recarga los datos de juego: última partida y tiempo total (en segundo plano). */
     private void reloadPlayData() {
         // Un record local: solo existe dentro de este método, para devolver dos valores juntos
-        record PlayData(Optional<LibraryEntry> entry, long seconds) {
+        record PlayData(Optional<Loaded> loaded, long seconds) {
         }
         BackgroundTasks.run(ctx.background(),
-                () -> new PlayData(ctx.libraryService().find(vnId), ctx.libraryService().totalPlaySeconds(vnId)),
+                () -> new PlayData(ctx.libraryService().find(vnId).map(e -> new Loaded(e, GameFiles.of(e))),
+                        ctx.libraryService().totalPlaySeconds(vnId)),
                 data -> {
                     playSeconds = data.seconds();
-                    data.entry().ifPresent(this::renderLaunchInfo);
+                    data.loaded().ifPresent(this::renderLaunchInfo);
                 },
                 "No se ha podido leer el tiempo de juego.");
     }
@@ -712,6 +774,11 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
         if (entry == null) {
             return;
         }
+        if (!entry.hasExecutable()) {
+            // «Elegir ejecutable»: el selector de archivos; al guardarlo, el botón pasa a «Jugar»
+            launchFlow.chooseExecutable(vnId, entry.vn().title(), null, this::reloadPlayData);
+            return;
+        }
         launching = true;
         renderPlayButton();
         launchFlow.play(vnId, entry.vn().title(),
@@ -742,7 +809,7 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
         if (entry == null) {
             return;
         }
-        optionsDialog = new GameOptionsDialog(optionsButton, entry, new GameOptionsDialog.Actions() {
+        optionsDialog = new GameOptionsDialog(optionsButton, entry, files, new GameOptionsDialog.Actions() {
             @Override
             public void chooseExecutable(Node owner) {
                 // Con un LaunchFlow anclado al diálogo: el selector de archivos sale encima de él

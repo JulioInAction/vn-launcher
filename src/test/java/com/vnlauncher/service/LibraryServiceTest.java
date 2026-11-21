@@ -184,6 +184,24 @@ class LibraryServiceTest {
     }
 
     @Test
+    void anExecutableThatIsGoneIsMarkedButNotHavingOneIsNot() throws Exception {
+        for (String id : List.of("v1", "v2", "v3")) {
+            service.addToLibrary(searchResult(id, null));
+        }
+        java.nio.file.Path exe = java.nio.file.Files.writeString(tempDir.resolve("Juego.exe"), "");
+        library.updateExePath("v1", exe.toString());
+        library.updateExePath("v2", tempDir.resolve("desinstalado/Juego.exe").toString());
+
+        var missing = new java.util.HashMap<String, Boolean>();
+        for (LibraryItem item : service.findAllWithStatus()) {
+            missing.put(item.entry().vn().id(), item.exeMissing());
+        }
+
+        assertEquals(java.util.Map.of("v1", false, "v2", true, "v3", false), missing,
+                "v3 no tiene ejecutable: eso no es «No encontrado»");
+    }
+
+    @Test
     void recentlyPlayedIsSortedNewestFirstAndLimited() throws Exception {
         for (String id : List.of("v1", "v2", "v3", "v4")) {
             service.addToLibrary(searchResult(id, null));

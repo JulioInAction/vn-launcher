@@ -26,7 +26,7 @@ class LibraryQueryTest {
         VisualNovel vn = new VisualNovel(id, title, altTitle, null, null, null, null, null, null,
                 List.of(new Developer("p" + id, developer, null)));
         LibraryEntry entry = new LibraryEntry(vn, Instant.EPOCH, null, null, null, false, null, null, null);
-        return new LibraryItem(entry, status, RouteSummary.NONE, 0);
+        return new LibraryItem(entry, status, RouteSummary.NONE, 0, false);
     }
 
     private static final LibraryItem CLANNAD = item("v4", "CLANNAD", "クラナド", "Key", PlayStatus.PLAYING);

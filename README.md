@@ -98,7 +98,7 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
 - [x] Fase 7: pulido («Actualizar desde VNDB», programa de configuración, instalador)
 - [ ] Fase 8: Discord Rich Presence
 - [ ] Versión 1.0 (en curso): registro de errores ✓, copias de seguridad automáticas ✓, restaurar
-  una copia ✓, exportar e importar el perfil ✓, estado manual ✓, estanterías ✓, ejecutables perdidos,
+  una copia ✓, exportar e importar el perfil ✓, estado manual ✓, estanterías ✓, ejecutables perdidos ✓,
   vista previa de la ficha, búsqueda en la biblioteca, aviso de actualizaciones
 - Después de la 1.0: GitHub Action que construya el instalador al subir una etiqueta; en la 1.1,
   traducción completa al inglés (ResourceBundle, selector de idioma, plurales con MessageFormat y
@@ -149,6 +149,15 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
   seguidos para no gastar una línea en blanco). La ruta del ejecutable ya no se ve: va en el
   tooltip de «Jugar». Las negritas salen de plantillas con `<b>…</b>` (`RichText`), para que cada
   frase siga siendo una sola plantilla traducible.
+- **Ejecutables perdidos** (`GameFiles`): en cada carga de la biblioteca (también al arrancar) y al
+  abrir la ficha se mira en segundo plano si siguen ahí el ejecutable y el programa de
+  configuración. Una ruta vacía no cuenta como perdida; una que no lleva a ningún archivo (o que ni
+  siquiera es válida), sí. En la biblioteca, la portada lleva «ⓘ No encontrado» y el «Jugar» de
+  «Continuar» se desactiva. En la ficha sale un aviso rojo entre los chips y las acciones («No se
+  encuentra el ejecutable», la ruta y «Buscar el .exe») y «Jugar» se desactiva. Sin ejecutable
+  elegido, el botón principal es «Elegir ejecutable». En «Opciones del juego», el campo de un
+  archivo perdido va con borde rojo y «No se encuentra este archivo»; si el que falta es el
+  programa de configuración, solo se marca ahí.
 - **Opciones del juego** (`GameOptionsDialog`, `opciones-juego-*.png`): el ejecutable (ruta de solo
   lectura recortada por el principio, entera en el tooltip, y «Cambiar…»), el programa de
   configuración («Sin configurar» + «Elegir…», o la ruta con «Cambiar…» y «Quitar») y el interruptor

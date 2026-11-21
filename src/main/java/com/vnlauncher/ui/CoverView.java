@@ -1,6 +1,7 @@
 package com.vnlauncher.ui;
 
 import javafx.geometry.Pos;
+import javafx.geometry.Insets;
 import javafx.scene.Cursor;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
@@ -10,6 +11,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.SVGPath;
 import javafx.stage.Screen;
 
 import java.nio.file.Files;
@@ -37,6 +39,9 @@ public class CoverView extends StackPane {
 
     private final ImageView imageView = new ImageView();
     private final Label sensitiveBadge = new Label("Sensible");
+    static final String MISSING = "No encontrado";
+    /** Un círculo con «!» dentro, de 12 px. */
+    private static final String MISSING_ICON = "M6 0.8A5.2 5.2 0 1 0 6.01 0.8Z M6 3.3V6.6 M6 8.7V8.8";
     private final boolean sensitive;
 
     /** Imagen guardada en disco (o null). */
@@ -95,6 +100,23 @@ public class CoverView extends StackPane {
             getChildren().add(sensitiveBadge);
         }
         setRevealed(false);
+    }
+
+    /**
+     * Marca la portada con «ⓘ No encontrado» arriba a la derecha (biblioteca-1-0-*.png): el
+     * ejecutable del juego ya no está. Si también lleva «Sensible», esta baja un poco.
+     */
+    public CoverView markMissing() {
+        SVGPath icon = new SVGPath();
+        icon.setContent(MISSING_ICON);
+        icon.getStyleClass().add("missing-badge-icon");
+        Label badge = new Label(MISSING, icon);
+        badge.getStyleClass().add("missing-badge");
+        StackPane.setAlignment(badge, Pos.TOP_RIGHT);
+        StackPane.setMargin(badge, new Insets(8, 8, 0, 0));
+        StackPane.setMargin(sensitiveBadge, new Insets(40, 0, 0, 0));
+        getChildren().add(badge);
+        return this;
     }
 
     /** Variante redonda (avatar) para las filas de rutas. */

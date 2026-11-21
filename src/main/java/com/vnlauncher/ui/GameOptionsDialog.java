@@ -1,6 +1,7 @@
 package com.vnlauncher.ui;
 
 import com.vnlauncher.model.LibraryEntry;
+import com.vnlauncher.service.GameFiles;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -47,6 +48,7 @@ final class GameOptionsDialog {
     static final String CHOOSE = "Elegir…";
     static final String REMOVE = "Quitar";
     static final String DONE = "Listo";
+    static final String FILE_MISSING = "No se encuentra este archivo";
 
     private final ModalDialog dialog;
     private final Actions actions;
@@ -56,7 +58,7 @@ final class GameOptionsDialog {
     /** true mientras se pinta lo guardado: ese cambio del interruptor no hay que guardarlo. */
     private boolean updating;
 
-    GameOptionsDialog(Node owner, LibraryEntry entry, Actions actions) {
+    GameOptionsDialog(Node owner, LibraryEntry entry, GameFiles files, Actions actions) {
         this.actions = actions;
         dialog = new ModalDialog(owner, 590).titleWithSubtitle(TITLE, entry.vn().title());
 
@@ -85,7 +87,7 @@ final class GameOptionsDialog {
         Button done = dialog.button("done", DONE, ModalDialog.ButtonKind.PRIMARY);
         // El foco empieza en «Listo» (si no, lo coge la × y sale marcada)
         javafx.application.Platform.runLater(done::requestFocus);
-        update(entry);
+        update(entry, files);
     }
 
     /** Abre el diálogo y espera a que se cierre. */
@@ -98,12 +100,16 @@ final class GameOptionsDialog {
         dialog.dismiss();
     }
 
-    /** Vuelve a pintar con la VN tal y como está guardada. */
-    void update(LibraryEntry entry) {
+    /**
+     * Vuelve a pintar con la VN tal y como está guardada. Un archivo que ya no está se marca con
+     * borde -vn-danger y «No se encuentra este archivo» debajo.
+     */
+    void update(LibraryEntry entry, GameFiles files) {
         // --- Ejecutable: la ruta + «Cambiar…», o «Sin elegir» + «Elegir…»
         if (entry.hasExecutable()) {
             exeField.getChildren().setAll(pathRow(entry.exePath(),
                     button(CHANGE, () -> actions.chooseExecutable(exeField))));
+            markMissing(exeField, files.exeMissing());
         } else {
             exeField.getChildren().setAll(emptyRow(NO_EXECUTABLE, () -> actions.chooseExecutable(exeField)));
         }
@@ -112,12 +118,25 @@ final class GameOptionsDialog {
             configField.getChildren().setAll(pathRow(entry.configExePath(),
                     button(CHANGE, () -> actions.chooseConfig(configField)),
                     button(REMOVE, actions::removeConfig)));
+            markMissing(configField, files.configMissing());
         } else {
             configField.getChildren().setAll(emptyRow(NOT_SET, () -> actions.chooseConfig(configField)));
         }
         updating = true;
         localeEmulator.setSelected(entry.useLocaleEmulator());
         updating = false;
+    }
+
+    /** Borde rojo en el campo de la ruta y «No se encuentra este archivo» debajo. */
+    private static void markMissing(VBox field, boolean missing) {
+        if (!missing) {
+            return;
+        }
+        HBox row = (HBox) field.getChildren().getFirst();
+        row.getChildren().getFirst().getStyleClass().add("missing");
+        Label message = new Label(FILE_MISSING);
+        message.getStyleClass().add("form-error");
+        field.getChildren().add(message);
     }
 
     /**

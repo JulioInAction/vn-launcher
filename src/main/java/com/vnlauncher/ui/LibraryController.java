@@ -58,6 +58,7 @@ public class LibraryController implements PlaytimeAware, ShelvesAware {
 
     /** MessageFormat con {@code choice}: «1 novela», «9 novelas». */
     private static final String COUNT = "{0,choice,0#0 novelas|1#1 novela|1<{0,number,integer} novelas}";
+    private static final String MISSING_TOOLTIP = "No se encuentra el ejecutable. Ábrelo en su ficha para buscarlo.";
     private static final String STATUS_FILTER = "Estado: %s   ✕";
     private static final String SHELF_FILTER = "Estantería: %s   ✕";
     private static final String EMPTY_SHELF = "La estantería «%s» está vacía. Añade novelas desde su ficha, "
@@ -444,7 +445,13 @@ public class LibraryController implements PlaytimeAware, ShelvesAware {
         Button play = new Button(running ? "Jugando..." : "▶  Jugar");
         play.getStyleClass().addAll("primary-button", "big-button");
         play.setMinWidth(Region.USE_PREF_SIZE); // el botón nunca se corta ("Ju..."); cede el texto
-        play.setDisable(running);
+        // Si el ejecutable ya no está, no se puede jugar: la ficha explica qué pasa y deja buscarlo
+        boolean missing = data.items().stream()
+                .anyMatch(i -> i.entry().vn().id().equals(vn.id()) && i.exeMissing());
+        play.setDisable(running || missing);
+        if (missing) {
+            Tooltip.install(continueCard, new Tooltip(MISSING_TOOLTIP));
+        }
         play.setOnAction(event -> {
             play.setDisable(true);
             play.setText("Lanzando...");
@@ -478,6 +485,9 @@ public class LibraryController implements PlaytimeAware, ShelvesAware {
                 : new CoverView(Covers.file(ctx, entry), Covers.sensitive(ctx, entry), COVER_WIDTH, COVER_HEIGHT,
                 vn.title());
         cover.setRevealed(showSensitiveCheck.isSelected());
+        if (item.exeMissing()) {
+            cover.markMissing(); // el juego se ha movido o desinstalado
+        }
         covers.add(cover);
 
         Label title = new Label(vn.title());
