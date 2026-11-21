@@ -123,6 +123,15 @@ class DatabaseTest {
     }
 
     @Test
+    void shelfColorsAreOneOfTheEightKeys() throws SQLException {
+        try (Connection c = db.getConnection(); Statement st = c.createStatement()) {
+            st.executeUpdate("INSERT INTO shelf (name, color, position, created_at) VALUES ('A', 'turquesa', 0, 0)");
+            assertThrows(SQLException.class, () -> st.executeUpdate(
+                    "INSERT INTO shelf (name, color, position, created_at) VALUES ('B', '#FF0000', 1, 0)"));
+        }
+    }
+
+    @Test
     void removingFromLibraryCascadesToRoutesAndSessions() throws SQLException {
         try (Connection c = db.getConnection(); Statement st = c.createStatement()) {
             st.executeUpdate("INSERT INTO vn (id, title, fetched_at) VALUES ('v1', 'Test', 0)");

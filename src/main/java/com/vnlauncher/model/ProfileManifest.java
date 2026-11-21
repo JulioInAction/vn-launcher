@@ -17,7 +17,8 @@ package com.vnlauncher.model;
  * @param routes          rutas apuntadas
  * @param playtimeSeconds tiempo de juego total
  * @param covers          portadas propias incluidas
+ * @param shelves         estanterías (0 en perfiles de antes de que existieran: el campo no está)
  */
 public record ProfileManifest(int format, String app, String appVersion, int schemaVersion, String exportedAt,
-                              int novels, int routes, long playtimeSeconds, int covers) {
+                              int novels, int routes, long playtimeSeconds, int covers, int shelves) {
 }

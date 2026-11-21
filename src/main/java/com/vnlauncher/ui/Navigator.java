@@ -1,6 +1,7 @@
 package com.vnlauncher.ui;
 
 import com.vnlauncher.model.PlayStatus;
+import com.vnlauncher.model.Shelf;
 import com.vnlauncher.model.VnTag;
 
 /**
@@ -15,6 +16,9 @@ public interface Navigator {
 
     /** Biblioteca mostrando solo las VNs en un estado (Jugando, En pausa...); se combina con la etiqueta. */
     void showLibrary(PlayStatus status);
+
+    /** Biblioteca mostrando solo las VNs de una estantería; se combina con la etiqueta. */
+    void showLibraryWithShelf(Shelf shelf);
 
     /** Biblioteca mostrando solo las VNs con esta etiqueta (al pulsarla en la ficha). */
     void showLibraryWithTag(VnTag tag);
@@ -33,4 +37,10 @@ public interface Navigator {
      * al añadir o quitar una VN, cambiar una ruta o su estado, o lanzar un juego.
      */
     void refreshSidebar();
+
+    /**
+     * Se ha creado, cambiado, reordenado o borrado una estantería, o se ha metido o sacado una VN:
+     * se actualizan la barra lateral y la pantalla visible.
+     */
+    void shelvesChanged();
 }

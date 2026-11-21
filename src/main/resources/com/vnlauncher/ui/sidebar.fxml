@@ -6,6 +6,7 @@
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
@@ -15,7 +16,7 @@
 
 <!-- Barra lateral común a todas las pantallas (docs/DISEÑO.md, "Barra lateral").
      StackPane: abajo la marca de agua japonesa, encima el contenido.
-     Las entradas de navegación y de estado las crea SidebarController en código. -->
+     Las entradas de navegación, estados y estanterías las crea SidebarController en código. -->
 <StackPane fx:id="sidebarRoot"
            xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
@@ -58,16 +59,36 @@
 
         <Region minHeight="26"/>
 
-        <!-- 4. Estado: los cinco estados con su contador (SidebarController) -->
-        <Label text="ESTADO" styleClass="caps, sidebar-block">
-            <VBox.margin><Insets bottom="4"/></VBox.margin>
-        </Label>
-        <VBox fx:id="statusBox" spacing="0"/>
+        <!-- 4 y 5. Estado y Mis estanterías, en un ScrollPane que ocupa el hueco que quede: con
+             muchas estanterías o la ventana baja, se desplaza en vez de empujar el contador de VNDB -->
+        <!-- Margen derecho -8: aprovecha parte del margen de la barra para que quepan nombres
+             como «Para la Steam Deck» (los más largos se cortan con «…» y tienen tooltip) -->
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="plain-scroll, sidebar-scroll"
+                    VBox.vgrow="ALWAYS">
+            <VBox.margin><Insets right="-8"/></VBox.margin>
+            <VBox spacing="0">
+                <!-- 4. Estado: los cinco estados con su contador (SidebarController) -->
+                <Label text="ESTADO" styleClass="caps, sidebar-block">
+                    <VBox.margin><Insets bottom="4"/></VBox.margin>
+                </Label>
+                <VBox fx:id="statusBox" spacing="0"/>
 
-        <!-- Hueco que crece: empuja lo siguiente hasta abajo del todo -->
-        <Region VBox.vgrow="ALWAYS"/>
+                <Region minHeight="22"/>
 
-        <!-- 5. Contador de peticiones a VNDB (el tema se cambia en Ajustes → Apariencia) -->
+                <!-- 5. Mis estanterías: «+» para crear una, las del usuario y «+ Nueva estantería» -->
+                <HBox alignment="CENTER_LEFT" styleClass="sidebar-block">
+                    <VBox.margin><Insets bottom="4"/></VBox.margin>
+                    <Label text="MIS ESTANTERÍAS" styleClass="caps"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="addShelfButton" text="+" styleClass="sidebar-add"/>
+                </HBox>
+                <VBox fx:id="shelvesBox" spacing="0"/>
+                <Button text="+   Nueva estantería" onAction="#createShelf" styleClass="new-shelf"
+                        maxWidth="Infinity"/>
+            </VBox>
+        </ScrollPane>
+
+        <!-- 6. Contador de peticiones a VNDB (el tema se cambia en Ajustes → Apariencia) -->
         <VBox spacing="8" styleClass="sidebar-block">
             <HBox alignment="CENTER_LEFT" spacing="8">
                 <Label text="Peticiones VNDB" styleClass="muted, small">

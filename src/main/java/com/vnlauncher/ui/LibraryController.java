@@ -6,8 +6,10 @@ import com.vnlauncher.model.LibraryEntry;
 import com.vnlauncher.model.LibraryItem;
 import com.vnlauncher.model.PlayStatus;
 import com.vnlauncher.model.RouteSummary;
+import com.vnlauncher.model.Shelf;
 import com.vnlauncher.model.VisualNovel;
 import com.vnlauncher.model.VnTag;
+import com.vnlauncher.service.LibraryQuery;
 import com.vnlauncher.service.LibraryService;
 import com.vnlauncher.service.LibrarySort;
 import com.vnlauncher.util.PlayTime;
@@ -41,11 +43,12 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 /**
- * Vista "Biblioteca": franja "Continuar" con la última VN jugada, los filtros activos (el estado
- * elegido en la barra lateral y la etiqueta pulsada en una ficha, cada uno con su ✕), el orden y la
- * cuadrícula de portadas. Todo sale de la base de datos y del disco, así que funciona sin conexión.
+ * Vista "Biblioteca": franja "Continuar" con la última VN jugada, los filtros activos (el estado o
+ * la estantería elegidos en la barra lateral y la etiqueta pulsada en una ficha, cada uno con su ✕),
+ * el orden y la cuadrícula de portadas. Los filtros van en un {@link LibraryQuery}. Todo sale de la
+ * base de datos y del disco, así que funciona sin conexión.
  */
-public class LibraryController implements PlaytimeAware {
+public class LibraryController implements PlaytimeAware, ShelvesAware {
 
     private static final System.Logger LOG = System.getLogger(LibraryController.class.getName());
 
@@ -56,6 +59,10 @@ public class LibraryController implements PlaytimeAware {
     /** MessageFormat con {@code choice}: «1 novela», «9 novelas». */
     private static final String COUNT = "{0,choice,0#0 novelas|1#1 novela|1<{0,number,integer} novelas}";
     private static final String STATUS_FILTER = "Estado: %s   ✕";
+    private static final String SHELF_FILTER = "Estantería: %s   ✕";
+    private static final String EMPTY_SHELF = "La estantería «%s» está vacía. Añade novelas desde su ficha, "
+            + "con «+ Añadir a estantería».";
+    private static final String NONE_IN_SHELF_WITH_TAG = "Ninguna novela de «%s» tiene la etiqueta «%s».";
     private static final String TAG_FILTER = "Etiqueta: %s   ✕";
     private static final String REMOVE_FILTER = "Quitar el filtro";
     private static final String NONE_WITH_STATUS = "No hay ninguna novela con el estado «%s».";
@@ -65,11 +72,12 @@ public class LibraryController implements PlaytimeAware {
             + "aún no tienen} sus etiquetas: se descargan al abrir su ficha.";
 
     /**
-     * Lo que carga la tarea de fondo: la biblioteca, la ruta en curso de la última VN jugada y, si
-     * se filtra por etiqueta, qué VNs la tienen y cuántas aún no tienen sus etiquetas guardadas.
+     * Lo que carga la tarea de fondo: la biblioteca, la ruta en curso de la última VN jugada; si se
+     * filtra por estantería, la estantería tal y como está ahora (vacío si ya no existe) y sus VNs;
+     * y si se filtra por etiqueta, qué VNs la tienen y cuántas aún no tienen sus etiquetas guardadas.
      */
     private record LibraryData(List<LibraryItem> items, Optional<CurrentRoute> currentRoute,
-                               Set<String> withTag, int withoutTags) {
+                               Optional<Shelf> shelf, Set<String> inShelf, Set<String> withTag, int withoutTags) {
     }
 
     private final AppContext ctx;
@@ -89,13 +97,11 @@ public class LibraryController implements PlaytimeAware {
     @FXML private Label emptyLabel;
     @FXML private TilePane grid;
 
-    /** Estado por el que se filtra (desde la barra lateral); null = todos. */
-    private PlayStatus status;
-    /** Etiqueta por la que se filtra (se combina con el estado); null = ninguna. */
-    private VnTag tag;
-    /** Para que la barra lateral resalte el estado filtrado (lo conecta MainController). */
-    private Consumer<PlayStatus> onStatusChanged = s -> { };
-    private LibraryData data = new LibraryData(List.of(), Optional.empty(), Set.of(), 0);
+    /** Los filtros: estado o estantería, etiqueta y texto (este, en la fase 11). */
+    private LibraryQuery query = LibraryQuery.ALL;
+    /** Para que la barra lateral resalte el estado o la estantería filtrados (lo conecta MainController). */
+    private Consumer<LibraryQuery> onQueryChanged = q -> { };
+    private LibraryData data = new LibraryData(List.of(), Optional.empty(), Optional.empty(), Set.of(), Set.of(), 0);
     /** Las portadas que hay en pantalla, para (des)difuminarlas al marcar la casilla. */
     private final List<CoverView> covers = new ArrayList<>();
 
@@ -124,40 +130,50 @@ public class LibraryController implements PlaytimeAware {
      * haber VNs nuevas añadidas desde la búsqueda.
      */
     public void showAll() {
-        setStatus(null);
-        this.tag = null;
+        setQuery(LibraryQuery.ALL);
         load(true);
     }
 
     /**
-     * Solo las VNs en este estado (al pulsarlo en la barra lateral). Si había un filtro de
-     * etiqueta, se queda: los dos se combinan.
+     * Solo las VNs en este estado (al pulsarlo en la barra lateral). Quita la estantería, si había
+     * (son excluyentes); la etiqueta se queda: se combinan.
      */
     public void showStatus(PlayStatus status) {
-        setStatus(status);
+        setQuery(query.withStatus(status));
         load(true);
     }
 
-    /** Muestra solo las VNs con esta etiqueta (en cualquier estado). */
+    /** Solo las VNs de esta estantería. Quita el estado, si había; la etiqueta se queda. */
+    public void showShelf(Shelf shelf) {
+        setQuery(query.withShelf(shelf));
+        load(true);
+    }
+
+    /** Muestra solo las VNs con esta etiqueta (al pulsarla en una ficha: sin más filtros). */
     public void showTag(VnTag tag) {
-        setStatus(null);
-        this.tag = tag;
+        setQuery(LibraryQuery.ALL.withTag(tag));
         load(true);
     }
 
-    /** El estado por el que se filtra ahora (null = todos), para la barra lateral. */
-    public PlayStatus status() {
-        return status;
+    /** Los filtros de ahora, para que la barra lateral resalte el estado o la estantería. */
+    public LibraryQuery query() {
+        return query;
     }
 
-    /** Se llama cada vez que cambia el estado filtrado (también al quitarlo con su ✕). */
-    public void setOnStatusChanged(Consumer<PlayStatus> listener) {
-        this.onStatusChanged = listener;
+    /** Se llama cada vez que cambian los filtros (también al quitar uno con su ✕). */
+    public void setOnQueryChanged(Consumer<LibraryQuery> listener) {
+        this.onQueryChanged = listener;
     }
 
-    private void setStatus(PlayStatus status) {
-        this.status = status;
-        onStatusChanged.accept(status);
+    private void setQuery(LibraryQuery newQuery) {
+        query = newQuery;
+        onQueryChanged.accept(newQuery);
+    }
+
+    /** Se ha creado, cambiado o borrado una estantería: puede ser la que se está filtrando. */
+    @Override
+    public void shelvesChanged() {
+        load(false);
     }
 
     /** Vuelve a cargar sin cambiar los filtros (al volver de una ficha). */
@@ -183,7 +199,7 @@ public class LibraryController implements PlaytimeAware {
      */
     private void load(boolean repairCovers) {
         LibraryService library = ctx.libraryService();
-        VnTag filter = tag; // la lambda corre en otro hilo: mejor no leer el campo desde allí
+        LibraryQuery filter = query; // la lambda corre en otro hilo: mejor no leer el campo desde allí
         BackgroundTasks.run(ctx.background(), () -> {
                     List<LibraryItem> items = library.findAllWithStatus();
                     Optional<CurrentRoute> current = Optional.empty();
@@ -191,16 +207,31 @@ public class LibraryController implements PlaytimeAware {
                     if (!recent.isEmpty()) {
                         current = library.currentRoute(recent.getFirst().vn().id());
                     }
+                    Optional<Shelf> shelf = Optional.empty();
+                    Set<String> inShelf = Set.of();
+                    if (filter.shelf() != null) {
+                        // La estantería como está ahora (puede haber cambiado de nombre o no existir ya)
+                        long id = filter.shelf().id();
+                        shelf = ctx.shelfService().findAll().stream().filter(s -> s.id() == id).findFirst();
+                        inShelf = ctx.shelfService().vnIdsIn(id);
+                    }
                     Set<String> withTag = Set.of();
                     int withoutTags = 0;
-                    if (filter != null) {
-                        withTag = ctx.vnDetailsService().vnIdsWithTag(filter.id());
+                    if (filter.tag() != null) {
+                        withTag = ctx.vnDetailsService().vnIdsWithTag(filter.tag().id());
                         withoutTags = ctx.vnDetailsService().countLibraryWithoutTags();
                     }
-                    return new LibraryData(items, current, withTag, withoutTags);
+                    return new LibraryData(items, current, shelf, inShelf, withTag, withoutTags);
                 },
                 loaded -> {
                     data = loaded;
+                    // La estantería filtrada se ha borrado: fuera ese filtro. Si sigue, con su nombre de ahora.
+                    if (query.shelf() != null && loaded.shelf().isEmpty()) {
+                        setQuery(query.withShelf(null));
+                    } else if (loaded.shelf().isPresent() && query.shelf() != null
+                            && loaded.shelf().get().id() == query.shelf().id()) {
+                        query = query.withShelf(loaded.shelf().get());
+                    }
                     render();
                     List<LibraryEntry> entries = loaded.items().stream().map(LibraryItem::entry).toList();
                     if (repairCovers && library.hasMissingCovers(entries)) {
@@ -270,9 +301,7 @@ public class LibraryController implements PlaytimeAware {
         renderContinue();
         renderActiveFilters();
 
-        List<LibraryItem> visible = all.stream()
-                .filter(item -> tag == null || data.withTag().contains(item.entry().vn().id()))
-                .filter(item -> status == null || item.status() == status)
+        List<LibraryItem> visible = query.apply(all, data.inShelf(), data.withTag()).stream()
                 .sorted(sortBox.getValue().comparator())
                 .toList();
         covers.clear();
@@ -289,6 +318,12 @@ public class LibraryController implements PlaytimeAware {
 
     /** Por qué no sale ninguna novela, según los filtros que haya. */
     private String emptyMessage() {
+        VnTag tag = query.tag();
+        if (query.shelf() != null) {
+            return tag == null ? String.format(EMPTY_SHELF, query.shelf().name())
+                    : String.format(NONE_IN_SHELF_WITH_TAG, query.shelf().name(), tag.name());
+        }
+        PlayStatus status = query.status();
         if (tag == null) {
             return String.format(NONE_WITH_STATUS, status == null ? "" : status.label());
         }
@@ -303,19 +338,29 @@ public class LibraryController implements PlaytimeAware {
      */
     private void renderActiveFilters() {
         activeFiltersBox.getChildren().clear();
-        if (status != null) {
-            activeFiltersBox.getChildren().add(filterChip(String.format(STATUS_FILTER, status.label()), () -> {
-                setStatus(null);
-                render();
-            }));
+        // No hace falta volver a la base de datos al quitar uno: sin él, sus datos no se usan
+        if (query.status() != null) {
+            activeFiltersBox.getChildren().add(filterChip(
+                    String.format(STATUS_FILTER, query.status().label()), () -> {
+                        setQuery(query.withStatus(null));
+                        render();
+                    }));
         }
-        if (tag != null) {
-            activeFiltersBox.getChildren().add(filterChip(String.format(TAG_FILTER, tag.name()), () -> {
-                tag = null;
-                render(); // no hace falta volver a la base de datos: sin etiqueta no se usa withTag
-            }));
+        if (query.shelf() != null) {
+            activeFiltersBox.getChildren().add(filterChip(
+                    String.format(SHELF_FILTER, query.shelf().name()), () -> {
+                        setQuery(query.withShelf(null));
+                        render();
+                    }));
         }
-        boolean note = tag != null && data.withoutTags() > 0;
+        if (query.tag() != null) {
+            activeFiltersBox.getChildren().add(filterChip(
+                    String.format(TAG_FILTER, query.tag().name()), () -> {
+                        setQuery(query.withTag(null));
+                        render();
+                    }));
+        }
+        boolean note = query.tag() != null && data.withoutTags() > 0;
         filterNote.setText(note ? MessageFormat.format(WITHOUT_TAGS, data.withoutTags()) : "");
         filterNote.setVisible(note);
         filterNote.setManaged(note);

@@ -99,13 +99,15 @@ class ProfileServiceTest {
 
     @Test
     void theManifestSaysWhatTheProfileBrings() throws Exception {
+        home.sql("INSERT INTO shelf (name, color, position, created_at) VALUES ('Favoritas', 'rosa', 0, 0), "
+                + "('Para la Steam Deck', 'azul', 1, 0)");
         Files.writeString(home.paths.coversDir().resolve("v4-12345.jpg"), "portada");
         Files.writeString(home.paths.coversDir().resolve("notas mias.txt"), "no es una portada");
 
         ProfileManifest manifest = home.profiles.export(tempDir.resolve("perfil.zip"));
 
         assertEquals(new ProfileManifest(1, "VN Launcher", "1.0.0", Database.latestVersion(),
-                "2026-11-21T10:42:03", 2, 3, 12_600, 1), manifest);
+                "2026-11-21T10:42:03", 2, 3, 12_600, 1, 2), manifest);
         assertEquals("vn-launcher-perfil-2026-11-21.zip", home.profiles.suggestedFileName());
         assertFalse(Files.exists(home.paths.root().resolve("exportar.db")), "Sin restos de la exportación");
     }

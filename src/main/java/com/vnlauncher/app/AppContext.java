@@ -8,6 +8,7 @@ import com.vnlauncher.db.repo.LibraryRepository;
 import com.vnlauncher.db.repo.PlaySessionRepository;
 import com.vnlauncher.db.repo.RouteRepository;
 import com.vnlauncher.db.repo.SettingsRepository;
+import com.vnlauncher.db.repo.ShelfRepository;
 import com.vnlauncher.db.repo.VnDetailsRepository;
 import com.vnlauncher.db.repo.VnRepository;
 import com.vnlauncher.service.BackupService;
@@ -27,6 +28,7 @@ import com.vnlauncher.service.RestoreService;
 import com.vnlauncher.service.RouteService;
 import com.vnlauncher.service.ScreenshotService;
 import com.vnlauncher.service.SettingsService;
+import com.vnlauncher.service.ShelfService;
 import com.vnlauncher.service.VnDetailsService;
 import com.vnlauncher.util.AppPaths;
 import com.vnlauncher.util.Sleeper;
@@ -80,6 +82,7 @@ public final class AppContext {
     private final BackupService backupService;
     private final RestoreService restoreService;
     private final ProfileService profileService;
+    private final ShelfService shelfService;
     /** Si falló la copia de antes de actualizar (se avisa al abrir la ventana); si no, null. */
     private final Exception preMigrationBackupError;
 
@@ -92,7 +95,8 @@ public final class AppContext {
                        SettingsService settingsService, LaunchService launchService, RateLimiter rateLimiter,
                        PlaytimeTracker playtimeTracker, CoverService coverService,
                        VnDetailsService vnDetailsService, BackupService backupService,
-                       ProfileService profileService, Exception preMigrationBackupError) {
+                       ProfileService profileService, ShelfService shelfService,
+                       Exception preMigrationBackupError) {
         this.paths = paths;
         this.database = database;
         this.httpClient = httpClient;
@@ -115,6 +119,7 @@ public final class AppContext {
         this.backupService = backupService;
         this.restoreService = new RestoreService(paths, backupService);
         this.profileService = profileService;
+        this.shelfService = shelfService;
         this.preMigrationBackupError = preMigrationBackupError;
         // Solo necesita la caché de imágenes: se crea aquí, como RefreshService
         this.screenshotService = new ScreenshotService(imageCache);
@@ -195,7 +200,7 @@ public final class AppContext {
                 characterService, new RouteService(routeRepository, clock),
                 settingsService, launchService, rateLimiter, playtimeTracker, coverService, vnDetailsService,
                 backupService, new ProfileService(database, paths, backupService, clock, AppInfo.VERSION),
-                backupError);
+                new ShelfService(new ShelfRepository(database), clock), backupError);
     }
 
     /**
@@ -282,6 +287,11 @@ public final class AppContext {
     /** Restaurar una copia de seguridad (se termina al reiniciar). */
     public RestoreService restoreService() {
         return restoreService;
+    }
+
+    /** «Mis estanterías». */
+    public ShelfService shelfService() {
+        return shelfService;
     }
 
     /** Exportar e importar el perfil (Ajustes). */

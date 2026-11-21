@@ -98,7 +98,7 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
 - [x] Fase 7: pulido («Actualizar desde VNDB», programa de configuración, instalador)
 - [ ] Fase 8: Discord Rich Presence
 - [ ] Versión 1.0 (en curso): registro de errores ✓, copias de seguridad automáticas ✓, restaurar
-  una copia ✓, exportar e importar el perfil ✓, estado manual ✓, estanterías, ejecutables perdidos,
+  una copia ✓, exportar e importar el perfil ✓, estado manual ✓, estanterías ✓, ejecutables perdidos,
   vista previa de la ficha, búsqueda en la biblioteca, aviso de actualizaciones
 - Después de la 1.0: GitHub Action que construya el instalador al subir una etiqueta; en la 1.1,
   traducción completa al inglés (ResourceBundle, selector de idioma, plurales con MessageFormat y
@@ -188,8 +188,21 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
 - **Biblioteca y barra lateral:** el bloque «Estado» de la barra cuenta las VNs de cada uno y filtra
   al pulsarlo (resaltado mientras filtra). En la biblioteca, encima de la cuadrícula, los filtros
   activos («Estado: Jugando ✕», «Etiqueta: Drama ✕») se combinan y se quitan con su ✕.
-  «01 Biblioteca» enseña todo sin filtros. «Recientes» ya no está: la última jugada sale en
-  «Continuar».
+  «Biblioteca» enseña todo sin filtros. «Recientes» ya no está: la última jugada sale en
+  «Continuar». La navegación de la barra va sin números.
+- **Estanterías** (`ShelfService`, migración 007: tablas `shelf` y `shelf_entry`): listas propias
+  («Favoritas», «Para la Steam Deck»...) con uno de 8 colores, guardado como clave (`rosa`...) y
+  pintado con los colores `-vn-shelf-*` del tema. Una VN puede estar en varias. En la barra, «Mis
+  estanterías» con su contador: se crean con «+», se reordenan arrastrando y con clic derecho →
+  «Editar…» (`ShelfDialog`) se cambian nombre y color, se mueven con «Subir»/«Bajar» o se eliminan
+  (las novelas no se borran). Nombres de 1 a 40 caracteres y sin repetir, sin distinguir
+  mayúsculas ni con acentos (`ShelfService.nameProblem`, que el diálogo usa mientras se escribe; el
+  índice `UNIQUE ... COLLATE NOCASE` lo respalda). En la ficha, fila «Estanterías» con chips
+  (`ShelfChips`) y «+ Añadir a estantería». Al quitar una VN de la biblioteca sale sola de sus
+  estanterías (`ON DELETE CASCADE`).
+- **Filtros** (`LibraryQuery`, sin nada de interfaz y con tests): un estado **o** una estantería
+  (elegir uno quita el otro), más la etiqueta y un texto de búsqueda (título, título original o
+  desarrollador; la caja de búsqueda llega en la fase 11), que se combinan con cualquiera.
 
 ## Registro de errores
 

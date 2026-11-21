@@ -80,8 +80,11 @@
                 <CheckBox fx:id="localeEmulatorCheck" text="Lanzar con Locale Emulator (perfil japonés)"
                           wrapText="true"/>
 
-                <!-- «Estado»: automático o fijado a mano (StatusPicker, en código; ficha-estado-*.png).
-                     La etiqueta tiene ancho fijo para alinearse con «Estanterías» (fase 6). -->
+                <!-- «Estanterías» (ShelfChips) y «Estado» (StatusPicker), en código; ficha-estado-*.png.
+                     Las etiquetas tienen el mismo ancho fijo para que los controles queden en columna. -->
+                <HBox fx:id="shelvesRow" spacing="0" alignment="CENTER_LEFT">
+                    <Label text="Estanterías" styleClass="text2" minWidth="126" prefWidth="126"/>
+                </HBox>
                 <HBox fx:id="statusRow" spacing="0" alignment="CENTER_LEFT">
                     <Label text="Estado" styleClass="text2" minWidth="126" prefWidth="126"/>
                 </HBox>

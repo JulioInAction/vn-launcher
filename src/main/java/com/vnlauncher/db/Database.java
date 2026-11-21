@@ -37,7 +37,8 @@ public class Database {
             "migration/003_library_config_exe.sql",
             "migration/004_library_cover_override.sql",
             "migration/005_vn_tags_screenshots.sql",
-            "migration/006_library_status_override.sql"
+            "migration/006_library_status_override.sql",
+            "migration/007_shelves.sql"
     );
 
     private final Path file;

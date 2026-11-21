@@ -67,6 +67,7 @@ Cambiar de tema = añadir o quitar `tema-claro` de `scene.getRoot().getStyleClas
 | `-vn-danger` | Errores y acciones destructivas (eliminar) | `#FF8F85` | `#B3261E` |
 | `-vn-danger-bg` | Fondo de avisos de error | `rgba(255,143,133,0.12)` | `rgba(179,38,30,0.08)` |
 | `-vn-backdrop` | Fondo detrás de los diálogos | `#0B0C10` | `#D2CAC2` |
+| `-vn-shelf-rosa` … `-vn-shelf-coral` | Los 8 colores de las estanterías: rosa `#F2A0B5`, azul `#8CC8FF`, naranja `#F3B76B`, verde `#9FD8A8`, morado `#C3A6F2`, turquesa `#7FD6CF`, gris `#B4B8C5`, coral `#FF8F85` | iguales | iguales |
 
 Notas:
 - El rosa `#F2A0B5` se usa igual en los dos temas como **fondo** del botón principal. Como **texto** sobre fondo claro no se lee bien, por eso existe `-vn-accent-ink` (`#B0365E` en el tema claro).
@@ -92,9 +93,9 @@ Tamaños: título de pantalla 32 px (ficha: 40 px), títulos de sección 24 px, 
 
 De arriba abajo:
 1. Logo (icono de los dos libros + «VN Launcher»).
-2. Navegación numerada: `01 Biblioteca`, `02 Buscar en VNDB`, `03 Ajustes`. La sección activa lleva el texto en color normal y un **marcapáginas** rosa pegado al borde izquierdo (8 × 40 px, con muesca en V abajo). Las inactivas, en `-vn-muted`.
+2. Navegación: `Biblioteca`, `Buscar`, `Ajustes`, sin números y con el texto alineado a la izquierda, a la misma altura que «ESTADO» y el logo (26 px). La sección activa lleva el texto en color normal y un **marcapáginas** rosa pegado al borde izquierdo (8 × 40 px, con muesca en V abajo). Las inactivas, en `-vn-muted`.
 3. **Estado** (`biblioteca-1-0-*.png`): Jugando, Pendientes, Completadas, En pausa y Abandonadas, con un punto del color del estado (un aro en En pausa) y el número de VNs. Al pulsar, abren la biblioteca filtrada (se combina con el filtro de etiqueta); el que se está filtrando sale resaltado.
-4. **Mis estanterías** (fase 6): las del usuario, con su color y su contador.
+4. **Mis estanterías:** «MIS ESTANTERÍAS» con un «+» a la derecha; cada estantería con un cuadradito de su color (8 × 8, radio 2) y su contador; al final, «+ Nueva estantería» en `-vn-accent-ink`. Se reordenan arrastrando (una línea rosa marca dónde caerá) y con clic derecho → «Editar…». Estado y estanterías van en una zona con scroll, para que muchas estanterías no empujen el contador de VNDB.
 5. Abajo del todo: contador de peticiones a VNDB («14/200», barra fina). El tema se cambia en Ajustes → Apariencia.
 6. De fondo, «ビジュアルノベル» en vertical, 58 px, color `-vn-watermark`. Puramente decorativo.
 
@@ -120,7 +121,9 @@ Archivos en `docs/diseno/logo/`:
 
 ## Detalles de comportamiento que se ven en el diseño
 
-- **Biblioteca:** encima de la cuadrícula, los filtros activos como chips oscuros con ✕ («Estado: Jugando ✕», «Etiqueta: Drama ✕») y a la derecha «Ordenar por». Los contadores de cada estado están en la barra lateral. La franja «Continuar» muestra la última VN jugada y su ruta en curso.
+- **Biblioteca:** encima de la cuadrícula, los filtros activos como chips oscuros con ✕ («Estado: Jugando ✕» o «Estantería: Favoritas ✕», y «Etiqueta: Drama ✕») y a la derecha «Ordenar por». Los contadores de cada estado están en la barra lateral. La franja «Continuar» muestra la última VN jugada y su ruta en curso.
+- **Estanterías de una VN** (`ficha-estado-*.png`): en la ficha, fila «Estanterías» con un chip por estantería (cuadradito de color, nombre y ×, fondo `-vn-surface2`) y «+ Añadir a estantería» con borde de rayas en `-vn-accent-ink`, que abre la lista de todas con casilla y «+ Nueva estantería…».
+- **Diálogo de estantería** (`estanteria-dialogo-*.png`): «Nombre» (máximo 40 caracteres, sin repetir), «Color» (8 muestras de 36 px; la elegida con un aro del color del texto) y «Así se verá en la barra lateral». Al editar: «Posición 2 de 3» con «Subir» y «Bajar», y «Eliminar estantería» abajo a la izquierda (pide confirmación; las novelas no se borran).
 - **Estado de una VN** (`ficha-estado-*.png`): en la ficha, fila «Estado» con un selector «● Jugando · automático ⌄». La lista ofrece «Automático — Según tus rutas y partidas (ahora: Jugando)» y los cinco estados; En pausa y Abandonada llevan «Fijado a mano» debajo (nunca salen solos) y el elegido, fondo `-vn-sel` y ✓ en `-vn-accent-ink`. Lo fijado a mano se queda aunque se juegue, hasta volver a «Automático».
 - **Ficha:** las rutas se ordenan arrastrando (asa de seis puntos a la izquierda). Los personajes con spoiler salen difuminados con un botón «Mostrar». Los que no tienen ruta llevan un botón «Marcar con ruta».
 - **Búsqueda:** se busca al pulsar Enter. «N resultados» va encima de la lista y del panel, y el panel empieza a la altura de la primera tarjeta. A la derecha, un panel fijo de 540 px (no hace scroll con la lista): portada de 180 × 270 con título, título original, «Desarrollador · año» y el estado de desarrollo; seis datos en dos columnas; 5 etiquetas sin spoilers; 3 capturas en 16:9; descripción a 6 líneas con «Leer más»; y abajo «Añadir a la biblioteca» o «✓ En tu biblioteca» + «Abrir ficha».

@@ -8,6 +8,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -85,9 +86,11 @@ class ModalDialog {
         scene.setFill(Color.TRANSPARENT);
         scene.getStylesheets().add(Views.class.getResource("styles.css").toExternalForm());
         Themes.apply(root, Themes.current(owner));
-        // Esc = cerrar sin elegir nada
-        scene.setOnKeyPressed(event -> {
+        // Esc = cerrar sin elegir nada. Con un filtro (se ejecuta ANTES que los controles): si no,
+        // un campo de texto con el foco se queda la tecla y el diálogo no se cierra
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (event.getCode() == KeyCode.ESCAPE) {
+                event.consume();
                 close(null);
             }
         });
@@ -114,13 +117,21 @@ class ModalDialog {
         return this;
     }
 
-    /** Título con subtítulo debajo (p. ej. el nombre de la VN) y botón × para cerrar. */
+    /** Título con botón × para cerrar (estanteria-dialogo-*.png). */
+    ModalDialog titleWithClose(String text) {
+        return titleWithSubtitle(text, null);
+    }
+
+    /** Título con subtítulo debajo (p. ej. el nombre de la VN; null = sin subtítulo) y botón × para cerrar. */
     ModalDialog titleWithSubtitle(String text, String subtitle) {
         Label title = new Label(text);
         title.getStyleClass().add("modal-title");
-        Label sub = new Label(subtitle);
-        sub.getStyleClass().add("meta");
-        VBox texts = new VBox(2, title, sub);
+        VBox texts = new VBox(2, title);
+        if (subtitle != null) {
+            Label sub = new Label(subtitle);
+            sub.getStyleClass().add("meta");
+            texts.getChildren().add(sub);
+        }
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         Button close = new Button("✕");

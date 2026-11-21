@@ -2,6 +2,8 @@ package com.vnlauncher.ui;
 
 import com.vnlauncher.app.AppContext;
 import com.vnlauncher.model.PlayStatus;
+import com.vnlauncher.model.Shelf;
+import com.vnlauncher.service.LibraryQuery;
 import com.vnlauncher.model.VnTag;
 import com.vnlauncher.model.Theme;
 import com.vnlauncher.service.PlaytimeTracker;
@@ -108,6 +110,12 @@ public class MainController implements Navigator {
     }
 
     @Override
+    public void showLibraryWithShelf(Shelf shelf) {
+        library().showShelf(shelf);
+        displayLibrary();
+    }
+
+    @Override
     public void showLibraryWithTag(VnTag tag) {
         library().showTag(tag);
         displayLibrary();
@@ -124,8 +132,8 @@ public class MainController implements Navigator {
         if (libraryView == null) {
             libraryController = new LibraryController(context, this);
             libraryView = Views.load("library-view.fxml", libraryController);
-            // Al quitar el filtro de estado con su ✕, que la barra deje de resaltarlo
-            libraryController.setOnStatusChanged(status -> sidebar.setActiveStatus(status));
+            // Al cambiar los filtros (también al quitar uno con su ✕), que la barra resalte lo que toca
+            libraryController.setOnQueryChanged(this::highlightFilter);
         }
         return libraryController;
     }
@@ -135,8 +143,13 @@ public class MainController implements Navigator {
         root.setCenter(libraryView);
         currentController = libraryController;
         sidebar.setActive(SidebarController.Section.LIBRARY);
-        sidebar.setActiveStatus(libraryController.status());
+        highlightFilter(libraryController.query());
         sidebar.refresh();
+    }
+
+    /** En la barra lateral, el estado o la estantería por los que se filtra la biblioteca. */
+    private void highlightFilter(LibraryQuery query) {
+        sidebar.setActiveFilter(query.status(), query.shelf() == null ? null : query.shelf().id());
     }
 
     /**
@@ -184,12 +197,23 @@ public class MainController implements Navigator {
         root.setCenter(Views.load("vn-detail-view.fxml", detail));
         currentController = detail;
         sidebar.setActive(SidebarController.Section.LIBRARY);
-        sidebar.setActiveStatus(libraryController.status());
+        // La ficha es parte de la biblioteca: se sigue resaltando el filtro al que se volverá
+        if (libraryController != null) {
+            highlightFilter(libraryController.query());
+        }
         sidebar.refresh();
     }
 
     @Override
     public void refreshSidebar() {
         sidebar.refresh();
+    }
+
+    @Override
+    public void shelvesChanged() {
+        sidebar.refresh();
+        if (currentController instanceof ShelvesAware screen) {
+            screen.shelvesChanged();
+        }
     }
 }

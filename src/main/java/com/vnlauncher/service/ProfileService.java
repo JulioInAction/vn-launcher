@@ -170,7 +170,8 @@ public class ProfileService {
                 (int) count(copy, "SELECT COUNT(*) FROM library_entry"),
                 (int) count(copy, "SELECT COUNT(*) FROM route"),
                 count(copy, "SELECT COALESCE(SUM(duration_seconds), 0) FROM play_session"),
-                covers);
+                covers,
+                (int) count(copy, "SELECT COUNT(*) FROM shelf"));
     }
 
     private static long count(Database db, String sql) throws SQLException {

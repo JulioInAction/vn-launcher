@@ -8,6 +8,7 @@ import com.vnlauncher.model.PlayStatus;
 import com.vnlauncher.model.Route;
 import com.vnlauncher.model.RouteProgress;
 import com.vnlauncher.model.RouteSummary;
+import com.vnlauncher.model.Shelf;
 import com.vnlauncher.model.VisualNovel;
 import com.vnlauncher.model.VnCharacter;
 import com.vnlauncher.model.VnDetails;
@@ -28,6 +29,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -53,7 +55,7 @@ import java.util.stream.Collectors;
  * <p>Recibe el AppContext entero en vez de cada servicio por separado porque usa casi todos;
  * con ocho parámetros en el constructor se volvía ilegible.
  */
-public class VnDetailController implements PlaytimeAware {
+public class VnDetailController implements PlaytimeAware, ShelvesAware {
 
     // --- Columnas de la cabecera (ficha-capturas-derecha-*.png)
     private static final double COVER_COLUMN = 220;
@@ -100,6 +102,7 @@ public class VnDetailController implements PlaytimeAware {
     @FXML private ProgressBar routesStatBar;
     @FXML private Label launchStatusLabel;
     @FXML private HBox statusRow;
+    @FXML private HBox shelvesRow;
     @FXML private VBox tagsContainer;
     @FXML private Label descriptionLabel;
     @FXML private Hyperlink readMoreLink;
@@ -123,6 +126,9 @@ public class VnDetailController implements PlaytimeAware {
 
     private LibraryEntry entry;
     private StatusPicker statusPicker;
+    private ShelfChips shelfChips;
+    /** Todas las estanterías (para el menú y para comprobar el nombre de una nueva). */
+    private List<Shelf> allShelves = List.of();
     private boolean descriptionExpanded = false;
     /** true mientras se está lanzando (entre pulsar Jugar y que el juego arranque). */
     private boolean launching = false;
@@ -148,6 +154,10 @@ public class VnDetailController implements PlaytimeAware {
         statusPicker = new StatusPicker(this::onStatusChosen);
         statusPicker.setDisable(true); // hasta que se cargue la VN
         statusRow.getChildren().add(statusPicker);
+        shelfChips = new ShelfChips(this::addToShelf, this::removeFromShelf, this::createShelfAndAdd);
+        HBox.setHgrow(shelfChips, Priority.ALWAYS);
+        shelvesRow.getChildren().add(shelfChips);
+        loadShelves();
         removeButton.setDisable(true);   // hasta que se cargue la VN
         playButton.setDisable(true);
         loadHeader();
@@ -396,6 +406,60 @@ public class VnDetailController implements PlaytimeAware {
         PlayStatus automatic = PlayStatus.of(RouteSummary.of(routes), entry.lastPlayedAt());
         statusPicker.setValue(entry.statusOverride(), automatic);
         statusPicker.setDisable(false);
+    }
+
+    // =========================================================== Estanterías
+
+    /** Las estanterías de esta VN y todas (en segundo plano). */
+    private void loadShelves() {
+        record Shelves(List<Shelf> mine, List<Shelf> all) {
+        }
+        BackgroundTasks.run(ctx.background(),
+                () -> new Shelves(ctx.shelfService().shelvesOf(vnId), ctx.shelfService().findAll()),
+                loaded -> {
+                    allShelves = loaded.all();
+                    shelfChips.setShelves(loaded.mine(), loaded.all());
+                },
+                "No se han podido leer las estanterías.");
+    }
+
+    /** Se ha cambiado alguna estantería desde la barra lateral (nombre, color, borrada...). */
+    @Override
+    public void shelvesChanged() {
+        loadShelves();
+    }
+
+    private void addToShelf(Shelf shelf) {
+        saveShelves(() -> ctx.shelfService().addVn(shelf.id(), vnId));
+    }
+
+    private void removeFromShelf(Shelf shelf) {
+        saveShelves(() -> ctx.shelfService().removeVn(shelf.id(), vnId));
+    }
+
+    /** «+ Nueva estantería…» en el menú: se crea y la VN entra directamente en ella. */
+    private void createShelfAndAdd() {
+        ShelfDialog.create(shelvesRow, allShelves).ifPresent(result -> saveShelves(() -> {
+            Shelf created = ctx.shelfService().create(result.name(), result.color());
+            ctx.shelfService().addVn(created.id(), vnId);
+        }));
+    }
+
+    /** Guarda en segundo plano; después, chips de la ficha y contadores de la barra al día. */
+    private void saveShelves(ShelfWork work) {
+        BackgroundTasks.run(ctx.background(),
+                () -> {
+                    work.run();
+                    return null;
+                },
+                done -> navigator.shelvesChanged(), // también vuelve a pintar estos chips
+                "No se ha podido guardar la estantería.");
+    }
+
+    /** Trabajo con las estanterías que puede lanzar SQLException (un Runnable normal no puede). */
+    @FunctionalInterface
+    private interface ShelfWork {
+        void run() throws java.sql.SQLException;
     }
 
     /** Elegido en el selector: un estado fijado a mano, o null para volver a «Automático». */

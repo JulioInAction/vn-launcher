@@ -46,7 +46,7 @@ final class ImportProfileDialog {
         Label exported = new Label(String.format(EXPORTED, Formats.DATE.format(preview.exportedAt()),
                 manifest.appVersion()));
         exported.getStyleClass().add("meta");
-        // Cuatro columnas iguales como en el diseño; «Estanterías» llega con la fase 6
+        // Cuatro columnas iguales, como en el diseño
         GridPane stats = new GridPane();
         for (int i = 0; i < 4; i++) {
             ColumnConstraints column = new ColumnConstraints();
@@ -56,6 +56,7 @@ final class ImportProfileDialog {
         stats.add(stat("Novelas", String.valueOf(manifest.novels())), 0, 0);
         stats.add(stat("Rutas", String.valueOf(manifest.routes())), 1, 0);
         stats.add(stat("Jugado", PlayTime.formatTotal(manifest.playtimeSeconds())), 2, 0);
+        stats.add(stat("Estanterías", String.valueOf(manifest.shelves())), 3, 0);
         VBox summary = new VBox(12, exported, stats);
         summary.getStyleClass().add("profile-summary");
 

@@ -74,6 +74,17 @@
     -vn-avatar-5: #2F3E52;
     -vn-avatar-6: #533C47;
 
+    /* Colores de las estanterías (ShelfColor; estanteria-dialogo-*.png): los mismos en los dos
+       temas, así que el tema claro no los redefine */
+    -vn-shelf-rosa: #F2A0B5;
+    -vn-shelf-azul: #8CC8FF;
+    -vn-shelf-naranja: #F3B76B;
+    -vn-shelf-verde: #9FD8A8;
+    -vn-shelf-morado: #C3A6F2;
+    -vn-shelf-turquesa: #7FD6CF;
+    -vn-shelf-gris: #B4B8C5;
+    -vn-shelf-coral: #FF8F85;
+
     -fx-font-family: "Inter";
     -fx-font-size: 17px;
     -fx-background-color: -vn-bg;
@@ -236,12 +247,6 @@
     -fx-alignment: center-left;
 }
 
-.nav-number {
-    -fx-font-family: "Inter SemiBold";
-    -fx-font-size: 14px;
-    -fx-text-fill: -vn-muted;
-}
-
 .nav-text {
     -fx-font-size: 20px;
     -fx-text-fill: -vn-muted;
@@ -250,10 +255,6 @@
 .nav-item:hover .nav-text,
 .nav-item.active .nav-text {
     -fx-text-fill: -vn-text;
-}
-
-.nav-item.active .nav-number {
-    -fx-text-fill: -vn-accent-ink;
 }
 
 /* Marcapáginas rosa de 8 × 40 px con muesca en V abajo. -fx-shape recorta el fondo con un
@@ -275,7 +276,7 @@
 .shelf-item {
     -fx-background-color: transparent;
     -fx-background-radius: 0 8 8 0;
-    -fx-padding: 0 8 0 26;
+    -fx-padding: 0 4 0 26;
     -fx-min-height: 44;
     -fx-cursor: hand;
     -fx-alignment: center-left;
@@ -290,15 +291,76 @@
     -fx-background-color: -vn-sel;
 }
 
+/* Mismo peso de letra que el resto: en negrita, un nombre largo ocuparía más y se cortaría */
 .shelf-item.active .label {
     -fx-text-fill: -vn-text;
-    -fx-font-family: "Inter SemiBold";
 }
 
 .shelf-count {
     -fx-font-size: 16px;
     -fx-text-fill: -vn-muted;
 }
+
+/* Reordenar estanterías arrastrando: una línea rosa donde caerá */
+.shelf-item.drop-above { -fx-border-color: -vn-accent transparent transparent transparent; -fx-border-width: 2 0 0 0; }
+.shelf-item.drop-below { -fx-border-color: transparent transparent -vn-accent transparent; -fx-border-width: 0 0 2 0; }
+
+/* «+» junto a «MIS ESTANTERÍAS» */
+.button.sidebar-add {
+    -fx-border-color: transparent;
+    -fx-background-color: transparent;
+    -fx-padding: 0 4 0 4;
+    -fx-min-height: 24;
+    -fx-font-size: 20px;
+    -fx-text-fill: -vn-muted;
+    -fx-cursor: hand;
+}
+
+.button.sidebar-add:hover {
+    -fx-text-fill: -vn-text;
+}
+
+/* «+ Nueva estantería», en rosa, alineado con los nombres de las estanterías */
+.button.new-shelf {
+    -fx-border-color: transparent;
+    -fx-background-color: transparent;
+    -fx-background-radius: 0 8 8 0;
+    -fx-padding: 0 8 0 26;
+    -fx-min-height: 44;
+    -fx-alignment: center-left;
+    -fx-text-fill: -vn-accent-ink;
+    -fx-font-family: "Inter Medium";
+    -fx-cursor: hand;
+}
+
+.button.new-shelf:hover {
+    -fx-background-color: -vn-sel;
+}
+
+/* La barra de desplazamiento de Estado + Mis estanterías, fina y solo si hace falta */
+.sidebar-scroll > .scroll-bar:vertical {
+    -fx-pref-width: 8;
+}
+
+/* Cuadradito del color de una estantería (barra, chips, vista previa) */
+.shelf-color {
+    -fx-min-width: 8;
+    -fx-min-height: 8;
+    -fx-pref-width: 8;
+    -fx-pref-height: 8;
+    -fx-max-width: 8;
+    -fx-max-height: 8;
+    -fx-background-radius: 2;
+}
+
+.shelf-rosa     { -fx-background-color: -vn-shelf-rosa; }
+.shelf-azul     { -fx-background-color: -vn-shelf-azul; }
+.shelf-naranja  { -fx-background-color: -vn-shelf-naranja; }
+.shelf-verde    { -fx-background-color: -vn-shelf-verde; }
+.shelf-morado   { -fx-background-color: -vn-shelf-morado; }
+.shelf-turquesa { -fx-background-color: -vn-shelf-turquesa; }
+.shelf-gris     { -fx-background-color: -vn-shelf-gris; }
+.shelf-coral    { -fx-background-color: -vn-shelf-coral; }
 
 /* Estados (StatusVisuals): los mismos colores en la barra, las tarjetas y la ficha */
 .dot-playing   { -fx-fill: -vn-orange; }
@@ -625,6 +687,101 @@
 
 .context-menu .separator .line {
     -fx-border-color: -vn-border;
+}
+
+/* ---- Estanterías de la ficha (ShelfChips, ficha-estado-*.png) */
+.shelf-chip {
+    -fx-background-color: -vn-surface2;
+    -fx-background-radius: 999;
+    -fx-padding: 4 6 4 14;
+    -fx-min-height: 38;
+}
+
+.button.chip-remove {
+    -fx-border-color: transparent;
+    -fx-background-color: transparent;
+    -fx-background-radius: 999;
+    -fx-padding: 2 7 2 7;
+    -fx-font-size: 13px;
+    -fx-text-fill: -vn-muted;
+    -fx-cursor: hand;
+}
+
+.button.chip-remove:hover {
+    -fx-background-color: -vn-sel;
+    -fx-text-fill: -vn-text;
+}
+
+/* «+ Añadir a estantería»: borde de rayas en rosa */
+.button.add-shelf-chip {
+    -fx-background-color: transparent;
+    -fx-background-radius: 999;
+    -fx-border-color: -vn-accent-ink;
+    -fx-border-style: segments(4, 3);
+    -fx-border-radius: 999;
+    -fx-padding: 0 14 0 14;
+    -fx-min-height: 38;
+    -fx-text-fill: -vn-accent-ink;
+    -fx-font-family: "Inter Medium";
+    -fx-font-size: 16px;
+}
+
+.button.add-shelf-chip:hover {
+    -fx-background-color: -vn-sel;
+}
+
+/* La casilla de cada estantería en el menú «+ Añadir a estantería»: sin los 44 px de alto que
+   tienen las casillas normales (están pensadas para pulsarlas; aquí se pulsa la fila) */
+.check-box.menu-check {
+    -fx-min-height: 0;
+    -fx-padding: 0;
+}
+
+.context-menu .menu-item.accent-item .label {
+    -fx-text-fill: -vn-accent-ink;
+}
+
+/* ---- Diálogo de estantería (ShelfDialog, estanteria-dialogo-*.png) */
+.shelf-swatch {
+    -fx-background-color: transparent;
+    -fx-background-radius: 11;
+    -fx-border-color: transparent;
+    -fx-border-width: 2;
+    -fx-border-radius: 11;
+    -fx-padding: 2;
+    -fx-cursor: hand;
+}
+
+/* La elegida, con un aro del color del texto y un hueco entre el aro y el color */
+.shelf-swatch:selected {
+    -fx-border-color: -vn-text;
+}
+
+.shelf-swatch-color {
+    -fx-min-width: 36;
+    -fx-min-height: 36;
+    -fx-pref-width: 36;
+    -fx-pref-height: 36;
+    -fx-background-radius: 8;
+}
+
+/* «Así se verá en la barra lateral» */
+.shelf-preview {
+    -fx-background-color: -vn-bg;
+    -fx-background-radius: 10;
+    -fx-border-color: -vn-border;
+    -fx-border-radius: 10;
+    -fx-padding: 12 16 12 16;
+}
+
+.form-hint {
+    -fx-font-size: 14px;
+    -fx-text-fill: -vn-muted;
+}
+
+.form-error {
+    -fx-font-size: 15px;
+    -fx-text-fill: -vn-danger;
 }
 
 /* ---- Selector «Estado» de la ficha (StatusPicker, ficha-estado-*.png) */
