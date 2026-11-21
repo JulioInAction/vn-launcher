@@ -81,6 +81,14 @@ public final class ErrorReporter {
         show(message, ADVICE_DATA_SAFE, error);
     }
 
+    /**
+     * Enseña el diálogo con un consejo propio, para un problema que ya está en el registro (p. ej. la
+     * copia de antes de actualizar, que falla al preparar la app y se avisa al abrir la ventana).
+     */
+    public static void notifyUser(String message, String advice, Throwable error) {
+        show(message, advice, error);
+    }
+
     /** true para los errores que tienen su propio aviso (sin conexión, VNDB, al lanzar un juego). */
     public static boolean isExpected(Throwable error) {
         return error instanceof VndbException || error instanceof IOException

@@ -210,6 +210,10 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
   (`.part`) y se renombra al acabar, así una copia a medias nunca parece buena.
 - El nombre lo dice todo: `vn-launcher-2026-11-21_104203-actualizacion-1.0.0.db` (fecha, tipo y
   versión). No hace falta ningún índice aparte. Los archivos con otro nombre no se tocan.
+- Si la copia de antes de actualizar no se puede hacer (disco lleno, sin permisos...), la app se
+  actualiza igualmente (las migraciones van en una transacción), lo apunta en el registro y, al abrir
+  la ventana, avisa: «No se ha podido hacer la copia de seguridad antes de actualizar. Revisa que
+  quede espacio libre en el disco».
 - La semanal se hace en segundo plano al abrir la app si la última tiene más de 7 días. En Ajustes
   → Perfil y copias de seguridad se puede apagar (las de antes de actualizar, importar o restaurar
   se hacen siempre), se ven las copias que hay y se abre su carpeta.

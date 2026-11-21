@@ -153,4 +153,17 @@ class BackupServiceTest {
         assertTrue(BackupService.parse(Path.of("vn-launcher-2026-13-45_999999-semanal.db")).isEmpty());
         assertTrue(BackupService.parse(Path.of("library.db")).isEmpty());
     }
+
+    @Test
+    void ifTheCopyCannotBeWrittenItFailsLoudly() throws Exception {
+        Files.writeString(backups, "no es una carpeta"); // p. ej., sin sitio o sin permisos
+        Database old = new Database(tempDir.resolve("vieja.db"));
+        old.migrateTo(3);
+
+        BackupService failing = new BackupService(old, backups, clock, "1.0.0");
+
+        assertThrows(java.io.IOException.class, failing::beforeMigration,
+                "Quien arranca la app lo captura, lo registra y avisa");
+        assertEquals(3, old.schemaVersion(), "Sin copia, la base no se ha tocado");
+    }
 }

@@ -35,6 +35,7 @@ import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.InstantSource;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -75,6 +76,8 @@ public final class AppContext {
     private final VnDetailsService vnDetailsService;
     private final ScreenshotService screenshotService;
     private final BackupService backupService;
+    /** Si falló la copia de antes de actualizar (se avisa al abrir la ventana); si no, null. */
+    private final Exception preMigrationBackupError;
 
     // Constructor con muchos parámetros: es el precio de la inyección manual. Si crece demasiado,
     // se podría agrupar (p. ej. un record con los servicios), pero así se ve todo de un vistazo.
@@ -84,7 +87,8 @@ public final class AppContext {
                        CharacterService characterService, RouteService routeService,
                        SettingsService settingsService, LaunchService launchService, RateLimiter rateLimiter,
                        PlaytimeTracker playtimeTracker, CoverService coverService,
-                       VnDetailsService vnDetailsService, BackupService backupService) {
+                       VnDetailsService vnDetailsService, BackupService backupService,
+                       Exception preMigrationBackupError) {
         this.paths = paths;
         this.database = database;
         this.httpClient = httpClient;
@@ -105,6 +109,7 @@ public final class AppContext {
         this.coverService = coverService;
         this.vnDetailsService = vnDetailsService;
         this.backupService = backupService;
+        this.preMigrationBackupError = preMigrationBackupError;
         // Solo necesita la caché de imágenes: se crea aquí, como RefreshService
         this.screenshotService = new ScreenshotService(imageCache);
     }
@@ -117,12 +122,14 @@ public final class AppContext {
         Clock clock = Clock.systemDefaultZone();
         BackupService backupService = new BackupService(database, paths.backupsDir(), clock, AppInfo.VERSION);
         // Si la app se acaba de actualizar (hay migraciones pendientes), copia ANTES de migrar
+        Exception backupError = null;
         try {
             backupService.beforeMigration();
         } catch (IOException | SQLException e) {
             // Sin copia (disco lleno...) se sigue igualmente: las migraciones van en una transacción, y
-            // dejar la app sin arrancar sería peor. Queda en el registro.
+            // dejar la app sin arrancar sería peor. Queda en el registro y se avisa al abrir la ventana.
             LOG.log(System.Logger.Level.ERROR, "No se pudo hacer la copia de antes de actualizar", e);
+            backupError = e;
         }
         database.migrate();
 
@@ -173,7 +180,7 @@ public final class AppContext {
                 new CatalogService(vndb), libraryService, imageCache, contentFilter,
                 characterService, new RouteService(routeRepository, clock),
                 settingsService, launchService, rateLimiter, playtimeTracker, coverService, vnDetailsService,
-                backupService);
+                backupService, backupError);
     }
 
     /**
@@ -248,6 +255,11 @@ public final class AppContext {
     }
 
     /** "Actualizar desde VNDB" en la ficha. */
+    /** El error de la copia de antes de actualizar, si falló al arrancar. */
+    public Optional<Exception> preMigrationBackupError() {
+        return Optional.ofNullable(preMigrationBackupError);
+    }
+
     /** Copias de seguridad automáticas de la base de datos. */
     public BackupService backupService() {
         return backupService;

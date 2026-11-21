@@ -37,6 +37,10 @@ public class Main extends Application {
     private static final double MIN_WIDTH = 1200;
     private static final double MIN_HEIGHT = 680;
 
+    private static final String BACKUP_FAILED = "No se ha podido hacer la copia de seguridad antes de actualizar.";
+    private static final String BACKUP_FAILED_ADVICE = "Revisa que quede espacio libre en el disco. "
+            + "La aplicación se ha actualizado igualmente y tus datos siguen en su sitio.";
+
     private AppContext context;
     private Stage stage;
 
@@ -90,6 +94,8 @@ public class Main extends Application {
             // Desde ahora los diálogos de error se centran sobre la ventana y la tapan
             ErrorReporter.setOwner(root);
             context.startBackgroundMaintenance(); // copia semanal, si toca
+            context.preMigrationBackupError().ifPresent(error ->
+                    ErrorReporter.notifyUser(BACKUP_FAILED, BACKUP_FAILED_ADVICE, error));
             DebugFailures.afterStartup(context); // solo con -Dvnlauncher.debug.fallo=fx|tarea|hilo
         } catch (Exception e) {
             // Un error aquí suele ser un fallo en el FXML (fx:id mal escrito, etc.)
