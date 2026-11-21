@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -36,11 +37,17 @@ public class Database {
             "migration/005_vn_tags_screenshots.sql"
     );
 
+    private final Path file;
     private final String url;
 
     /** @param file fichero .db; si no existe, SQLite lo crea al abrir la primera conexión. */
     public Database(Path file) {
-        this.url = "jdbc:sqlite:" + file.toAbsolutePath();
+        this.file = file.toAbsolutePath();
+        this.url = "jdbc:sqlite:" + this.file;
+    }
+
+    public Path file() {
+        return file;
     }
 
     /**
@@ -97,10 +104,48 @@ public class Database {
     }
 
     /**
+     * true si hay una base de datos con datos y le faltan migraciones: es decir, la app se acaba de
+     * actualizar. Una base nueva (el fichero aún no existe o está vacío) no cuenta: no hay nada que
+     * proteger. Ojo: NO abre el fichero si no existe (abrirlo lo crearía).
+     */
+    public boolean needsMigration() throws SQLException {
+        try {
+            if (!Files.exists(file) || Files.size(file) == 0) {
+                return false;
+            }
+        } catch (IOException e) {
+            throw new SQLException(String.format("No se puede leer %s", file), e);
+        }
+        int version = schemaVersion();
+        return version > 0 && version < latestVersion();
+    }
+
+    /**
+     * Copia consistente de la base de datos en {@code target} (que no debe existir), con
+     * {@code VACUUM INTO}: SQLite escribe una base nueva y compacta con el contenido de este momento,
+     * también lo que aún está en el WAL. No bloquea: la app puede seguir leyendo y escribiendo.
+     */
+    public void backupTo(Path target) throws SQLException {
+        try (Connection conn = getConnection();
+             Statement st = conn.createStatement()) {
+            // VACUUM INTO no admite "?": la ruta va como texto SQL, con las comillas simples dobladas
+            st.execute("VACUUM INTO '" + target.toAbsolutePath().toString().replace("'", "''") + "'");
+        }
+    }
+
+    /**
      * Aplica las migraciones pendientes. Es idempotente: si la BD ya está al día no hace nada,
      * así que se puede llamar en cada arranque.
      */
     public void migrate() throws SQLException {
+        migrateTo(latestVersion());
+    }
+
+    /**
+     * Migra solo hasta {@code version}. La app siempre usa {@link #migrate()}; esto es para los tests,
+     * que necesitan bases "antiguas" (p. ej. para probar la copia antes de actualizar).
+     */
+    public void migrateTo(int version) throws SQLException {
         try (Connection conn = getConnection()) {
             // WAL (write-ahead log) permite leer mientras otro hilo escribe. A diferencia de
             // foreign_keys, este modo se guarda en el fichero, basta activarlo una vez.
@@ -109,8 +154,8 @@ public class Database {
             }
 
             int current = schemaVersion();
-            for (int version = current + 1; version <= MIGRATIONS.size(); version++) {
-                applyMigration(conn, version, MIGRATIONS.get(version - 1));
+            for (int next = current + 1; next <= Math.min(version, MIGRATIONS.size()); next++) {
+                applyMigration(conn, next, MIGRATIONS.get(next - 1));
             }
         }
     }

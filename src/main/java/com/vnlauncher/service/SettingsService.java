@@ -21,6 +21,7 @@ public class SettingsService {
     static final String SHOW_SPOILERS = "content.show_spoilers";
     static final String BLUR = "content.blur";
     static final String WINDOW = "window";   // "x;y;ancho;alto;maximizada"
+    static final String WEEKLY_BACKUPS = "backup.weekly";
 
 
     private final SettingsRepository repository;
@@ -99,6 +100,18 @@ public class SettingsService {
 
     public void setShowSpoilers(boolean show) throws SQLException {
         repository.put(SHOW_SPOILERS, String.valueOf(show));
+    }
+
+    /**
+     * Copia de seguridad semanal (por defecto, sí). Las de antes de actualizar, importar o restaurar
+     * se hacen siempre: este ajuste no las apaga.
+     */
+    public boolean weeklyBackups() throws SQLException {
+        return repository.get(WEEKLY_BACKUPS).map(Boolean::parseBoolean).orElse(true);
+    }
+
+    public void setWeeklyBackups(boolean enabled) throws SQLException {
+        repository.put(WEEKLY_BACKUPS, String.valueOf(enabled));
     }
 
     public BlurLevel blurLevel() throws SQLException {

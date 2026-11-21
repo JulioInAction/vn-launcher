@@ -10,6 +10,7 @@ import com.vnlauncher.db.repo.RouteRepository;
 import com.vnlauncher.db.repo.SettingsRepository;
 import com.vnlauncher.db.repo.VnDetailsRepository;
 import com.vnlauncher.db.repo.VnRepository;
+import com.vnlauncher.service.BackupService;
 import com.vnlauncher.service.CatalogService;
 import com.vnlauncher.service.CharacterService;
 import com.vnlauncher.service.ContentFilter;
@@ -28,6 +29,7 @@ import com.vnlauncher.service.VnDetailsService;
 import com.vnlauncher.util.AppPaths;
 import com.vnlauncher.util.Sleeper;
 
+import java.io.IOException;
 import java.net.http.HttpClient;
 import java.sql.SQLException;
 import java.time.Clock;
@@ -72,6 +74,7 @@ public final class AppContext {
     private final CoverService coverService;
     private final VnDetailsService vnDetailsService;
     private final ScreenshotService screenshotService;
+    private final BackupService backupService;
 
     // Constructor con muchos parámetros: es el precio de la inyección manual. Si crece demasiado,
     // se podría agrupar (p. ej. un record con los servicios), pero así se ve todo de un vistazo.
@@ -81,7 +84,7 @@ public final class AppContext {
                        CharacterService characterService, RouteService routeService,
                        SettingsService settingsService, LaunchService launchService, RateLimiter rateLimiter,
                        PlaytimeTracker playtimeTracker, CoverService coverService,
-                       VnDetailsService vnDetailsService) {
+                       VnDetailsService vnDetailsService, BackupService backupService) {
         this.paths = paths;
         this.database = database;
         this.httpClient = httpClient;
@@ -101,6 +104,7 @@ public final class AppContext {
                 vnDetailsService);
         this.coverService = coverService;
         this.vnDetailsService = vnDetailsService;
+        this.backupService = backupService;
         // Solo necesita la caché de imágenes: se crea aquí, como RefreshService
         this.screenshotService = new ScreenshotService(imageCache);
     }
@@ -110,6 +114,16 @@ public final class AppContext {
         paths.createDirectories();
 
         Database database = new Database(paths.databaseFile());
+        Clock clock = Clock.systemDefaultZone();
+        BackupService backupService = new BackupService(database, paths.backupsDir(), clock, AppInfo.VERSION);
+        // Si la app se acaba de actualizar (hay migraciones pendientes), copia ANTES de migrar
+        try {
+            backupService.beforeMigration();
+        } catch (IOException | SQLException e) {
+            // Sin copia (disco lleno...) se sigue igualmente: las migraciones van en una transacción, y
+            // dejar la app sin arrancar sería peor. Queda en el registro.
+            LOG.log(System.Logger.Level.ERROR, "No se pudo hacer la copia de antes de actualizar", e);
+        }
         database.migrate();
 
         // Un único HttpClient para toda la app: reutiliza conexiones y es seguro entre hilos.
@@ -132,7 +146,6 @@ public final class AppContext {
         VnRepository vnRepository = new VnRepository(database);
         LibraryRepository libraryRepository = new LibraryRepository(database);
         ImageCacheService imageCache = new ImageCacheService(httpClient, paths);
-        Clock clock = Clock.systemUTC();
         RouteRepository routeRepository = new RouteRepository(database);
         PlaySessionRepository sessionRepository = new PlaySessionRepository(database);
         // Sesiones que quedaron abiertas porque la app se cerró de golpe: cerrarlas con su último latido
@@ -159,7 +172,22 @@ public final class AppContext {
         return new AppContext(paths, database, httpClient, background,
                 new CatalogService(vndb), libraryService, imageCache, contentFilter,
                 characterService, new RouteService(routeRepository, clock),
-                settingsService, launchService, rateLimiter, playtimeTracker, coverService, vnDetailsService);
+                settingsService, launchService, rateLimiter, playtimeTracker, coverService, vnDetailsService,
+                backupService);
+    }
+
+    /**
+     * Mantenimiento en segundo plano, una vez abierta la ventana (para no retrasar el arranque): la
+     * copia de seguridad semanal, si toca. Si falla, queda en el registro: no es motivo para molestar.
+     */
+    public void startBackgroundMaintenance() {
+        background.execute(() -> {
+            try {
+                backupService.weeklyIfDue(settingsService.weeklyBackups());
+            } catch (IOException | SQLException e) {
+                LOG.log(System.Logger.Level.WARNING, "No se pudo hacer la copia semanal", e);
+            }
+        });
     }
 
     /** Se llama al cerrar la ventana: corta las tareas y conexiones pendientes. */
@@ -220,6 +248,11 @@ public final class AppContext {
     }
 
     /** "Actualizar desde VNDB" en la ficha. */
+    /** Copias de seguridad automáticas de la base de datos. */
+    public BackupService backupService() {
+        return backupService;
+    }
+
     /** Imágenes de las capturas (miniaturas y tamaño completo) en la caché. */
     public ScreenshotService screenshotService() {
         return screenshotService;

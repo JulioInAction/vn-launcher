@@ -62,6 +62,11 @@ public final class AppPaths {
         return root.resolve("images");
     }
 
+    /** Copias de seguridad automáticas de la base de datos. Ver BackupService. */
+    public Path backupsDir() {
+        return root.resolve("backups");
+    }
+
     /** Registros de la aplicación (logs/vn-launcher0.log...). Ver LogSetup. */
     public Path logsDir() {
         return root.resolve("logs");

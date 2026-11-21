@@ -89,6 +89,7 @@ public class Main extends Application {
             stage.show();
             // Desde ahora los diálogos de error se centran sobre la ventana y la tapan
             ErrorReporter.setOwner(root);
+            context.startBackgroundMaintenance(); // copia semanal, si toca
             DebugFailures.afterStartup(context); // solo con -Dvnlauncher.debug.fallo=fx|tarea|hilo
         } catch (Exception e) {
             // Un error aquí suele ser un fallo en el FXML (fx:id mal escrito, etc.)

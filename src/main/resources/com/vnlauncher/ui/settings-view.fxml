@@ -82,9 +82,12 @@
             <HBox styleClass="settings-row">
                 <VBox styleClass="settings-text" HBox.hgrow="ALWAYS">
                     <Label text="Carpeta de datos" styleClass="settings-label"/>
-                    <Label text="Base de datos y todas las imágenes descargadas." styleClass="settings-desc"/>
+                    <Label text="Base de datos y todas las imágenes descargadas." styleClass="settings-desc"
+                           wrapText="true"/>
                 </VBox>
-                <Label fx:id="dataDirLabel" styleClass="mono-text" minWidth="-Infinity"/>
+                <!-- Con una ruta larga se corta por el principio ("…\Local\VNLauncher"): lo que
+                     interesa es el final. La ruta entera, en el tooltip. -->
+                <Label fx:id="dataDirLabel" styleClass="mono-text" maxWidth="420" textOverrun="LEADING_ELLIPSIS"/>
                 <Button text="Abrir carpeta" onAction="#onOpenDataFolder" minWidth="-Infinity"/>
             </HBox>
             <Region styleClass="divider"/>
@@ -113,6 +116,25 @@
                 </VBox>
                 <TextField promptText="Pega aquí tu token" prefWidth="280" minWidth="-Infinity" disable="true"/>
                 <Button text="Conectar" disable="true" minWidth="-Infinity"/>
+            </HBox>
+        </VBox>
+
+        <!-- ================================================= Perfil y copias de seguridad (ajustes-1-0)
+             Exportar e importar el perfil llegarán en la fase 4; restaurar, en la 3. -->
+        <VBox styleClass="card, settings-card">
+            <Label text="Perfil y copias de seguridad" styleClass="settings-card-title"/>
+            <HBox styleClass="settings-row">
+                <VBox styleClass="settings-text" HBox.hgrow="ALWAYS">
+                    <Label text="Copias automáticas" styleClass="settings-label"/>
+                    <Label text="Una copia cada semana. Antes de actualizar, importar o restaurar se hace siempre. Se guardan las 5 últimas."
+                           styleClass="settings-desc" wrapText="true"/>
+                </VBox>
+                <HBox fx:id="weeklyBackupsBox" maxHeight="-Infinity"/>
+            </HBox>
+            <!-- Las copias que hay (las pone SettingsController) -->
+            <VBox fx:id="backupList" styleClass="backup-list"/>
+            <HBox>
+                <Button text="Abrir carpeta de copias" onAction="#onOpenBackupsFolder" minWidth="-Infinity"/>
             </HBox>
         </VBox>
 

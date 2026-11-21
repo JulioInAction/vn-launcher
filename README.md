@@ -97,8 +97,8 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
   de carga y de error, tema «Según el sistema»
 - [x] Fase 7: pulido («Actualizar desde VNDB», programa de configuración, instalador)
 - [ ] Fase 8: Discord Rich Presence
-- [ ] Versión 1.0 (en curso): registro de errores ✓, copias de seguridad, exportar e importar el
-  perfil, estado manual, estanterías, ejecutables perdidos, vista previa de la ficha, búsqueda en
+- [ ] Versión 1.0 (en curso): registro de errores ✓, copias de seguridad automáticas ✓ (falta
+  restaurar), exportar e importar el perfil, estado manual, estanterías, ejecutables perdidos, vista previa de la ficha, búsqueda en
   la biblioteca, aviso de actualizaciones
 - Después de la 1.0: GitHub Action que construya el instalador al subir una etiqueta; en la 1.1,
   traducción completa al inglés (ResourceBundle, selector de idioma, plurales con MessageFormat y
@@ -198,6 +198,23 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
 - Para probarlo sin romper nada: `-Dvnlauncher.debug.fallo=arranque|fx|tarea|hilo` provoca un error
   a propósito (al preparar la base de datos, en el hilo de la interfaz, en una tarea en segundo
   plano o en un hilo suelto). `-Dvnlauncher.log.level=FINE` escribe también los mensajes de detalle.
+
+## Copias de seguridad
+
+- Copias automáticas de la base de datos en `backups/` dentro de la carpeta de datos
+  (`BackupService`): antes de aplicar migraciones nuevas (al arrancar una versión nueva de la app),
+  una cada semana y, en las fases siguientes, antes de importar un perfil o de restaurar una copia.
+  Se guardan las 5 últimas, de todos los tipos juntos.
+- Se hacen con `VACUUM INTO`: SQLite escribe una base nueva y compacta con el contenido de ese
+  momento (también lo que aún está en el WAL) sin bloquear la app. Se escribe con otro nombre
+  (`.part`) y se renombra al acabar, así una copia a medias nunca parece buena.
+- El nombre lo dice todo: `vn-launcher-2026-11-21_104203-actualizacion-1.0.0.db` (fecha, tipo y
+  versión). No hace falta ningún índice aparte. Los archivos con otro nombre no se tocan.
+- La semanal se hace en segundo plano al abrir la app si la última tiene más de 7 días. En Ajustes
+  → Perfil y copias de seguridad se puede apagar (las de antes de actualizar, importar o restaurar
+  se hacen siempre), se ven las copias que hay y se abre su carpeta.
+- Fechas en la interfaz con un patrón numérico fijo (`dd/MM/yyyy, HH:mm`, en `Formats`): no
+  dependen de los datos de idioma de Java, que el instalador no incluye.
 
 ## Pendiente
 

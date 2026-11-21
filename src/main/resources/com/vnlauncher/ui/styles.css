@@ -1657,6 +1657,33 @@
     -fx-font-size: 16px;
 }
 
+/* Lista de copias de seguridad (ajustes-1-0): un recuadro más oscuro que la tarjeta, una fila por copia */
+.backup-list {
+    -fx-background-color: -vn-bg;
+    -fx-background-radius: 10;
+    -fx-border-color: -vn-border;
+    -fx-border-radius: 10;
+    -fx-padding: 4 18 4 18;
+}
+
+.backup-row {
+    -fx-padding: 14 0 14 0;
+    -fx-min-height: 52;
+}
+
+.backup-row.divided {
+    -fx-border-color: -vn-border transparent transparent transparent;
+}
+
+.backup-date {
+    -fx-font-family: "Inter SemiBold";
+    -fx-text-fill: -vn-text;
+}
+
+.backup-list > .label {
+    -fx-padding: 14 0 14 0;
+}
+
 .settings-value {
     -fx-font-family: "Inter SemiBold";
     -fx-text-fill: -vn-text;

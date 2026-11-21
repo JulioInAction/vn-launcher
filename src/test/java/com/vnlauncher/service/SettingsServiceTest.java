@@ -99,4 +99,17 @@ class SettingsServiceTest {
         assertEquals(BlurLevel.NONE, settings.blurLevel());
         assertEquals(BlurLevel.NONE, filter.level(), "El filtro de la app cambia al momento");
     }
+
+    @Test
+    void weeklyBackupsAreOnByDefaultAndCanBeTurnedOff() throws Exception {
+        Database db = new Database(tempDir.resolve("test.db"));
+        db.migrate();
+        SettingsService settings = new SettingsService(new SettingsRepository(db), ContentFilter.withDefaults());
+
+        assertTrue(settings.weeklyBackups(), "Por defecto, sí");
+
+        settings.setWeeklyBackups(false);
+        assertFalse(settings.weeklyBackups());
+        assertEquals("false", new SettingsRepository(db).get("backup.weekly").orElseThrow());
+    }
 }
