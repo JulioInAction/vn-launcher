@@ -46,6 +46,11 @@
     -vn-danger-bg: rgba(255, 143, 133, 0.12);   /* fondo de avisos de error */
     -vn-backdrop: #0B0C10;                      /* fondo detrás de los diálogos */
 
+    /* Iguales en los dos temas (el tema claro no los cambia): van sobre imágenes, que no
+       dependen del tema. Pastilla «1 / 12» de la galería de capturas. */
+    -vn-scrim: rgba(10, 11, 14, 0.72);
+    -vn-on-scrim: #F2F2F5;
+
     /* Variables propias, no están en DISEÑO.md: sombra de los diálogos y fondos de las
        iniciales cuando no hay imagen */
     -vn-shadow: rgba(0, 0, 0, 0.55);
@@ -877,6 +882,68 @@
 /* Enlaces pequeños junto a .exe-path ("Cambiar", "Quitar", "+ Añadir programa de configuración") */
 .hyperlink.small-link {
     -fx-font-size: 16px;
+}
+
+/* ===================================================================== Capturas de pantalla
+   Galería de la ficha (ScreenshotGallery), ficha-capturas-derecha-*.png */
+
+/* Fondo del hueco: se ve en las franjas si la imagen no es 16:9, y mientras se descarga */
+.shot {
+    -fx-background-color: -vn-surface2;
+}
+
+/* Contorno de la captura principal, dibujado encima de la imagen */
+.shot-frame {
+    -fx-border-color: -vn-border;
+    -fx-border-radius: 12;
+}
+
+/* Anillo de la miniatura elegida: 2 px, separado 2 px (radio de la miniatura 8 + 4) */
+.shot-ring {
+    -fx-border-color: -vn-accent-ink;
+    -fx-border-width: 2;
+    -fx-border-radius: 12;
+}
+
+/* «1 / 12», abajo a la derecha de la captura principal */
+.gallery-counter {
+    -fx-background-color: -vn-scrim;
+    -fx-background-radius: 999;
+    -fx-text-fill: -vn-on-scrim;
+    -fx-font-family: "Inter Medium";
+    -fx-font-size: 14px;
+    -fx-padding: 2 9 2 9;
+}
+
+/* Flechas de 48 px: círculo con sombra suave. La sombra va en el botón, que no tiene texto
+   (solo el icono), así que no estropea el suavizado LCD de ningún texto. */
+.button.gallery-arrow {
+    -fx-background-color: -vn-surface;
+    -fx-background-radius: 999;
+    -fx-border-color: -vn-border2;
+    -fx-border-radius: 999;
+    -fx-padding: 0;
+    -fx-min-width: 48;
+    -fx-min-height: 48;
+    -fx-pref-width: 48;
+    -fx-pref-height: 48;
+    -fx-effect: dropshadow(gaussian, -vn-shadow, 12, 0, 0, 2);
+}
+
+.button.gallery-arrow:hover {
+    -fx-background-color: -vn-sel;
+}
+
+.button.gallery-arrow:focused {
+    -fx-border-color: -vn-accent-ink;
+}
+
+.gallery-arrow-icon {
+    -fx-fill: transparent;
+    -fx-stroke: -vn-text;
+    -fx-stroke-width: 2;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
 }
 
 /* ===================================================================== Cambiar portada

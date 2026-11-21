@@ -22,6 +22,7 @@ import com.vnlauncher.service.ProcessScanner;
 import com.vnlauncher.service.ProcessStarter;
 import com.vnlauncher.service.RefreshService;
 import com.vnlauncher.service.RouteService;
+import com.vnlauncher.service.ScreenshotService;
 import com.vnlauncher.service.SettingsService;
 import com.vnlauncher.service.VnDetailsService;
 import com.vnlauncher.util.AppPaths;
@@ -70,6 +71,7 @@ public final class AppContext {
     private final RefreshService refreshService;
     private final CoverService coverService;
     private final VnDetailsService vnDetailsService;
+    private final ScreenshotService screenshotService;
 
     // Constructor con muchos parámetros: es el precio de la inyección manual. Si crece demasiado,
     // se podría agrupar (p. ej. un record con los servicios), pero así se ve todo de un vistazo.
@@ -99,6 +101,8 @@ public final class AppContext {
                 vnDetailsService);
         this.coverService = coverService;
         this.vnDetailsService = vnDetailsService;
+        // Solo necesita la caché de imágenes: se crea aquí, como RefreshService
+        this.screenshotService = new ScreenshotService(imageCache);
     }
 
     /** Prepara carpetas, base de datos y servicios. Si algo falla aquí la app no puede arrancar. */
@@ -217,6 +221,11 @@ public final class AppContext {
     }
 
     /** "Actualizar desde VNDB" en la ficha. */
+    /** Imágenes de las capturas (miniaturas y tamaño completo) en la caché. */
+    public ScreenshotService screenshotService() {
+        return screenshotService;
+    }
+
     /** Etiquetas y capturas de la ficha. */
     public VnDetailsService vnDetailsService() {
         return vnDetailsService;

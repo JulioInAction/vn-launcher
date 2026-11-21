@@ -8,8 +8,9 @@ Guía visual para la interfaz JavaFX. Las capturas de `docs/diseno/capturas/` so
 |---|---|---|
 | `biblioteca-oscuro.png` / `biblioteca-claro.png` | Biblioteca: franja «Continuar», filtros por estado, cuadrícula de portadas | 2 |
 | `ficha-oscuro.png` / `ficha-claro.png` | Ficha de la VN: datos, Jugar, rutas en orden, personajes «primary» | 2, 3 y 4 |
-| `ficha-capturas-derecha-oscuro.png` / `-claro.png` | Ficha con etiquetas (chips, «+N más») y capturas a la derecha | Ficha: etiquetas (hecho), capturas y visor (pendiente) |
-| `ficha-capturas-estrecha-oscuro.png`, `visor-capturas.png` | Ficha con la ventana estrecha y visor de capturas | Pendiente |
+| `ficha-capturas-derecha-oscuro.png` / `-claro.png` | Ficha con etiquetas (chips, «+N más») y capturas a la derecha | Ficha: etiquetas y galería de capturas (hecho) |
+| `ficha-capturas-estrecha-oscuro.png` | Ficha con la ventana estrecha: la galería baja debajo de la cabecera | Hecho |
+| `visor-capturas.png` | Visor de capturas a pantalla completa | Pendiente |
 | `buscar-oscuro.png` / `buscar-claro.png` | Búsqueda en VNDB con vista previa del resultado | 1 (rehacer al aplicar el diseño) |
 | `ajustes.png` | Ajustes: Locale Emulator, tema, contenido, datos, cuenta de VNDB, acerca de | 5 |
 | `dialogo-ruta.png` | Diálogo para crear o editar una ruta | 4 |

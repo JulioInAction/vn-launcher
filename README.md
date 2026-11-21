@@ -148,6 +148,15 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
   por ella: arriba sale «Etiqueta: X ✕» y se combina con los filtros de estado. Solo cuenta las VNs
   cuya ficha se ha abierto alguna vez (las demás aún no tienen etiquetas guardadas; lo avisa).
   «‹ Biblioteca» vuelve a la biblioteca con los filtros que tenía.
+- **Capturas:** galería en la cabecera (`ScreenshotGallery`): captura principal en 16:9 con
+  contador y flechas (al final vuelve a la primera) y una fila de 6 miniaturas que se desplaza para
+  que la elegida siempre se vea. Con la ventana ancha va como tercera columna (portada 220 px,
+  información mínimo 400 px, galería entre 520 y 680 px); si no caben las tres, baja debajo de la
+  cabecera. Un listener sobre el ancho la cambia de sitio solo al cruzar ese umbral. Las miniaturas
+  se descargan al abrir la ficha y la imagen grande solo cuando se muestra (`ScreenshotService`,
+  carpeta `images/shots/` de la caché; el nombre sale de la URL, así que no hace falta guardar la
+  ruta en la base de datos). Las sensibles van difuminadas según «Difuminar imágenes». Sin capturas,
+  no hay galería.
 - **Programa de configuración:** además del juego, cada VN puede tener su `config.exe` (o como se
   llame). Se abre con el botón «Configuración», desde su carpeta y con Locale Emulator si la VN lo
   usa. No cuenta como partida.

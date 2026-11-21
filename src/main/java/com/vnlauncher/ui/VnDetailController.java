@@ -13,15 +13,21 @@ import com.vnlauncher.model.VnTag;
 import com.vnlauncher.util.PlayTime;
 import com.vnlauncher.util.RelativeTime;
 import javafx.beans.binding.Bindings;
+import javafx.beans.binding.DoubleBinding;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
@@ -47,6 +53,15 @@ import java.util.stream.Collectors;
  */
 public class VnDetailController implements PlaytimeAware {
 
+    // --- Columnas de la cabecera (ficha-capturas-derecha-*.png)
+    private static final double COVER_COLUMN = 220;
+    private static final double COLUMN_GAP = 28;
+    private static final double INFO_MIN = 400;
+    private static final double GALLERY_MIN = 520;
+    private static final double GALLERY_MAX = ScreenshotGallery.MAX_WIDTH;
+    /** Ancho de página a partir del cual caben las tres columnas: 220 + 28 + 400 + 28 + 520. */
+    static final double THREE_COLUMNS_MIN = COVER_COLUMN + COLUMN_GAP + INFO_MIN + COLUMN_GAP + GALLERY_MIN;
+
     /** Descripción recortada a unos 4-5 renglones hasta pulsar "Leer más". */
     private static final int DESCRIPTION_PREVIEW_CHARS = 380;
 
@@ -56,6 +71,9 @@ public class VnDetailController implements PlaytimeAware {
     private final String vnId;
 
     // --- cabecera
+    @FXML private ScrollPane scroll;
+    @FXML private VBox pageContent;
+    @FXML private HBox headerRow;
     @FXML private VBox noticeBox;
     @FXML private Hyperlink refreshLink;
     @FXML private Label refreshStatus;
@@ -91,6 +109,12 @@ public class VnDetailController implements PlaytimeAware {
     private RoutesPane routesPane;
     private LaunchFlow launchFlow;
     private TagChips tagChips;
+    /** Galería de capturas; null si la VN no tiene (o aún no se han cargado). */
+    private ScreenshotGallery gallery;
+    /** Dónde está la galería: true = tercera columna, false = debajo, null = aún sin colocar. */
+    private Boolean galleryWide;
+    /** Ancho útil de la página (sin márgenes). Ver {@link #initialize()}. */
+    private final DoubleProperty pageWidth = new SimpleDoubleProperty();
 
     private LibraryEntry entry;
     private boolean descriptionExpanded = false;
@@ -145,6 +169,13 @@ public class VnDetailController implements PlaytimeAware {
         routesContainer.getChildren().add(routesPane);
         routesPane.reload();
 
+        // Ancho de la página para colocar la galería. Se mide el "viewport" del ScrollPane (la
+        // parte visible), que depende solo de la ventana: el ancho del contenido no sirve, porque
+        // con la galería a la derecha el contenido no puede encoger por debajo de las tres columnas.
+        scroll.viewportBoundsProperty().addListener((obs, old, bounds) -> pageWidth.set(
+                bounds.getWidth() - pageContent.getPadding().getLeft() - pageContent.getPadding().getRight()));
+        pageWidth.addListener((obs, old, width) -> placeGallery());
+
         // Etiquetas: pulsar una abre la biblioteca filtrada por ella
         tagChips = new TagChips(navigator::showLibraryWithTag);
         tagsContainer.getChildren().add(tagChips);
@@ -186,11 +217,12 @@ public class VnDetailController implements PlaytimeAware {
                 loaded -> {
                     details = loaded;
                     renderTags();
+                    renderGallery();
                 },
                 error -> {
                     // Sin conexión la primera vez: se vuelven a pedir al abrir la ficha otra vez
-                    Label message = new Label("No se han podido cargar las etiquetas. Se intentará de "
-                            + "nuevo la próxima vez que abras la ficha.");
+                    Label message = new Label("No se han podido cargar las etiquetas ni las capturas. Se "
+                            + "intentará de nuevo la próxima vez que abras la ficha.");
                     message.getStyleClass().add("muted");
                     message.setWrapText(true);
                     tagsContainer.getChildren().setAll(message);
@@ -207,6 +239,61 @@ public class VnDetailController implements PlaytimeAware {
         tagChips.setTags(tags);
         tagsContainer.getChildren().setAll(tagChips); // por si antes había un aviso de error
         show(tagsContainer, !tags.isEmpty());       // sin etiquetas, la sección no se ve
+    }
+
+    /** Crea la galería con las capturas (o la quita si no hay ninguna) y la coloca. */
+    private void renderGallery() {
+        if (gallery != null) {
+            ((Pane) gallery.getParent()).getChildren().remove(gallery);
+            gallery = null;
+        }
+        if (details.screenshots().isEmpty()) {
+            return; // sin capturas no hay galería: la información ocupa ese sitio
+        }
+        ScreenshotSet shots = new ScreenshotSet(details.screenshots(), ctx.screenshotService(),
+                ctx.background(), ctx.contentFilter());
+        gallery = new ScreenshotGallery(shots);
+        gallery.setMaxHeight(Region.USE_PREF_SIZE); // en la fila de la cabecera, que no la estire
+        galleryWide = null; // colocarla aunque no cambie el ancho
+        placeGallery();
+    }
+
+    /**
+     * Pone la galería como tercera columna de la cabecera (si caben las tres) o debajo de ella,
+     * alineada a la izquierda y con 680 px como mucho. Se llama con cada cambio de ancho, pero solo
+     * mueve la galería cuando se cruza el umbral (THREE_COLUMNS_MIN), no en cada píxel.
+     */
+    private void placeGallery() {
+        if (gallery == null || pageWidth.get() <= 0) {
+            return;
+        }
+        boolean wide = pageWidth.get() >= THREE_COLUMNS_MIN;
+        if (galleryWide != null && galleryWide == wide) {
+            return;
+        }
+        galleryWide = wide;
+        if (gallery.getParent() != null) {
+            ((Pane) gallery.getParent()).getChildren().remove(gallery);
+        }
+        if (wide) {
+            // Ancho: lo que sobre tras la portada y 400 px de información, entre 520 y 680. Va
+            // enlazado (binding) al ancho de la página: se recalcula solo, sin mover nada.
+            DoubleBinding width = Bindings.createDoubleBinding(() -> Math.clamp(
+                    pageWidth.get() - COVER_COLUMN - 2 * COLUMN_GAP - INFO_MIN, GALLERY_MIN, GALLERY_MAX), pageWidth);
+            // min = pref = max: así la HBox, cuando le falta sitio, solo encoge la información
+            gallery.minWidthProperty().bind(width);
+            gallery.prefWidthProperty().bind(width);
+            gallery.maxWidthProperty().bind(width);
+            headerRow.getChildren().add(gallery);
+        } else {
+            gallery.minWidthProperty().unbind();
+            gallery.prefWidthProperty().unbind();
+            gallery.maxWidthProperty().unbind();
+            gallery.setMinWidth(0);
+            gallery.setPrefWidth(GALLERY_MAX);
+            gallery.setMaxWidth(GALLERY_MAX); // la VBox la estira hasta aquí, a la izquierda
+            pageContent.getChildren().add(pageContent.getChildren().indexOf(headerRow) + 1, gallery);
+        }
     }
 
     // =========================================================== cabecera

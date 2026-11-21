@@ -115,7 +115,7 @@ public class CoverView extends StackPane {
      * Escala de la pantalla: 1 al 100 %, 1,25 al 125 %, 1,5 al 150 % (escalado de Windows). Si hay
      * varias pantallas, la mayor: la ventana se puede mover de una a otra.
      */
-    private static double outputScale() {
+    static double outputScale() {
         double max = 1;
         for (Screen screen : Screen.getScreens()) {
             max = Math.max(max, screen.getOutputScaleX());

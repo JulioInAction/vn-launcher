@@ -15,34 +15,39 @@
 
 <!-- Ficha de una VN (según el prototipo):
        · cabecera: portada + título, acciones (Jugar, ejecutable, Locale Emulator), datos, etiquetas
-         y descripción
+         y descripción, y la galería de capturas (a la derecha o debajo, según el ancho)
        · sección Rutas (la crea VnDetailController: RoutesPane)
        · sección Personajes principales
      Todo dentro de un ScrollPane porque puede ser largo. -->
-<ScrollPane xmlns="http://javafx.com/javafx"
+<ScrollPane fx:id="scroll"
+            xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.vnlauncher.ui.VnDetailController"
             fitToWidth="true" styleClass="plain-scroll">
 
-    <VBox spacing="28" styleClass="page-content">
+    <VBox fx:id="pageContent" spacing="28" styleClass="page-content">
         <Button text="‹  Biblioteca" onAction="#onBack" styleClass="link-button"/>
 
         <!-- Avisos de "Actualizar desde VNDB" (sin conexión...). Solo ocupa sitio si hay alguno. -->
         <VBox fx:id="noticeBox" maxWidth="760"/>
 
-        <!-- ================================================= cabecera -->
-        <HBox spacing="28">
+        <!-- ================================================= cabecera
+             Con la ventana ancha, tres columnas: portada, información y galería de capturas (la
+             pone VnDetailController). Si no caben, la galería pasa debajo de esta fila. -->
+        <HBox fx:id="headerRow" spacing="28">
             <!-- Aquí VnDetailController pone un CoverView cuando carga la VN.
                  alignment TOP_CENTER: el HBox estira este hueco a toda la altura de la fila
                  y sin esto la portada saldría centrada en vertical. -->
             <!-- 330 de portada + 50 reservados debajo para el control «Cambiar portada» -->
             <StackPane fx:id="coverBox" alignment="TOP_CENTER" minWidth="220" minHeight="380"/>
 
-            <VBox spacing="12" HBox.hgrow="ALWAYS">
+            <VBox fx:id="infoColumn" spacing="12" HBox.hgrow="ALWAYS" minWidth="400">
                 <VBox spacing="4">
                     <Label fx:id="titleLabel" styleClass="detail-title" wrapText="true"/>
                     <Label fx:id="altTitleLabel" styleClass="muted, original-text" wrapText="true"/>
-                    <HBox spacing="6" alignment="BASELINE_LEFT">
+                    <!-- FlowPane en vez de HBox (aquí y más abajo): con la galería a la derecha esta
+                         columna puede quedarse en 400 px, y entonces salta de línea en vez de cortarse -->
+                    <FlowPane hgap="6" vgap="2" rowValignment="BASELINE">
                         <Label fx:id="metaLabel" styleClass="muted"/>
                         <Label text="·" styleClass="muted"/>
                         <Hyperlink text="Ver en VNDB" onAction="#onOpenVndb"/>
@@ -50,10 +55,10 @@
                         <!-- Vuelve a pedir la ficha, los personajes y las etiquetas y capturas (3 peticiones) -->
                         <Hyperlink fx:id="refreshLink" text="Actualizar desde VNDB" onAction="#onRefresh"/>
                         <Label fx:id="refreshStatus" styleClass="muted"/>
-                    </HBox>
+                    </FlowPane>
                 </VBox>
 
-                <HBox spacing="10" alignment="CENTER_LEFT">
+                <FlowPane hgap="10" vgap="10" alignment="CENTER_LEFT">
                     <Button fx:id="playButton" text="▶  Jugar" onAction="#onPlay"
                             styleClass="primary-button, big-button"/>
                     <Button fx:id="exeButton" text="Elegir ejecutable" onAction="#onChooseExecutable"
@@ -61,7 +66,7 @@
                     <!-- Solo se ve cuando hay programa de configuración (config.exe...) -->
                     <Button fx:id="configButton" text="Configuración" onAction="#onOpenConfig"
                             styleClass="secondary-button"/>
-                </HBox>
+                </FlowPane>
                 <VBox spacing="2">
                     <Label fx:id="exePathLabel" styleClass="exe-path"/>
                     <!-- "Configuración: C:\...\config.exe · Cambiar · Quitar", o el enlace para añadirlo -->
@@ -72,10 +77,11 @@
                                    styleClass="small-link"/>
                     </HBox>
                 </VBox>
-                <CheckBox fx:id="localeEmulatorCheck" text="Lanzar con Locale Emulator (perfil japonés)"/>
+                <CheckBox fx:id="localeEmulatorCheck" text="Lanzar con Locale Emulator (perfil japonés)"
+                          wrapText="true"/>
 
-                <!-- Tarjetas de datos -->
-                <HBox spacing="10">
+                <!-- Tarjetas de datos (si no caben las tres en una fila, pasan a la siguiente) -->
+                <FlowPane hgap="10" vgap="10">
                     <VBox styleClass="stat-card">
                         <Label text="Tiempo jugado" styleClass="stat-label"/>
                         <Label fx:id="playTimeLabel" text="0 min" styleClass="stat-value"/>
@@ -89,7 +95,7 @@
                         <Label fx:id="routesStatLabel" text="Sin rutas" styleClass="stat-value"/>
                         <ProgressBar fx:id="routesStatBar" progress="0" maxWidth="Infinity" prefHeight="6"/>
                     </VBox>
-                </HBox>
+                </FlowPane>
 
                 <!-- Etiquetas (TagChips, en código): debajo de las tarjetas y antes de la descripción.
                      Se oculta si la VN no tiene ninguna que enseñar. -->
