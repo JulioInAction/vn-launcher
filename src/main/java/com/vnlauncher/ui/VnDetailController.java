@@ -101,6 +101,11 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
     private static final String OPEN_VNDB = "Ver en VNDB";
     private static final String REFRESH = "Actualizar desde VNDB";
     private static final String REMOVE = "Quitar de la biblioteca";
+    /** «¿Quitar "CLANNAD" de la biblioteca?» */
+    private static final String REMOVE_TITLE = "¿Quitar \"%s\" de la biblioteca?";
+    private static final String REMOVE_TEXT = "Se borrarán también sus rutas y el tiempo de juego registrado.";
+    private static final String REMOVE_TEXT_WITH_COVER = "Se borrarán también sus rutas, el tiempo de juego "
+            + "registrado y la portada que elegiste.";
 
     // --- Lo que pasa al actualizar desde VNDB (a la derecha del «⋯»)
     private static final String REFRESHING = "Actualizando…";
@@ -959,8 +964,10 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
             Dialogs.error(moreButton, "Cierra el juego antes de quitarlo de la biblioteca.");
             return;
         }
-        if (!Dialogs.confirm(moreButton, "¿Quitar \"" + entry.vn().title() + "\" de la biblioteca?",
-                "Se borrarán también sus rutas y el tiempo de juego registrado.", "Quitar", true)) {
+        // Si tiene portada elegida, también se borra su archivo: mejor decirlo
+        String consequences = entry.coverOverride() != null ? REMOVE_TEXT_WITH_COVER : REMOVE_TEXT;
+        if (!Dialogs.confirm(moreButton, String.format(REMOVE_TITLE, entry.vn().title()), consequences,
+                "Quitar", true)) {
             return;
         }
         moreButton.setDisable(true);

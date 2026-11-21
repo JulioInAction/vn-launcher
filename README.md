@@ -99,6 +99,7 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
 - [ ] Fase 8: Discord Rich Presence
 - [ ] Versión 1.0 (en curso): registro de errores ✓, copias de seguridad automáticas ✓, restaurar
   una copia ✓, exportar e importar el perfil ✓, estado manual ✓, estanterías ✓, ejecutables perdidos ✓,
+  limpieza al quitar una VN ✓,
   vista previa de la ficha, búsqueda en la biblioteca, aviso de actualizaciones
 - Después de la 1.0: GitHub Action que construya el instalador al subir una etiqueta; en la 1.1,
   traducción completa al inglés (ResourceBundle, selector de idioma, plurales con MessageFormat y
@@ -202,6 +203,13 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
 - **Difuminado barato:** las capturas sensibles no usan `GaussianBlur` sobre la imagen grande (sin
   tarjeta gráfica, p. ej. en una máquina virtual, eso tarda segundos por fotograma). Se difumina una
   vez una copia de 64 px con `BoxBlur` y se muestra ampliada.
+- **Quitar de la biblioteca** (en el «⋯»): con confirmación. Se van sus rutas, sesiones y
+  estanterías (`ON DELETE CASCADE`) y también el archivo de su portada elegida en `covers/`, que ya
+  no usaría nadie; los datos de VNDB y sus imágenes de la caché se quedan, por si se vuelve a añadir.
+  Solo se borra si la ruta guardada queda de verdad dentro de `covers/`
+  (`CoverService.customCoverFile`): la base puede venir de un perfil importado, y algo como
+  `covers/../library.db` no se toca nunca. Si después se restaura una copia antigua en la que estaba,
+  vuelve con la portada de VNDB.
 - **Programa de configuración:** además del juego, cada VN puede tener su `config.exe` (o como se
   llame). Se elige en «Opciones del juego» y se abre desde el «⋯», desde su carpeta y con Locale
   Emulator si la VN lo usa. No cuenta como partida.

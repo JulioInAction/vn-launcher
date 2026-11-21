@@ -12,6 +12,7 @@ import com.vnlauncher.util.AppPaths;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
@@ -22,6 +23,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * "Cambiar portada": la galería con las imágenes de cada edición de la VN y la portada que el
@@ -142,8 +145,32 @@ public class CoverService {
     private void setOverride(String vnId, String relative) throws SQLException, IOException {
         String previous = library.findByVnId(vnId).map(LibraryEntry::coverOverride).orElse(null);
         library.updateCoverOverride(vnId, relative);
-        if (previous != null && !previous.equals(relative) && previous.startsWith(COVERS_FOLDER + "/")) {
-            Files.deleteIfExists(paths.root().resolve(previous));
+        if (previous != null && !previous.equals(relative)) {
+            Optional<Path> file = customCoverFile(paths.root()::resolve, previous);
+            if (file.isPresent()) {
+                Files.deleteIfExists(file.get());
+            }
+        }
+    }
+
+    /**
+     * El archivo de una portada elegida, solo si de verdad está DENTRO de covers/. La ruta sale de
+     * la base de datos, que puede venir de un perfil importado: algo como «covers/../library.db»
+     * empieza por «covers/» pero apunta fuera, y no se debe borrar nunca.
+     *
+     * @param resolve convierte una ruta relativa a la carpeta de datos en una ruta del disco
+     * @return vacío si no es una portada propia (o la ruta no es válida)
+     */
+    static Optional<Path> customCoverFile(Function<String, Path> resolve, String relative) {
+        if (relative == null || relative.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            Path folder = resolve.apply(COVERS_FOLDER).normalize();
+            Path file = resolve.apply(relative).normalize();
+            return folder.equals(file.getParent()) ? Optional.of(file) : Optional.empty();
+        } catch (InvalidPathException e) {
+            return Optional.empty();
         }
     }
 

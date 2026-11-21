@@ -202,6 +202,37 @@ class LibraryServiceTest {
     }
 
     @Test
+    void removingANovelDeletesItsOwnCoverButNotTheVndbCache() throws Exception {
+        service.addToLibrary(searchResult("v4", server.url("/cv/1.jpg")));
+        service.addToLibrary(searchResult("v11", null));
+        java.nio.file.Path covers = java.nio.file.Files.createDirectories(tempDir.resolve("covers"));
+        java.nio.file.Path mine = java.nio.file.Files.writeString(covers.resolve("v4-propia-1.png"), "mía");
+        java.nio.file.Path other = java.nio.file.Files.writeString(covers.resolve("v11-cv2.jpg"), "de otra VN");
+        library.updateCoverOverride("v4", "covers/v4-propia-1.png");
+        library.updateCoverOverride("v11", "covers/v11-cv2.jpg");
+        String vndbCover = service.find("v4").orElseThrow().vn().imagePath();
+
+        service.remove("v4");
+
+        assertFalse(java.nio.file.Files.exists(mine), "La portada propia ya no la usa nadie");
+        assertTrue(java.nio.file.Files.exists(other), "La de otra VN no se toca");
+        assertTrue(images.isCached(vndbCover), "La caché de VNDB se queda (por si se vuelve a añadir)");
+    }
+
+    @Test
+    void aCoverPathThatLeavesTheCoversFolderIsNeverDeleted() throws Exception {
+        service.addToLibrary(searchResult("v4", null));
+        java.nio.file.Path outside = java.nio.file.Files.writeString(tempDir.resolve("importante.txt"), "no");
+        // Como si viniera así de un perfil importado de otro sitio
+        library.updateCoverOverride("v4", "covers/../importante.txt");
+
+        service.remove("v4");
+
+        assertTrue(java.nio.file.Files.exists(outside));
+        assertFalse(service.isInLibrary("v4"), "La VN se quita igualmente");
+    }
+
+    @Test
     void recentlyPlayedIsSortedNewestFirstAndLimited() throws Exception {
         for (String id : List.of("v1", "v2", "v3", "v4")) {
             service.addToLibrary(searchResult(id, null));

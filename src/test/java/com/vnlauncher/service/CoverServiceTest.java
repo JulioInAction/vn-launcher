@@ -195,4 +195,16 @@ class CoverServiceTest {
         assertEquals(tempDir.resolve("covers/v4-cv1.jpg"), covers.effectiveCover(entry()),
                 "covers/ está fuera de images/: «Vaciar caché» no la borra");
     }
+
+    @Test
+    void onlyFilesReallyInsideCoversCountAsOwnCovers() {
+        java.nio.file.Path root = java.nio.file.Path.of("/datos");
+        assertEquals(java.util.Optional.of(java.nio.file.Path.of("/datos/covers/v4-cv1.jpg")),
+                CoverService.customCoverFile(root::resolve, "covers/v4-cv1.jpg"));
+        assertTrue(CoverService.customCoverFile(root::resolve, "covers/../library.db").isEmpty());
+        assertTrue(CoverService.customCoverFile(root::resolve, "images/vn/v4.jpg").isEmpty(), "La caché, no");
+        assertTrue(CoverService.customCoverFile(root::resolve, "covers/sub/v4.jpg").isEmpty());
+        assertTrue(CoverService.customCoverFile(root::resolve, null).isEmpty());
+        assertTrue(CoverService.customCoverFile(root::resolve, "covers/mal\u0000.jpg").isEmpty());
+    }
 }

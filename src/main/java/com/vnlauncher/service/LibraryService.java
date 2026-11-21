@@ -85,8 +85,29 @@ public class LibraryService {
         return vnRepository.fetchedAt(vnId);
     }
 
+    /**
+     * Quita la VN de la biblioteca: sus rutas, sesiones y estanterías se van con ella (ON DELETE
+     * CASCADE) y también se borra su portada propia de covers/, que ya no usaría nadie. Los datos de
+     * VNDB y sus imágenes de la caché se quedan (si se vuelve a añadir, no hay que pedirlos otra vez).
+     *
+     * <p>Si después se restaura una copia antigua en la que estaba, vuelve con la portada de VNDB: la
+     * app ya tolera que falte el archivo de la elegida.
+     */
     public void remove(String vnId) throws SQLException {
+        Optional<String> customCover = libraryRepository.findByVnId(vnId).map(LibraryEntry::coverOverride);
         libraryRepository.remove(vnId);
+        customCover.flatMap(relative -> CoverService.customCoverFile(imageCache::resolve, relative))
+                .ifPresent(LibraryService::deleteQuietly);
+    }
+
+    /** La VN ya está quitada: si el archivo no se puede borrar, solo se apunta en el registro. */
+    private static void deleteQuietly(java.nio.file.Path file) {
+        try {
+            java.nio.file.Files.deleteIfExists(file);
+            LOG.log(System.Logger.Level.INFO, "Portada propia borrada: {0}", file.getFileName());
+        } catch (IOException e) {
+            LOG.log(System.Logger.Level.WARNING, "No se pudo borrar la portada " + file, e);
+        }
     }
 
     public boolean isInLibrary(String vnId) throws SQLException {
