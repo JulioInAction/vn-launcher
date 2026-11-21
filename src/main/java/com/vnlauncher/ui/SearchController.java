@@ -186,6 +186,20 @@ public class SearchController {
         }
     }
 
+    /**
+     * Se sale de «Buscar» (MainController la descarta): se cancela la búsqueda si sigue en marcha,
+     * la cuenta atrás del límite y la petición de detalles que estuviera esperando.
+     */
+    void close() {
+        if (searchTask != null) {
+            searchTask.cancel(); // interrumpe el hilo, también si espera en el RateLimiter
+        }
+        if (countdown != null) {
+            countdown.stop();
+        }
+        extrasDelay.stop();
+    }
+
     // =========================================================== avisos y estados vacíos
 
     /** Aviso azul "Has llegado al límite de VNDB" con cuenta atrás y "Cancelar búsqueda". */

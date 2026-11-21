@@ -112,6 +112,8 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
 
 ## Búsqueda
 
+- Al salir de «Buscar» a otra pestaña, la búsqueda se descarta: al volver está vacía. Si había una
+  búsqueda en marcha (p. ej. esperando al límite de VNDB), se cancela.
 - Se busca al pulsar Enter: **1 petición** a `/vn` que trae también los datos ligeros del panel
   (duración, valoración, idiomas, plataformas y estado de desarrollo).
 - A la derecha, un panel fijo de 540 px con el resultado elegido: portada, título original, estado

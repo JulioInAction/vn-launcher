@@ -21,13 +21,15 @@ Guía visual para la interfaz JavaFX. Las capturas de `docs/diseno/capturas/` so
 
 ## Temas y colores
 
-Hay dos temas, **oscuro** (por defecto) y **claro**. El usuario lo cambia con el botón de la parte de abajo de la barra lateral y se guarda en la tabla `setting` (clave `theme`).
+Hay dos temas, **oscuro** (por defecto) y **claro**, más la opción «Según el sistema». El usuario lo cambia en Ajustes → Apariencia y se guarda en la tabla `setting` (clave `theme`).
+
+El tema claro es cálido y sin blancos puros: fondo `#ECE6DF`, barra lateral `#F2EDE7` y tarjetas `#F6F2ED`, con bordes y huecos de imagen en la misma gama de beige. Así las tarjetas se distinguen del fondo sin deslumbrar.
 
 En JavaFX los colores se definen una sola vez como *looked-up colors* en `.root`, y el tema claro los sobrescribe con una clase de estilo:
 
 ```css
 .root { -vn-bg: #121318; /* ... */ }
-.root.tema-claro { -vn-bg: #F7F4F1; /* ... */ }
+.root.tema-claro { -vn-bg: #ECE6DF; /* ... */ }
 .tarjeta { -fx-background-color: -vn-surface; }
 ```
 
@@ -35,13 +37,13 @@ Cambiar de tema = añadir o quitar `tema-claro` de `scene.getRoot().getStyleClas
 
 | Variable | Uso | Oscuro | Claro |
 |---|---|---|---|
-| `-vn-bg` | Fondo de la ventana | `#121318` | `#F7F4F1` |
-| `-vn-side` | Barra lateral | `#16171D` | `#FFFFFF` |
-| `-vn-surface` | Tarjetas y paneles | `#1F2129` | `#FFFFFF` |
-| `-vn-surface2` | Fondo secundario (huecos de imagen) | `#282B35` | `#F0EBE7` |
-| `-vn-sel` | Fila seleccionada | `#262833` | `#FDF1F4` |
-| `-vn-border` | Bordes suaves | `#2A2D37` | `#E6E0DB` |
-| `-vn-border2` | Bordes de botones e inputs | `#3A3D49` | `#D3CBC5` |
+| `-vn-bg` | Fondo de la ventana | `#121318` | `#ECE6DF` |
+| `-vn-side` | Barra lateral | `#16171D` | `#F2EDE7` |
+| `-vn-surface` | Tarjetas y paneles | `#1F2129` | `#F6F2ED` |
+| `-vn-surface2` | Fondo secundario (huecos de imagen) | `#282B35` | `#E6DFD7` |
+| `-vn-sel` | Fila seleccionada | `#262833` | `#F5E6EA` |
+| `-vn-border` | Bordes suaves | `#2A2D37` | `#DCD3CA` |
+| `-vn-border2` | Bordes de botones e inputs | `#3A3D49` | `#C9BFB5` |
 | `-vn-text` | Texto principal | `#ECEDF2` | `#1D1B22` |
 | `-vn-text2` | Texto secundario | `#C9CCD6` | `#3F3C47` |
 | `-vn-muted` | Texto apagado (metadatos) | `#A4A8B6` | `#5E5B68` |
@@ -57,12 +59,12 @@ Cambiar de tema = añadir o quitar `tema-claro` de `scene.getRoot().getStyleClas
 | `-vn-grey-bg` | Fondo de la etiqueta gris | `rgba(164,168,182,0.14)` | `rgba(94,91,104,0.10)` |
 | `-vn-chip-on-bg` | Filtro activo (fondo) | `#ECEDF2` | `#1D1B22` |
 | `-vn-chip-on-text` | Filtro activo (texto) | `#121318` | `#FFFFFF` |
-| `-vn-track` | Fondo de barras de progreso | `#30333E` | `#E6E0DB` |
+| `-vn-track` | Fondo de barras de progreso | `#30333E` | `#DCD3CA` |
 | `-vn-watermark` | Texto japonés de fondo en la barra lateral | `rgba(242,160,181,0.07)` | `rgba(176,54,94,0.07)` |
-| `-vn-overlay` | Capa sobre imágenes con spoiler | `rgba(18,19,24,0.55)` | `rgba(247,244,241,0.62)` |
+| `-vn-overlay` | Capa sobre imágenes con spoiler | `rgba(18,19,24,0.55)` | `rgba(236,230,223,0.62)` |
 | `-vn-danger` | Errores y acciones destructivas (eliminar) | `#FF8F85` | `#B3261E` |
 | `-vn-danger-bg` | Fondo de avisos de error | `rgba(255,143,133,0.12)` | `rgba(179,38,30,0.08)` |
-| `-vn-backdrop` | Fondo detrás de los diálogos | `#0B0C10` | `#DCD5D0` |
+| `-vn-backdrop` | Fondo detrás de los diálogos | `#0B0C10` | `#D2CAC2` |
 
 Notas:
 - El rosa `#F2A0B5` se usa igual en los dos temas como **fondo** del botón principal. Como **texto** sobre fondo claro no se lee bien, por eso existe `-vn-accent-ink` (`#B0365E` en el tema claro).
@@ -91,7 +93,7 @@ De arriba abajo:
 2. Navegación numerada: `01 Biblioteca`, `02 Buscar en VNDB`, `03 Ajustes`. La sección activa lleva el texto en color normal y un **marcapáginas** rosa pegado al borde izquierdo (8 × 40 px, con muesca en V abajo). Las inactivas, en `-vn-muted`.
 3. **Estanterías:** Jugando, Pendientes y Completadas, con un punto del color del estado y el número de VNs. Al pulsar, abren la biblioteca filtrada.
 4. **Recientes:** portadas pequeñas (48 × 72) de las 3 últimas VNs jugadas.
-5. Abajo del todo: contador de peticiones a VNDB («14/200», barra fina) y botón para cambiar de tema.
+5. Abajo del todo: contador de peticiones a VNDB («14/200», barra fina). El tema se cambia en Ajustes → Apariencia.
 6. De fondo, «ビジュアルノベル» en vertical, 58 px, color `-vn-watermark`. Puramente decorativo.
 
 ## Ajustes, diálogos y estados

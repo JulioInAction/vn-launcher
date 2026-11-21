@@ -34,11 +34,13 @@ public class MainController implements Navigator {
     /** Controlador de la pantalla visible, para avisarle de cambios en el tiempo de juego. */
     private Object currentController;
 
-    // Biblioteca y búsqueda se crean una sola vez y se reutilizan (la búsqueda conserva sus
-    // resultados al volver). El detalle de una VN se crea nuevo cada vez.
+    // La biblioteca se crea una sola vez y se reutiliza (así recuerda sus filtros). La búsqueda y el
+    // detalle de una VN se crean nuevos cada vez: al volver a «Buscar» se empieza de cero.
     private Parent libraryView;
     private LibraryController libraryController;
+    /** Búsqueda en pantalla; null si se está en otra pestaña. */
     private Parent searchView;
+    private SearchController searchController;
 
     public MainController(AppContext context, Consumer<String> urlOpener, Theme initialTheme) {
         this.context = context;
@@ -118,24 +120,45 @@ public class MainController implements Navigator {
     }
 
     private void displayLibrary() {
+        leaveSearch();
         root.setCenter(libraryView);
         currentController = libraryController;
         sidebar.setActive(SidebarController.Section.LIBRARY);
         sidebar.refresh();
     }
 
+    /**
+     * Abre «Buscar» vacía. Si ya se está en ella (p. ej. al pulsar otra vez «02 Buscar»), se deja
+     * como está: solo se empieza de cero al venir de otra pestaña.
+     */
     @Override
     public void showSearch() {
-        if (searchView == null) {
-            searchView = Views.load("search-view.fxml", new SearchController(context, this));
+        if (searchView != null && root.getCenter() == searchView) {
+            return;
         }
+        searchController = new SearchController(context, this);
+        searchView = Views.load("search-view.fxml", searchController);
         root.setCenter(searchView);
         currentController = null;
         sidebar.setActive(SidebarController.Section.SEARCH);
     }
 
+    /**
+     * Al salir de «Buscar» se descarta la búsqueda: sus resultados no se guardan para la próxima
+     * vez, y se cancela lo que estuviera en marcha (si no, una búsqueda que espera al límite de
+     * VNDB gastaría una petición para nada).
+     */
+    private void leaveSearch() {
+        if (searchController != null) {
+            searchController.close();
+        }
+        searchController = null;
+        searchView = null;
+    }
+
     @Override
     public void showSettings() {
+        leaveSearch();
         SettingsController settings = new SettingsController(context, themeManager, urlOpener);
         root.setCenter(Views.load("settings-view.fxml", settings));
         currentController = settings;
@@ -144,6 +167,7 @@ public class MainController implements Navigator {
 
     @Override
     public void showVnDetail(String vnId) {
+        leaveSearch();
         VnDetailController detail = new VnDetailController(context, this, urlOpener, vnId);
         root.setCenter(Views.load("vn-detail-view.fxml", detail));
         currentController = detail;
