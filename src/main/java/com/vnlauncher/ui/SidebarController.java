@@ -1,11 +1,9 @@
 package com.vnlauncher.ui;
 
 import com.vnlauncher.app.AppContext;
-import com.vnlauncher.model.LibraryEntry;
 import com.vnlauncher.model.LibraryItem;
 import com.vnlauncher.model.PlayStatus;
 import com.vnlauncher.model.Theme;
-import com.vnlauncher.service.LibraryService;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.beans.binding.Bindings;
@@ -30,8 +28,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Barra lateral común a todas las pantallas: logo, navegación numerada con marcapáginas,
- * estanterías (Jugando / Pendientes / Completadas), recientes, contador de VNDB y botón de tema.
+ * Barra lateral común a todas las pantallas (docs/diseño/capturas/biblioteca-1-0-*.png): logo,
+ * navegación numerada con marcapáginas, el bloque «Estado» (los cinco estados con su contador) y el
+ * contador de peticiones a VNDB.
  */
 public class SidebarController {
 
@@ -52,7 +51,6 @@ public class SidebarController {
 
     /** Límite real de VNDB, el que se muestra al usuario (internamente nos quedamos en 190). */
     private static final int VNDB_LIMIT = 200;
-    private static final int RECENT_COUNT = 3;
 
     private final AppContext ctx;
     private final Navigator navigator;
@@ -60,13 +58,13 @@ public class SidebarController {
     @FXML private StackPane sidebarRoot;
     @FXML private ImageView watermark;
     @FXML private VBox navBox;
-    @FXML private VBox shelvesBox;
-    @FXML private HBox recentBox;
+    @FXML private VBox statusBox;
     @FXML private Label vndbCountLabel;
     @FXML private ProgressBar vndbCountBar;
 
     private final Map<Section, Button> navButtons = new EnumMap<>(Section.class);
-    private final Map<PlayStatus, Label> shelfCounts = new EnumMap<>(PlayStatus.class);
+    private final Map<PlayStatus, Label> statusCounts = new EnumMap<>(PlayStatus.class);
+    private final Map<PlayStatus, Button> statusButtons = new EnumMap<>(PlayStatus.class);
 
     // Marca de agua de cada tema (se cargan una vez y se cambian al cambiar de tema)
     private final Image watermarkDark = loadImage("images/marca-agua-rosa.png");
@@ -92,8 +90,10 @@ public class SidebarController {
             navButtons.put(section, button);
             navBox.getChildren().add(button);
         }
-        for (PlayStatus shelf : PlayStatus.values()) {
-            shelvesBox.getChildren().add(shelfItem(shelf));
+        for (PlayStatus status : PlayStatus.values()) {
+            Button button = statusItem(status);
+            statusButtons.put(status, button);
+            statusBox.getChildren().add(button);
         }
         Tooltip.install(vndbCountLabel, new Tooltip("Datos guardados en " + ctx.paths().root()));
         startVndbCounter();
@@ -125,18 +125,13 @@ public class SidebarController {
         return button;
     }
 
-    /** Estantería: ● Jugando ........ 2 */
-    private Button shelfItem(PlayStatus shelf) {
-        Circle dot = new Circle(3.5);
-        dot.getStyleClass().add(switch (shelf) {
-            case PLAYING -> "dot-playing";
-            case PENDING -> "dot-pending";
-            case COMPLETED -> "dot-completed";
-        });
-        Label name = new Label(shelf.shelfName());
+    /** Estado: ● Jugando ........ 2. Al pulsarlo, la biblioteca solo con las VNs en ese estado. */
+    private Button statusItem(PlayStatus status) {
+        Circle dot = StatusVisuals.dot(status);
+        Label name = new Label(status.shelfName());
         Label count = new Label("0");
         count.getStyleClass().add("shelf-count");
-        shelfCounts.put(shelf, count);
+        statusCounts.put(status, count);
         Region grow = new Region();
         HBox.setHgrow(grow, Priority.ALWAYS);
 
@@ -147,7 +142,7 @@ public class SidebarController {
         button.setMaxWidth(Double.MAX_VALUE);
         // Que el HBox interior ocupe todo el ancho del botón (si no, el número no se va a la derecha)
         content.prefWidthProperty().bind(button.widthProperty().subtract(34));
-        button.setOnAction(event -> navigator.showLibrary(shelf));
+        button.setOnAction(event -> navigator.showLibrary(status));
         return button;
     }
 
@@ -159,7 +154,10 @@ public class SidebarController {
 
     // ------------------------------------------------------------------ estado
 
-    /** Marca la sección activa (texto en color normal + marcapáginas rosa). */
+    /**
+     * Marca la sección activa (texto en color normal + marcapáginas rosa). Fuera de la biblioteca
+     * (Buscar, Ajustes) no hay ningún estado filtrado que resaltar.
+     */
     public void setActive(Section active) {
         navButtons.forEach((section, button) -> {
             button.getStyleClass().remove("active");
@@ -167,9 +165,22 @@ public class SidebarController {
                 button.getStyleClass().add("active");
             }
         });
+        if (active != Section.LIBRARY) {
+            setActiveStatus(null);
+        }
     }
 
-    /** Vuelve a calcular estanterías y recientes (en segundo plano: consulta la BD). */
+    /** Resalta el estado por el que se filtra la biblioteca (null = ninguno). */
+    public void setActiveStatus(PlayStatus active) {
+        statusButtons.forEach((status, button) -> {
+            button.getStyleClass().remove("active");
+            if (status == active) {
+                button.getStyleClass().add("active");
+            }
+        });
+    }
+
+    /** Vuelve a contar las VNs de cada estado (en segundo plano: consulta la BD). */
     public void refresh() {
         BackgroundTasks.run(ctx.background(), () -> ctx.libraryService().findAllWithStatus(),
                 this::render,
@@ -177,25 +188,9 @@ public class SidebarController {
     }
 
     private void render(List<LibraryItem> items) {
-        for (PlayStatus shelf : PlayStatus.values()) {
-            long n = items.stream().filter(i -> i.status() == shelf).count();
-            shelfCounts.get(shelf).setText(String.valueOf(n));
-        }
-
-        recentBox.getChildren().clear();
-        List<LibraryEntry> recent = LibraryService.recentlyPlayed(items, RECENT_COUNT);
-        if (recent.isEmpty()) {
-            Label none = new Label("Aún no has jugado a nada.");
-            none.getStyleClass().addAll("muted", "small");
-            recentBox.getChildren().add(none);
-        }
-        for (LibraryEntry entry : recent) {
-            var vn = entry.vn();
-            CoverView cover = new CoverView(Covers.file(ctx, entry), Covers.sensitive(ctx, entry), 48, 72, vn.title());
-            cover.getStyleClass().add("recent-cover");
-            Tooltip.install(cover, new Tooltip(vn.title()));
-            cover.setOnMouseClicked(event -> navigator.showVnDetail(vn.id()));
-            recentBox.getChildren().add(cover);
+        for (PlayStatus status : PlayStatus.values()) {
+            long n = items.stream().filter(i -> i.status() == status).count();
+            statusCounts.get(status).setText(String.valueOf(n));
         }
     }
 

@@ -12,6 +12,7 @@ import java.time.Instant;
  * @param useLocaleEmulator si se lanza a través de Locale Emulator (LEProc.exe)
  * @param leProfile         GUID de un perfil concreto de Locale Emulator; null = perfil por defecto
  * @param lastPlayedAt      última vez que se lanzó; null si nunca
+ * @param statusOverride    estado fijado a mano desde la ficha; null = automático (ver PlayStatus)
  */
 public record LibraryEntry(
         VisualNovel vn,
@@ -21,7 +22,8 @@ public record LibraryEntry(
         String coverOverride,
         boolean useLocaleEmulator,
         String leProfile,
-        Instant lastPlayedAt
+        Instant lastPlayedAt,
+        PlayStatus statusOverride
 ) {
     public boolean hasExecutable() {
         return exePath != null && !exePath.isBlank();

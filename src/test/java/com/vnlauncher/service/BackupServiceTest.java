@@ -147,6 +147,23 @@ class BackupServiceTest {
     }
 
     @Test
+    void migration6AddsTheManualStatusAfterCopyingTheDatabase() throws Exception {
+        Database v5 = new Database(tempDir.resolve("v5.db"));
+        v5.migrateTo(5);
+
+        BackupInfo backup = new BackupService(v5, backups, clock, "1.0.0").beforeMigration().orElseThrow();
+        v5.migrate();
+
+        assertEquals(5, new Database(backup.file()).schemaVersion(), "La copia es de antes de la 006");
+        assertEquals(6, v5.schemaVersion());
+        try (var conn = v5.getConnection(); var st = conn.createStatement();
+             var rs = st.executeQuery("SELECT COUNT(*) FROM pragma_table_info('library_entry') "
+                     + "WHERE name = 'status_override'")) {
+            assertEquals(1, rs.getInt(1));
+        }
+    }
+
+    @Test
     void namesThatAreNotOursAreIgnored() {
         assertTrue(BackupService.parse(Path.of("vn-launcher-2026-11-21_104203-semanal.db.part")).isEmpty());
         assertTrue(BackupService.parse(Path.of("vn-launcher-2026-11-21_104203-otra-cosa.db")).isEmpty());

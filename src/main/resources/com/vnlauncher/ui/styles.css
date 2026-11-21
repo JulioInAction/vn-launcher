@@ -285,18 +285,27 @@
     -fx-background-color: -vn-sel;
 }
 
+/* El estado por el que se está filtrando la biblioteca */
+.shelf-item.active {
+    -fx-background-color: -vn-sel;
+}
+
+.shelf-item.active .label {
+    -fx-text-fill: -vn-text;
+    -fx-font-family: "Inter SemiBold";
+}
+
 .shelf-count {
     -fx-font-size: 16px;
     -fx-text-fill: -vn-muted;
 }
 
+/* Estados (StatusVisuals): los mismos colores en la barra, las tarjetas y la ficha */
 .dot-playing   { -fx-fill: -vn-orange; }
 .dot-pending   { -fx-fill: -vn-grey; }
 .dot-completed { -fx-fill: -vn-blue; }
-
-.recent-cover {
-    -fx-cursor: hand;
-}
+.dot-paused    { -fx-fill: transparent; -fx-stroke: -vn-text2; -fx-stroke-width: 1.6; -fx-stroke-type: inside; }
+.dot-dropped   { -fx-fill: -vn-danger; }
 
 .counter-value {
     -fx-font-family: "Inter SemiBold";
@@ -479,6 +488,8 @@
 .pill-devstatus              { -fx-background-color: -vn-blue-bg;   -fx-text-fill: -vn-blue; }
 .pill-in-progress            { -fx-background-color: -vn-orange-bg; -fx-text-fill: -vn-orange; }
 .pill-pending                { -fx-background-color: -vn-grey-bg;   -fx-text-fill: -vn-grey; }
+.pill-paused                 { -fx-background-color: -vn-grey-bg;   -fx-text-fill: -vn-text2; }
+.pill-dropped                { -fx-background-color: -vn-danger-bg; -fx-text-fill: -vn-danger; }
 .pill-spoiler                { -fx-background-color: -vn-orange-bg; -fx-text-fill: -vn-orange; }
 
 .badge {
@@ -614,6 +625,71 @@
 
 .context-menu .separator .line {
     -fx-border-color: -vn-border;
+}
+
+/* ---- Selector «Estado» de la ficha (StatusPicker, ficha-estado-*.png) */
+.button.status-picker {
+    -fx-background-color: transparent;
+    -fx-border-color: -vn-border2;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 9 14 9 14;
+}
+
+.button.status-picker:hover {
+    -fx-background-color: -vn-sel;
+}
+
+/* Los botones llevan Inter SemiBold y sus etiquetas lo heredan: aquí solo el nombre va en negrita */
+.status-picker .label {
+    -fx-font-family: "Inter";
+}
+
+.status-picker .status-picker-name {
+    -fx-font-family: "Inter SemiBold";
+    -fx-text-fill: -vn-text;
+}
+
+.status-picker-chevron,
+.status-menu-check {
+    -fx-fill: transparent;
+    -fx-stroke-width: 1.6;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+}
+
+.status-picker-chevron { -fx-stroke: -vn-muted; }
+.status-menu-check     { -fx-stroke: -vn-accent-ink; }
+
+.context-menu.status-menu {
+    -fx-padding: 6;
+    -fx-effect: dropshadow(gaussian, -vn-shadow, 24, 0.1, 0, 8);
+}
+
+.status-menu .menu-item {
+    -fx-background-radius: 8;
+    -fx-padding: 8 10 8 10;
+}
+
+.status-menu .menu-item.selected {
+    -fx-background-color: -vn-sel;
+}
+
+.status-menu-title {
+    -fx-text-fill: -vn-text;
+}
+
+.status-menu-hint {
+    -fx-font-size: 14px;
+    -fx-text-fill: -vn-muted;
+}
+
+/* Aro de puntos de «Automático» */
+.status-auto-icon {
+    -fx-fill: transparent;
+    -fx-stroke: -vn-muted;
+    -fx-stroke-width: 1.6;
+    -fx-stroke-dash-array: 2.2 2.5;
 }
 
 .tooltip {

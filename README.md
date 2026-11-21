@@ -98,7 +98,7 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
 - [x] Fase 7: pulido («Actualizar desde VNDB», programa de configuración, instalador)
 - [ ] Fase 8: Discord Rich Presence
 - [ ] Versión 1.0 (en curso): registro de errores ✓, copias de seguridad automáticas ✓, restaurar
-  una copia ✓, exportar e importar el perfil ✓, estado manual, estanterías, ejecutables perdidos,
+  una copia ✓, exportar e importar el perfil ✓, estado manual ✓, estanterías, ejecutables perdidos,
   vista previa de la ficha, búsqueda en la biblioteca, aviso de actualizaciones
 - Después de la 1.0: GitHub Action que construya el instalador al subir una etiqueta; en la 1.1,
   traducción completa al inglés (ResourceBundle, selector de idioma, plurales con MessageFormat y
@@ -148,13 +148,13 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
   las miniaturas se descargan al abrirla y la imagen grande solo al confirmar) y «Elegir
   archivo…». La elegida se guarda en `library_entry.cover_override` (migración 004) y su archivo
   en la carpeta `covers/`, fuera de `images/` para que «Vaciar caché» no la borre. «Volver a la de
-  VNDB» la pone a `NULL`. Se ve en la ficha, la biblioteca, «Continuar» y «Recientes».
+  VNDB» la pone a `NULL`. Se ve en la ficha, la biblioteca y «Continuar».
 - **Etiquetas:** la primera vez que se abre la ficha se piden a VNDB sus etiquetas y capturas
   (1 petición, como los personajes) y se guardan en `vn_tag` y `vn_screenshot` (migración 005), así
   que después funciona sin conexión. Se ven las 8 mejor puntuadas como chips (`TagChips`) y «+N más»
   despliega el resto. Las spoiler solo con «Mostrar spoilers»; las de contenido sexual, solo con
   «Difuminar imágenes: No difuminar» (como en la búsqueda). Pulsar una abre la biblioteca filtrada
-  por ella: arriba sale «Etiqueta: X ✕» y se combina con los filtros de estado. Solo cuenta las VNs
+  por ella: arriba sale «Etiqueta: X ✕» y se combina con el filtro de estado. Solo cuenta las VNs
   cuya ficha se ha abierto alguna vez (las demás aún no tienen etiquetas guardadas; lo avisa).
   «‹ Biblioteca» vuelve a la biblioteca con los filtros que tenía.
 - **Capturas:** galería en la cabecera (`ScreenshotGallery`): captura principal en 16:9 con
@@ -178,6 +178,18 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
 - **Programa de configuración:** además del juego, cada VN puede tener su `config.exe` (o como se
   llame). Se abre con el botón «Configuración», desde su carpeta y con Locale Emulator si la VN lo
   usa. No cuenta como partida.
+- **Estado:** cada VN tiene uno de cinco (`PlayStatus`): Jugando, Pendiente y Completada salen
+  solos con sus rutas y partidas (`PlayStatus.of`); En pausa y Abandonada solo se fijan a mano. El
+  selector «Estado» de la ficha (`StatusPicker`, un `ContextMenu`) ofrece «Automático (ahora:
+  Jugando)» y los cinco. El fijado a mano va en `library_entry.status_override` (migración 006,
+  `NULL` = automático) y manda aunque se juegue, hasta volver a «Automático». Cada estado tiene su
+  equivalente en las listas de VNDB (`vndbLabelId`: Playing 1, Finished 2, Stalled 3, Dropped 4;
+  Pendiente, ninguna) para cuando se sincronice con la cuenta.
+- **Biblioteca y barra lateral:** el bloque «Estado» de la barra cuenta las VNs de cada uno y filtra
+  al pulsarlo (resaltado mientras filtra). En la biblioteca, encima de la cuadrícula, los filtros
+  activos («Estado: Jugando ✕», «Etiqueta: Drama ✕») se combinan y se quitan con su ✕.
+  «01 Biblioteca» enseña todo sin filtros. «Recientes» ya no está: la última jugada sale en
+  «Continuar».
 
 ## Registro de errores
 

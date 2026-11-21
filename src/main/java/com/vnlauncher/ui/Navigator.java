@@ -10,15 +10,16 @@ import com.vnlauncher.model.VnTag;
  */
 public interface Navigator {
 
+    /** Toda la biblioteca, sin filtros. */
     void showLibrary();
 
-    /** Biblioteca mostrando solo una estantería (Jugando, Pendientes o Completadas). */
-    void showLibrary(PlayStatus shelf);
+    /** Biblioteca mostrando solo las VNs en un estado (Jugando, En pausa...); se combina con la etiqueta. */
+    void showLibrary(PlayStatus status);
 
     /** Biblioteca mostrando solo las VNs con esta etiqueta (al pulsarla en la ficha). */
     void showLibraryWithTag(VnTag tag);
 
-    /** Vuelve a la biblioteca tal como estaba (con su estantería y su etiqueta), p. ej. desde la ficha. */
+    /** Vuelve a la biblioteca tal como estaba (con su estado y su etiqueta), p. ej. desde la ficha. */
     void backToLibrary();
 
     void showSearch();
@@ -28,8 +29,8 @@ public interface Navigator {
     void showVnDetail(String vnId);
 
     /**
-     * Avisa de que han cambiado datos que muestra la barra lateral (estanterías, recientes):
-     * al añadir o quitar una VN, cambiar una ruta o lanzar un juego.
+     * Avisa de que han cambiado datos que muestra la barra lateral (los contadores de cada estado):
+     * al añadir o quitar una VN, cambiar una ruta o su estado, o lanzar un juego.
      */
     void refreshSidebar();
 }

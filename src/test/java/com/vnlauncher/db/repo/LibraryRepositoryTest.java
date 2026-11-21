@@ -3,6 +3,7 @@ package com.vnlauncher.db.repo;
 import com.vnlauncher.db.Database;
 import com.vnlauncher.model.Developer;
 import com.vnlauncher.model.LibraryEntry;
+import com.vnlauncher.model.PlayStatus;
 import com.vnlauncher.model.VisualNovel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -77,5 +78,19 @@ class LibraryRepositoryTest {
         assertFalse(library.contains("v4"));
         assertTrue(library.findByVnId("v4").isEmpty());
         assertTrue(vns.findById("v4").isPresent(), "La caché de VNDB se conserva");
+    }
+
+    @Test
+    void theStatusSetByHandIsSavedAndCanGoBackToAutomatic() throws SQLException {
+        saveVn("v4", "CLANNAD");
+        library.add("v4", Instant.EPOCH);
+        assertNull(library.findByVnId("v4").orElseThrow().statusOverride(), "Al añadirla, automático");
+
+        library.updateStatusOverride("v4", PlayStatus.DROPPED);
+        assertEquals(PlayStatus.DROPPED, library.findByVnId("v4").orElseThrow().statusOverride());
+        assertEquals(PlayStatus.DROPPED, library.findAll().getFirst().statusOverride());
+
+        library.updateStatusOverride("v4", null);
+        assertNull(library.findByVnId("v4").orElseThrow().statusOverride());
     }
 }

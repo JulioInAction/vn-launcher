@@ -80,6 +80,12 @@
                 <CheckBox fx:id="localeEmulatorCheck" text="Lanzar con Locale Emulator (perfil japonés)"
                           wrapText="true"/>
 
+                <!-- «Estado»: automático o fijado a mano (StatusPicker, en código; ficha-estado-*.png).
+                     La etiqueta tiene ancho fijo para alinearse con «Estanterías» (fase 6). -->
+                <HBox fx:id="statusRow" spacing="0" alignment="CENTER_LEFT">
+                    <Label text="Estado" styleClass="text2" minWidth="126" prefWidth="126"/>
+                </HBox>
+
                 <!-- Tarjetas de datos (si no caben las tres en una fila, pasan a la siguiente) -->
                 <FlowPane hgap="10" vgap="10">
                     <VBox styleClass="stat-card">

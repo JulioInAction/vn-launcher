@@ -97,7 +97,17 @@ public class LibraryService {
         return libraryRepository.findAll();
     }
 
-    /** Toda la biblioteca con el estado de cada VN (Jugando / Pendiente / Completada). */
+    /**
+     * Fija a mano el estado de una VN (selector «Estado» de la ficha). Se queda aunque se juegue,
+     * hasta que se vuelva a automático.
+     *
+     * @param status el estado, o null para «Automático» (calculado con las rutas y partidas)
+     */
+    public void setStatus(String vnId, PlayStatus status) throws SQLException {
+        libraryRepository.updateStatusOverride(vnId, status);
+    }
+
+    /** Toda la biblioteca con el estado de cada VN (el fijado a mano, o el calculado). */
     public List<LibraryItem> findAllWithStatus() throws SQLException {
         // Una consulta para las rutas de todas las VNs y otra para los tiempos (no una por VN)
         Map<String, RouteSummary> routes = routeRepository.summariesByVn();

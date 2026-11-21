@@ -15,7 +15,7 @@
 
 <!-- Barra lateral común a todas las pantallas (docs/DISEÑO.md, "Barra lateral").
      StackPane: abajo la marca de agua japonesa, encima el contenido.
-     Las entradas de navegación, estanterías y recientes las crea SidebarController en código. -->
+     Las entradas de navegación y de estado las crea SidebarController en código. -->
 <StackPane fx:id="sidebarRoot"
            xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
@@ -58,24 +58,16 @@
 
         <Region minHeight="26"/>
 
-        <!-- 4. Estanterías -->
-        <Label text="ESTANTERÍAS" styleClass="caps, sidebar-block">
+        <!-- 4. Estado: los cinco estados con su contador (SidebarController) -->
+        <Label text="ESTADO" styleClass="caps, sidebar-block">
             <VBox.margin><Insets bottom="4"/></VBox.margin>
         </Label>
-        <VBox fx:id="shelvesBox" spacing="0"/>
-
-        <Region minHeight="22"/>
-
-        <!-- 5. Recientes -->
-        <Label text="RECIENTES" styleClass="caps, sidebar-block">
-            <VBox.margin><Insets bottom="10"/></VBox.margin>
-        </Label>
-        <HBox fx:id="recentBox" spacing="10" styleClass="sidebar-block"/>
+        <VBox fx:id="statusBox" spacing="0"/>
 
         <!-- Hueco que crece: empuja lo siguiente hasta abajo del todo -->
         <Region VBox.vgrow="ALWAYS"/>
 
-        <!-- 6. Contador de peticiones a VNDB (el tema se cambia en Ajustes → Apariencia) -->
+        <!-- 5. Contador de peticiones a VNDB (el tema se cambia en Ajustes → Apariencia) -->
         <VBox spacing="8" styleClass="sidebar-block">
             <HBox alignment="CENTER_LEFT" spacing="8">
                 <Label text="Peticiones VNDB" styleClass="muted, small">

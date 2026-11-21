@@ -156,6 +156,34 @@ class LibraryServiceTest {
     }
 
     @Test
+    void theStatusSetByHandWinsAndIsCountedThere() throws Exception {
+        for (String id : List.of("v1", "v2", "v3")) {
+            service.addToLibrary(searchResult(id, null));
+        }
+        library.updateLastPlayed("v1", NOW);   // jugando...
+        service.setStatus("v1", PlayStatus.PAUSED); // ...pero en pausa a mano
+        service.setStatus("v2", PlayStatus.DROPPED);
+
+        var items = new java.util.HashMap<String, LibraryItem>();
+        for (LibraryItem item : service.findAllWithStatus()) {
+            items.put(item.entry().vn().id(), item);
+        }
+        assertEquals(PlayStatus.PAUSED, items.get("v1").status());
+        assertEquals(PlayStatus.PLAYING, items.get("v1").automaticStatus(), "El calculado sigue ahí");
+        assertTrue(items.get("v1").manualStatus());
+        assertEquals(PlayStatus.DROPPED, items.get("v2").status());
+        assertFalse(items.get("v3").manualStatus());
+        // Lo que cuenta la barra lateral: cada VN en un solo estado
+        var counts = new java.util.EnumMap<PlayStatus, Long>(PlayStatus.class);
+        items.values().forEach(i -> counts.merge(i.status(), 1L, Long::sum));
+        assertEquals(java.util.Map.of(PlayStatus.PAUSED, 1L, PlayStatus.DROPPED, 1L, PlayStatus.PENDING, 1L), counts);
+
+        service.setStatus("v1", null); // «Automático»
+        assertEquals(PlayStatus.PLAYING, service.findAllWithStatus().stream()
+                .filter(i -> i.entry().vn().id().equals("v1")).findFirst().orElseThrow().status());
+    }
+
+    @Test
     void recentlyPlayedIsSortedNewestFirstAndLimited() throws Exception {
         for (String id : List.of("v1", "v2", "v3", "v4")) {
             service.addToLibrary(searchResult(id, null));

@@ -56,6 +56,8 @@ Cambiar de tema = añadir o quitar `tema-claro` de `scene.getRoot().getStyleClas
 | `-vn-orange` | Estado Jugando / En curso | `#F3B76B` | `#9A5600` |
 | `-vn-orange-bg` | Fondo de la etiqueta naranja | `rgba(243,183,107,0.14)` | `rgba(196,122,20,0.13)` |
 | `-vn-grey` | Estado Pendiente | `#B4B8C5` | `#5E5B68` |
+| `-vn-text2` | También el aro de En pausa y el texto de su etiqueta (fondo `-vn-grey-bg`) | `#C9CCD6` | `#3F3C47` |
+| `-vn-danger` | También el estado Abandonada (punto y etiqueta, con fondo `-vn-danger-bg`) | `#FF8F85` | `#B3261E` |
 | `-vn-grey-bg` | Fondo de la etiqueta gris | `rgba(164,168,182,0.14)` | `rgba(94,91,104,0.10)` |
 | `-vn-chip-on-bg` | Filtro activo (fondo) | `#ECEDF2` | `#1D1B22` |
 | `-vn-chip-on-text` | Filtro activo (texto) | `#121318` | `#FFFFFF` |
@@ -68,7 +70,7 @@ Cambiar de tema = añadir o quitar `tema-claro` de `scene.getRoot().getStyleClas
 
 Notas:
 - El rosa `#F2A0B5` se usa igual en los dos temas como **fondo** del botón principal. Como **texto** sobre fondo claro no se lee bien, por eso existe `-vn-accent-ink` (`#B0365E` en el tema claro).
-- Los estados se distinguen también por claridad, no solo por color: azul = completada, naranja = jugando, gris = pendiente.
+- Los estados se distinguen también por claridad y forma, no solo por color: azul = completada, naranja = jugando, gris = pendiente, un **aro sin relleno** = en pausa, rojo = abandonada.
 - Los fondos de las portadas de ejemplo son marcadores de posición; en la app se usan las imágenes descargadas de VNDB.
 
 ## Tipografía
@@ -91,10 +93,12 @@ Tamaños: título de pantalla 32 px (ficha: 40 px), títulos de sección 24 px, 
 De arriba abajo:
 1. Logo (icono de los dos libros + «VN Launcher»).
 2. Navegación numerada: `01 Biblioteca`, `02 Buscar en VNDB`, `03 Ajustes`. La sección activa lleva el texto en color normal y un **marcapáginas** rosa pegado al borde izquierdo (8 × 40 px, con muesca en V abajo). Las inactivas, en `-vn-muted`.
-3. **Estanterías:** Jugando, Pendientes y Completadas, con un punto del color del estado y el número de VNs. Al pulsar, abren la biblioteca filtrada.
-4. **Recientes:** portadas pequeñas (48 × 72) de las 3 últimas VNs jugadas.
+3. **Estado** (`biblioteca-1-0-*.png`): Jugando, Pendientes, Completadas, En pausa y Abandonadas, con un punto del color del estado (un aro en En pausa) y el número de VNs. Al pulsar, abren la biblioteca filtrada (se combina con el filtro de etiqueta); el que se está filtrando sale resaltado.
+4. **Mis estanterías** (fase 6): las del usuario, con su color y su contador.
 5. Abajo del todo: contador de peticiones a VNDB («14/200», barra fina). El tema se cambia en Ajustes → Apariencia.
 6. De fondo, «ビジュアルノベル» en vertical, 58 px, color `-vn-watermark`. Puramente decorativo.
+
+«Recientes» desapareció en la 1.0: la última VN jugada ya está en «Continuar».
 
 ## Ajustes, diálogos y estados
 
@@ -116,6 +120,7 @@ Archivos en `docs/diseno/logo/`:
 
 ## Detalles de comportamiento que se ven en el diseño
 
-- **Biblioteca:** los filtros (Todas, Jugando, Pendientes, Completadas) muestran el número de VNs de cada estado. La franja «Continuar» muestra la última VN jugada y su ruta en curso.
+- **Biblioteca:** encima de la cuadrícula, los filtros activos como chips oscuros con ✕ («Estado: Jugando ✕», «Etiqueta: Drama ✕») y a la derecha «Ordenar por». Los contadores de cada estado están en la barra lateral. La franja «Continuar» muestra la última VN jugada y su ruta en curso.
+- **Estado de una VN** (`ficha-estado-*.png`): en la ficha, fila «Estado» con un selector «● Jugando · automático ⌄». La lista ofrece «Automático — Según tus rutas y partidas (ahora: Jugando)» y los cinco estados; En pausa y Abandonada llevan «Fijado a mano» debajo (nunca salen solos) y el elegido, fondo `-vn-sel` y ✓ en `-vn-accent-ink`. Lo fijado a mano se queda aunque se juegue, hasta volver a «Automático».
 - **Ficha:** las rutas se ordenan arrastrando (asa de seis puntos a la izquierda). Los personajes con spoiler salen difuminados con un botón «Mostrar». Los que no tienen ruta llevan un botón «Marcar con ruta».
 - **Búsqueda:** se busca al pulsar Enter. «N resultados» va encima de la lista y del panel, y el panel empieza a la altura de la primera tarjeta. A la derecha, un panel fijo de 540 px (no hace scroll con la lista): portada de 180 × 270 con título, título original, «Desarrollador · año» y el estado de desarrollo; seis datos en dos columnas; 5 etiquetas sin spoilers; 3 capturas en 16:9; descripción a 6 líneas con «Leer más»; y abajo «Añadir a la biblioteca» o «✓ En tu biblioteca» + «Abrir ficha».

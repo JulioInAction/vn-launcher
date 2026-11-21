@@ -3,6 +3,7 @@ package com.vnlauncher.db.repo;
 import com.vnlauncher.db.Database;
 import com.vnlauncher.model.Developer;
 import com.vnlauncher.model.LibraryEntry;
+import com.vnlauncher.model.PlayStatus;
 import com.vnlauncher.model.VisualNovel;
 
 import java.sql.Connection;
@@ -22,7 +23,7 @@ public class LibraryRepository {
     private static final String SELECT_ENTRIES =
             "SELECT " + VnRows.COLUMNS + ", l.added_at, l.exe_path, l.config_exe_path, l.cover_override, "
                     + "l.use_locale_emulator, "
-                    + "l.le_profile, l.last_played_at "
+                    + "l.le_profile, l.last_played_at, l.status_override "
                     + "FROM library_entry l JOIN vn v ON v.id = l.vn_id ";
 
     private final Database db;
@@ -164,6 +165,21 @@ public class LibraryRepository {
         }
     }
 
+    /**
+     * Fija el estado a mano.
+     *
+     * @param status el estado, o null para volver al automático
+     */
+    public void updateStatusOverride(String vnId, PlayStatus status) throws SQLException {
+        try (Connection conn = db.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "UPDATE library_entry SET status_override = ? WHERE vn_id = ?")) {
+            ps.setString(1, status == null ? null : status.name());
+            ps.setString(2, vnId);
+            ps.executeUpdate();
+        }
+    }
+
     public void updateLastPlayed(String vnId, Instant when) throws SQLException {
         try (Connection conn = db.getConnection();
              PreparedStatement ps = conn.prepareStatement(
@@ -186,6 +202,19 @@ public class LibraryRepository {
                 rs.getString("cover_override"),
                 rs.getInt("use_locale_emulator") == 1,
                 rs.getString("le_profile"),
-                lastPlayedAt);
+                lastPlayedAt,
+                statusOf(rs.getString("status_override")));
+    }
+
+    /** Lo guardado en status_override («PAUSED»...) como PlayStatus; null = automático. */
+    private static PlayStatus statusOf(String value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return PlayStatus.valueOf(value);
+        } catch (IllegalArgumentException unknown) {
+            return null; // no puede pasar (la columna tiene un CHECK), pero mejor automático que fallar
+        }
     }
 }

@@ -4,8 +4,10 @@ import com.vnlauncher.app.AppContext;
 import com.vnlauncher.model.BlurLevel;
 import com.vnlauncher.model.GameCharacter;
 import com.vnlauncher.model.LibraryEntry;
+import com.vnlauncher.model.PlayStatus;
 import com.vnlauncher.model.Route;
 import com.vnlauncher.model.RouteProgress;
+import com.vnlauncher.model.RouteSummary;
 import com.vnlauncher.model.VisualNovel;
 import com.vnlauncher.model.VnCharacter;
 import com.vnlauncher.model.VnDetails;
@@ -97,6 +99,7 @@ public class VnDetailController implements PlaytimeAware {
     @FXML private Label routesStatLabel;
     @FXML private ProgressBar routesStatBar;
     @FXML private Label launchStatusLabel;
+    @FXML private HBox statusRow;
     @FXML private VBox tagsContainer;
     @FXML private Label descriptionLabel;
     @FXML private Hyperlink readMoreLink;
@@ -119,6 +122,7 @@ public class VnDetailController implements PlaytimeAware {
     private final DoubleProperty pageWidth = new SimpleDoubleProperty();
 
     private LibraryEntry entry;
+    private StatusPicker statusPicker;
     private boolean descriptionExpanded = false;
     /** true mientras se está lanzando (entre pulsar Jugar y que el juego arranque). */
     private boolean launching = false;
@@ -141,6 +145,9 @@ public class VnDetailController implements PlaytimeAware {
     @FXML
     private void initialize() {
         launchFlow = new LaunchFlow(ctx, navigator, playButton);
+        statusPicker = new StatusPicker(this::onStatusChosen);
+        statusPicker.setDisable(true); // hasta que se cargue la VN
+        statusRow.getChildren().add(statusPicker);
         removeButton.setDisable(true);   // hasta que se cargue la VN
         playButton.setDisable(true);
         loadHeader();
@@ -165,7 +172,8 @@ public class VnDetailController implements PlaytimeAware {
         routesPane.setOnRoutesChanged(changed -> {
             routes = changed;
             renderRouteStats();
-            navigator.refreshSidebar(); // las estanterías dependen de las rutas
+            renderStatus();             // el estado automático depende de las rutas
+            navigator.refreshSidebar(); // y los contadores de la barra, del estado
             renderCharacters(); // actualizar "Tiene ruta" / "Marcar con ruta"
         });
         routesContainer.getChildren().add(routesPane);
@@ -374,6 +382,34 @@ public class VnDetailController implements PlaytimeAware {
         renderConfigInfo(loaded);
         lastPlayedLabel.setText(RelativeTime.format(loaded.lastPlayedAt(), Instant.now(), ZoneId.systemDefault()));
         renderPlayButton();
+        renderStatus();
+    }
+
+    /**
+     * El selector «Estado»: el fijado a mano (si hay) y el que saldría solo con las rutas y las
+     * partidas. Se vuelve a pintar al cambiar las rutas o al jugar.
+     */
+    private void renderStatus() {
+        if (entry == null) {
+            return;
+        }
+        PlayStatus automatic = PlayStatus.of(RouteSummary.of(routes), entry.lastPlayedAt());
+        statusPicker.setValue(entry.statusOverride(), automatic);
+        statusPicker.setDisable(false);
+    }
+
+    /** Elegido en el selector: un estado fijado a mano, o null para volver a «Automático». */
+    private void onStatusChosen(PlayStatus status) {
+        BackgroundTasks.run(ctx.background(),
+                () -> {
+                    ctx.libraryService().setStatus(vnId, status);
+                    return status;
+                },
+                saved -> {
+                    reloadPlayData();           // vuelve a leer la VN (con su estado) y lo pinta
+                    navigator.refreshSidebar(); // los contadores de cada estado
+                },
+                "No se ha podido guardar el estado.");
     }
 
     /**

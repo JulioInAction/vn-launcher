@@ -112,6 +112,17 @@ class DatabaseTest {
     }
 
     @Test
+    void theStatusSetByHandOnlyAcceptsKnownValues() throws SQLException {
+        try (Connection c = db.getConnection(); Statement st = c.createStatement()) {
+            st.executeUpdate("INSERT INTO vn (id, title, fetched_at) VALUES ('v1', 'Test', 0)");
+            st.executeUpdate("INSERT INTO library_entry (vn_id, added_at) VALUES ('v1', 0)");
+            st.executeUpdate("UPDATE library_entry SET status_override = 'PAUSED'");
+            assertThrows(SQLException.class, () -> st.executeUpdate(
+                    "UPDATE library_entry SET status_override = 'OLVIDADA'"));
+        }
+    }
+
+    @Test
     void removingFromLibraryCascadesToRoutesAndSessions() throws SQLException {
         try (Connection c = db.getConnection(); Statement st = c.createStatement()) {
             st.executeUpdate("INSERT INTO vn (id, title, fetched_at) VALUES ('v1', 'Test', 0)");

@@ -97,12 +97,13 @@ public class MainController implements Navigator {
 
     @Override
     public void showLibrary() {
-        showLibrary(null);
+        library().showAll(); // recarga: puede haber VNs nuevas añadidas desde la búsqueda
+        displayLibrary();
     }
 
     @Override
-    public void showLibrary(PlayStatus shelf) {
-        library().show(shelf); // recarga: puede haber VNs nuevas añadidas desde la búsqueda
+    public void showLibrary(PlayStatus status) {
+        library().showStatus(status);
         displayLibrary();
     }
 
@@ -123,6 +124,8 @@ public class MainController implements Navigator {
         if (libraryView == null) {
             libraryController = new LibraryController(context, this);
             libraryView = Views.load("library-view.fxml", libraryController);
+            // Al quitar el filtro de estado con su ✕, que la barra deje de resaltarlo
+            libraryController.setOnStatusChanged(status -> sidebar.setActiveStatus(status));
         }
         return libraryController;
     }
@@ -132,6 +135,7 @@ public class MainController implements Navigator {
         root.setCenter(libraryView);
         currentController = libraryController;
         sidebar.setActive(SidebarController.Section.LIBRARY);
+        sidebar.setActiveStatus(libraryController.status());
         sidebar.refresh();
     }
 
@@ -180,6 +184,7 @@ public class MainController implements Navigator {
         root.setCenter(Views.load("vn-detail-view.fxml", detail));
         currentController = detail;
         sidebar.setActive(SidebarController.Section.LIBRARY);
+        sidebar.setActiveStatus(libraryController.status());
         sidebar.refresh();
     }
 
