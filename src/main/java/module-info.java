@@ -6,6 +6,10 @@ module com.vnlauncher {
     requires javafx.controls;
     requires javafx.fxml;
 
+    // java.util.logging: el registro de errores en logs/ (LogSetup). Los System.Logger de la app
+    // escriben en él automáticamente cuando este módulo está presente.
+    requires java.logging;
+
     // java.sql = API de JDBC (Connection, PreparedStatement...).
     requires java.sql;
     // El driver de SQLite no tiene module-info propio; Java lo trata como

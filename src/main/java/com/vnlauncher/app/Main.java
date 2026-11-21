@@ -2,18 +2,23 @@ package com.vnlauncher.app;
 
 import com.vnlauncher.model.Theme;
 import com.vnlauncher.model.WindowBounds;
+import com.vnlauncher.ui.DebugFailures;
+import com.vnlauncher.ui.ErrorReporter;
 import com.vnlauncher.ui.Fonts;
 import com.vnlauncher.ui.MainController;
 import com.vnlauncher.ui.Views;
+import com.vnlauncher.util.AppPaths;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.image.Image;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.Optional;
 
@@ -38,27 +43,32 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) {
         this.stage = stage;
+        // 1. Lo primero, el registro: así queda constancia hasta de un fallo al arrancar
+        AppPaths paths = AppPaths.fromEnvironment();
+        Path logFile = setUpLogging(paths);
+        // 2. Manejador global de errores. Abre carpetas con getHostServices (el explorador de archivos)
+        ErrorReporter.install(logFile, uri -> getHostServices().showDocument(uri));
+        // Las fuentes tienen que estar registradas antes de que se aplique el CSS (también el del
+        // diálogo de error si falla el arranque)
+        Fonts.load();
+
         Theme theme;
         Optional<WindowBounds> savedWindow;
         try {
-            context = AppContext.create();
+            DebugFailures.atStartup(); // solo con -Dvnlauncher.debug.fallo=arranque
+            context = AppContext.create(paths);
+            LOG.log(System.Logger.Level.INFO, "Arranque\n{0}",
+                    SystemInfo.current(context.database().schemaVersion(), paths.root()));
             // Leer el tema guardado ANTES de crear la ventana, para que no se vea un "parpadeo"
             // del tema oscuro al arrancar con el claro
             theme = context.settingsService().theme();
             savedWindow = context.settingsService().windowBounds();
         } catch (Exception e) {
-            LOG.log(System.Logger.Level.ERROR, "Error al iniciar", e);
-            Alert alert = new Alert(Alert.AlertType.ERROR,
-                    "No se pudo preparar la base de datos:\n" + e.getMessage());
-            alert.setHeaderText("Error al iniciar VN Launcher");
-            alert.showAndWait();
+            ErrorReporter.showStartupError("No se ha podido preparar la base de datos.", e);
             return; // sin ventana principal, la app termina sola
         }
 
         try {
-            // Las fuentes tienen que estar registradas antes de que se aplique el CSS
-            Fonts.load();
-
             // getHostServices().showDocument(url) abre una URL en el navegador del sistema.
             // Se lo pasamos al controlador como una función, para no atarlo a la clase Application.
             Parent root = Views.load("main-view.fxml",
@@ -77,9 +87,28 @@ public class Main extends Application {
             placeWindow(stage, savedWindow);
             stage.setScene(scene);
             stage.show();
+            // Desde ahora los diálogos de error se centran sobre la ventana y la tapan
+            ErrorReporter.setOwner(root);
+            DebugFailures.afterStartup(context); // solo con -Dvnlauncher.debug.fallo=fx|tarea|hilo
         } catch (Exception e) {
             // Un error aquí suele ser un fallo en el FXML (fx:id mal escrito, etc.)
-            throw new IllegalStateException("No se pudo cargar la interfaz", e);
+            ErrorReporter.showStartupError("No se ha podido cargar la interfaz.", e);
+            Platform.exit();
+        }
+    }
+
+    /**
+     * Prepara el registro en logs/. Si no se puede (carpeta sin permisos...), la app sigue: los
+     * mensajes salen solo por la consola.
+     *
+     * @return el archivo de registro actual, o null si no se pudo preparar
+     */
+    private static Path setUpLogging(AppPaths paths) {
+        try {
+            return LogSetup.configure(paths.logsDir());
+        } catch (IOException | RuntimeException e) {
+            LOG.log(System.Logger.Level.WARNING, "No se pudo preparar el registro en " + paths.logsDir(), e);
+            return null;
         }
     }
 
@@ -90,6 +119,7 @@ public class Main extends Application {
             saveWindow();
             context.shutdown();
         }
+        LOG.log(System.Logger.Level.INFO, "Cierre");
     }
 
     // ------------------------------------------------------------------ posición de la ventana

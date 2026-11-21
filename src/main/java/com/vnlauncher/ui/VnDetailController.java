@@ -62,6 +62,8 @@ public class VnDetailController implements PlaytimeAware {
     /** Ancho de página a partir del cual caben las tres columnas: 220 + 28 + 400 + 28 + 520. */
     static final double THREE_COLUMNS_MIN = COVER_COLUMN + COLUMN_GAP + INFO_MIN + COLUMN_GAP + GALLERY_MIN;
 
+    private static final String CHARACTERS_ERROR = "No se pudieron cargar los personajes: %s";
+
     /** Descripción recortada a unos 4-5 renglones hasta pulsar "Leer más". */
     private static final int DESCRIPTION_PREVIEW_CHARS = 380;
 
@@ -204,8 +206,15 @@ public class VnDetailController implements PlaytimeAware {
                     characters = loaded;
                     renderCharacters();
                 },
-                error -> charactersStatus.setText(
-                        "No se pudieron cargar los personajes: " + error.getMessage()));
+                error -> {
+                    // Sin conexión la primera vez: aviso en su sitio. Otro error no debería pasar.
+                    if (ErrorReporter.isExpected(error)) {
+                        charactersStatus.setText(String.format(CHARACTERS_ERROR, error.getMessage()));
+                    } else {
+                        charactersStatus.setText("");
+                        ErrorReporter.report("No se han podido cargar los personajes.", error);
+                    }
+                });
     }
 
     /**
@@ -220,6 +229,10 @@ public class VnDetailController implements PlaytimeAware {
                     renderGallery();
                 },
                 error -> {
+                    if (!ErrorReporter.isExpected(error)) {
+                        ErrorReporter.report("No se han podido cargar las etiquetas ni las capturas.", error);
+                        return;
+                    }
                     // Sin conexión la primera vez: se vuelven a pedir al abrir la ficha otra vez
                     Label message = new Label("No se han podido cargar las etiquetas ni las capturas. Se "
                             + "intentará de nuevo la próxima vez que abras la ficha.");
@@ -323,7 +336,7 @@ public class VnDetailController implements PlaytimeAware {
                     refreshLink.setTooltip(new Tooltip("Vuelve a pedir a VNDB la ficha, los personajes y "
                             + "las etiquetas y capturas (3 peticiones).\nDatos descargados: " + when + "."));
                 },
-                error -> titleLabel.setText("Error: " + error.getMessage()));
+                "No se ha podido cargar la ficha.");
     }
 
     /**
@@ -401,7 +414,7 @@ public class VnDetailController implements PlaytimeAware {
                     data.entry().ifPresent(this::renderLaunchInfo);
                     playTimeLabel.setText(PlayTime.format(data.seconds()));
                 },
-                error -> launchStatusLabel.setText("Error: " + error.getMessage()));
+                "No se ha podido leer el tiempo de juego.");
     }
 
     private void renderRouteStats() {
@@ -548,7 +561,7 @@ public class VnDetailController implements PlaytimeAware {
                     return null;
                 },
                 ignored -> reloadPlayData(),
-                error -> Dialogs.error(playButton, error.getMessage()));
+                "No se ha podido quitar el programa de configuración.");
     }
 
     private void onLocaleEmulatorToggled(boolean selected) {
@@ -574,7 +587,7 @@ public class VnDetailController implements PlaytimeAware {
                         }
                     }
                 },
-                error -> Dialogs.error(playButton, error.getMessage()));
+                "No se ha podido guardar la opción de Locale Emulator.");
     }
 
     // =========================================================== personajes
@@ -663,7 +676,7 @@ public class VnDetailController implements PlaytimeAware {
                 ignored -> navigator.showLibrary(),
                 error -> {
                     removeButton.setDisable(false);
-                    Dialogs.error(removeButton, error.getMessage());
+                    ErrorReporter.report("No se ha podido quitar la novela de la biblioteca.", error);
                 });
     }
 }

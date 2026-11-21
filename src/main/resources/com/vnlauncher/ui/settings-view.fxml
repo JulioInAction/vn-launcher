@@ -116,6 +116,22 @@
             </HBox>
         </VBox>
 
+        <!-- ================================================= Registro de errores (ajustes-1-0) -->
+        <VBox styleClass="card, settings-card">
+            <Label text="Registro de errores" styleClass="settings-card-title"/>
+            <HBox styleClass="settings-row">
+                <VBox styleClass="settings-text" HBox.hgrow="ALWAYS">
+                    <Label text="Archivo de registro" styleClass="settings-label"/>
+                    <Label text="Si algo falla, el detalle queda guardado. Adjúntalo al informar de un problema."
+                           styleClass="settings-desc" wrapText="true"/>
+                </VBox>
+                <Button fx:id="openLogsButton" text="Abrir carpeta de registros" onAction="#onOpenLogsFolder"
+                        minWidth="-Infinity"/>
+                <Button fx:id="copySystemInfoButton" text="Copiar información del sistema"
+                        onAction="#onCopySystemInfo" minWidth="-Infinity"/>
+            </HBox>
+        </VBox>
+
         <!-- ================================================= Acerca de -->
         <VBox styleClass="card, settings-card" spacing="10">
             <Label text="Acerca de" styleClass="settings-card-title"/>

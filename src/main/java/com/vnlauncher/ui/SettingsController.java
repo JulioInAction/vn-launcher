@@ -2,15 +2,20 @@ package com.vnlauncher.ui;
 
 import com.vnlauncher.app.AppContext;
 import com.vnlauncher.app.AppInfo;
+import com.vnlauncher.app.SystemInfo;
 import com.vnlauncher.model.BlurLevel;
 import com.vnlauncher.model.Theme;
+import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.HBox;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
+import javafx.util.Duration;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -29,6 +34,9 @@ public class SettingsController {
     private record Loaded(Optional<Path> lePath, boolean showSpoilers, BlurLevel blur, long cacheBytes) {
     }
 
+    private static final String COPY_SYSTEM_INFO = "Copiar información del sistema";
+    private static final String COPIED = "✓  Copiada";
+
     private final AppContext ctx;
     private final ThemeManager themeManager;
     private final Consumer<String> urlOpener;
@@ -41,6 +49,8 @@ public class SettingsController {
     @FXML private Label dataDirLabel;
     @FXML private Label cacheSizeLabel;
     @FXML private Button clearCacheButton;
+    @FXML private Button openLogsButton;
+    @FXML private Button copySystemInfoButton;
     @FXML private Text appNameText;
     @FXML private Text versionText;
 
@@ -62,6 +72,8 @@ public class SettingsController {
         spoilersBox.getChildren().add(spoilers);
         blurBox.getChildren().add(blur);
         dataDirLabel.setText(ctx.paths().root().toString());
+        // Si no se pudo preparar el registro (carpeta sin permisos...), no hay carpeta que abrir
+        openLogsButton.setDisable(ErrorReporter.logFile() == null);
         appNameText.setText(AppInfo.NAME);
         versionText.setText(" · versión " + AppInfo.VERSION);
 
@@ -99,7 +111,7 @@ public class SettingsController {
                     blur.valueProperty().addListener((obs, was, now) ->
                             save(() -> ctx.settingsService().setBlurLevel(now)));
                 },
-                error -> Dialogs.error(lePathField, error.getMessage()));
+                "No se han podido cargar los ajustes.");
     }
 
     // =========================================================== Locale Emulator
@@ -175,7 +187,7 @@ public class SettingsController {
                 },
                 error -> {
                     clearCacheButton.setDisable(false);
-                    Dialogs.error(clearCacheButton, error.getMessage());
+                    ErrorReporter.report("No se ha podido vaciar la caché de imágenes.", error);
                 });
     }
 
@@ -186,6 +198,30 @@ public class SettingsController {
             return Math.round(mb) + " MB";
         }
         return Math.round(bytes / 1024.0) + " KB";
+    }
+
+    // =========================================================== Registro de errores
+
+    @FXML
+    private void onOpenLogsFolder() {
+        ErrorReporter.openLogsFolder();
+    }
+
+    /** Versión de la app, de Java y del sistema, esquema de la base de datos... al portapapeles. */
+    @FXML
+    private void onCopySystemInfo() {
+        BackgroundTasks.run(ctx.background(),
+                () -> SystemInfo.current(ctx.database().schemaVersion(), ctx.paths().root()),
+                info -> {
+                    ClipboardContent content = new ClipboardContent();
+                    content.putString(info);
+                    Clipboard.getSystemClipboard().setContent(content);
+                    copySystemInfoButton.setText(COPIED);
+                    PauseTransition reset = new PauseTransition(Duration.seconds(2));
+                    reset.setOnFinished(event -> copySystemInfoButton.setText(COPY_SYSTEM_INFO));
+                    reset.play();
+                },
+                "No se ha podido leer la información del sistema.");
     }
 
     // =========================================================== Acerca de
@@ -209,7 +245,7 @@ public class SettingsController {
                     return null;
                 },
                 ignored -> { },
-                error -> Dialogs.error(lePathField, "No se pudo guardar el ajuste: " + error.getMessage()));
+                "No se ha podido guardar el ajuste.");
     }
 
     @FunctionalInterface

@@ -62,6 +62,11 @@ public final class AppPaths {
         return root.resolve("images");
     }
 
+    /** Registros de la aplicación (logs/vn-launcher0.log...). Ver LogSetup. */
+    public Path logsDir() {
+        return root.resolve("logs");
+    }
+
     /**
      * Portadas elegidas por el usuario en la galería. Fuera de images/ a propósito: "Vaciar caché"
      * borra images/, y un archivo propio no se podría volver a descargar.

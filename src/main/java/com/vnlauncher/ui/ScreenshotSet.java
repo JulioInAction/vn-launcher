@@ -112,7 +112,8 @@ final class ScreenshotSet {
         if (missing.isEmpty()) {
             return;
         }
-        executor.submit(() -> {
+        // execute y no submit: así una excepción inesperada llega al manejador global (ErrorReporter)
+        executor.execute(() -> {
             for (int i : missing) {
                 try {
                     Path file = service.thumbnail(shots.get(i));
@@ -153,7 +154,8 @@ final class ScreenshotSet {
             whenLoaded(createLarge(key, cached.get(), width), onLoaded);
             return;
         }
-        executor.submit(() -> {
+        // execute y no submit: así una excepción inesperada llega al manejador global (ErrorReporter)
+        executor.execute(() -> {
             try {
                 Path file = service.image(shot);
                 Platform.runLater(() -> {

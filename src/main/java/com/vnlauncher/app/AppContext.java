@@ -106,8 +106,7 @@ public final class AppContext {
     }
 
     /** Prepara carpetas, base de datos y servicios. Si algo falla aquí la app no puede arrancar. */
-    public static AppContext create() throws SQLException {
-        AppPaths paths = AppPaths.fromEnvironment();
+    public static AppContext create(AppPaths paths) throws SQLException {
         paths.createDirectories();
 
         Database database = new Database(paths.databaseFile());

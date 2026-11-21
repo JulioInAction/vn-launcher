@@ -296,7 +296,8 @@ public class SearchController {
                     navigator.refreshSidebar(); // cambia el número de "Pendientes"
                 },
                 error -> {
-                    statusLabel.setText("Error al añadir: " + error.getMessage());
+                    statusLabel.setText("");
+                    ErrorReporter.report("No se ha podido añadir la novela a la biblioteca.", error);
                     renderResults();
                     renderFooter();
                 });

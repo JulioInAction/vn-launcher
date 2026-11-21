@@ -67,7 +67,7 @@ final class ThemeManager {
                     return null;
                 },
                 ignored -> { },
-                error -> Dialogs.error(sceneRoot, "No se pudo guardar el tema: " + error.getMessage()));
+                "No se ha podido guardar el tema.");
     }
 
     private void apply() {

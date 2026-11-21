@@ -96,7 +96,9 @@ final class LaunchFlow {
     private void handle(Throwable error, Target target, String vnId, String title,
                         Runnable onLaunched, Runnable onFailed) {
         if (!(error instanceof LaunchException launchError)) {
-            Dialogs.error(owner, error.getMessage());
+            // No es un problema conocido al lanzar (falta el .exe, LE...): no debería pasar
+            ErrorReporter.report(target == Target.GAME ? "No se ha podido abrir el juego."
+                    : "No se ha podido abrir el programa de configuración.", error);
             return;
         }
         Runnable retry = () -> run(target, vnId, title, false, onLaunched, onFailed);
@@ -188,7 +190,7 @@ final class LaunchFlow {
                     return null;
                 },
                 ignored -> after.run(),
-                error -> Dialogs.error(owner, error.getMessage()));
+                "No se ha podido guardar el ejecutable.");
     }
 
     /**
@@ -207,7 +209,7 @@ final class LaunchFlow {
                     return null;
                 },
                 ignored -> after.run(),
-                error -> Dialogs.error(owner, error.getMessage()));
+                "No se ha podido guardar el programa de configuración.");
     }
 
     /** Selector de .exe. Devuelve null si el usuario cancela. */

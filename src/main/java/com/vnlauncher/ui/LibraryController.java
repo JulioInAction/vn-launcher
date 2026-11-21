@@ -46,6 +46,8 @@ import java.util.Set;
  */
 public class LibraryController implements PlaytimeAware {
 
+    private static final System.Logger LOG = System.getLogger(LibraryController.class.getName());
+
     /** Portadas en proporción 2:3 (DISEÑO.md, "Medidas"). */
     private static final double COVER_WIDTH = 176;
     private static final double COVER_HEIGHT = 264;
@@ -169,7 +171,7 @@ public class LibraryController implements PlaytimeAware {
                         downloadCovers();
                     }
                 },
-                this::showError);
+                "No se ha podido cargar la biblioteca.");
     }
 
     /**
@@ -202,8 +204,9 @@ public class LibraryController implements PlaytimeAware {
             }
         });
         task.setOnFailed(event -> {
+            // Sin conexión, normalmente: las que falten se reintentan la próxima vez
             showCoversProgress(false);
-            showError(task.getException());
+            LOG.log(System.Logger.Level.WARNING, "No se pudieron descargar las portadas", task.getException());
         });
         ctx.background().submit(task);
     }
@@ -469,10 +472,6 @@ public class LibraryController implements PlaytimeAware {
             case PENDING -> "pill-pending";
             case COMPLETED -> "pill-completed";
         };
-    }
-
-    private void showError(Throwable error) {
-        countLabel.setText("Error: " + error.getMessage());
     }
 
     /** Celda del desplegable "Ordenar por": muestra "Último jugado" en vez de LAST_PLAYED. */

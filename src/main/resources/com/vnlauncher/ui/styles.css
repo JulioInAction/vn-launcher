@@ -1302,6 +1302,35 @@
     -fx-text-fill: -vn-text;
 }
 
+/* ===================================================================== Diálogo «Algo ha fallado»
+   ErrorDialog, error-general-*.png */
+
+/* «› Detalles técnicos»: enlace rosa con un chevron que gira al desplegar */
+.button.details-toggle {
+    -fx-padding: 0;
+    -fx-graphic-text-gap: 8;
+    -fx-min-height: 32;
+}
+
+.details-chevron {
+    -fx-fill: transparent;
+    -fx-stroke: -vn-accent-ink;
+    -fx-stroke-width: 1.8;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+}
+
+/* La traza: texto de ancho fijo sobre -vn-surface2, sin borde ni contorno de foco */
+.text-area.error-details,
+.text-area.error-details:focused {
+    -fx-background-color: -vn-surface2;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
+    -fx-padding: 0;
+    -fx-font-size: 14px;
+    -fx-text-fill: -vn-text2;
+}
+
 /* ===================================================================== Diálogos (ModalDialog) */
 
 /* Margen transparente alrededor de la tarjeta: deja sitio a la sombra */

@@ -97,6 +97,13 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
   de carga y de error, tema «Según el sistema»
 - [x] Fase 7: pulido («Actualizar desde VNDB», programa de configuración, instalador)
 - [ ] Fase 8: Discord Rich Presence
+- [ ] Versión 1.0 (en curso): registro de errores ✓, copias de seguridad, exportar e importar el
+  perfil, estado manual, estanterías, ejecutables perdidos, vista previa de la ficha, búsqueda en
+  la biblioteca, aviso de actualizaciones
+- Después de la 1.0: GitHub Action que construya el instalador al subir una etiqueta; en la 1.1,
+  traducción completa al inglés (ResourceBundle, selector de idioma, plurales con MessageFormat y
+  fechas según el idioma). Por eso el código nuevo escribe cada frase como una plantilla completa
+  (String.format o MessageFormat), sin pegar trozos de texto.
 
 ## Cómo se mide el tiempo de juego
 
@@ -171,6 +178,26 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
 - **Programa de configuración:** además del juego, cada VN puede tener su `config.exe` (o como se
   llame). Se abre con el botón «Configuración», desde su carpeta y con Locale Emulator si la VN lo
   usa. No cuenta como partida.
+
+## Registro de errores
+
+- La app escribe un registro en `logs/` dentro de la carpeta de datos (`%LOCALAPPDATA%\VNLauncher`):
+  `vn-launcher0.log` es el actual y `vn-launcher1.log` … `4.log` los anteriores, de 1 MB como
+  mucho cada uno (`FileHandler` de `java.util.logging`, `LogSetup`). Al arrancar apunta la versión
+  de la app, de Java y del sistema, y la versión del esquema de la base de datos.
+- Los errores inesperados (un fallo de la base de datos, de programación...) se registran y abren
+  el diálogo «Algo ha fallado», con los detalles técnicos desplegables, «Copiar detalles» y «Abrir
+  carpeta de registros» (`ErrorReporter`, `ErrorDialog`). Los esperados (sin conexión, límite de
+  VNDB) siguen con sus avisos dentro de cada pantalla.
+- Llegan al diálogo: las excepciones que nadie captura en cualquier hilo (manejador global), las
+  tareas en segundo plano sin manejador propio (`BackgroundTasks` con mensaje) y los errores que
+  cada pantalla reporta con su contexto («No se ha podido guardar la ruta.»).
+- Las rutas se enseñan como `%LOCALAPPDATA%\...` (`DisplayPaths`): al pegar los detalles en un
+  informe no se comparte el nombre de la cuenta de Windows.
+- En Ajustes → Registro de errores: «Abrir carpeta de registros» y «Copiar información del sistema».
+- Para probarlo sin romper nada: `-Dvnlauncher.debug.fallo=arranque|fx|tarea|hilo` provoca un error
+  a propósito (al preparar la base de datos, en el hilo de la interfaz, en una tarea en segundo
+  plano o en un hilo suelto). `-Dvnlauncher.log.level=FINE` escribe también los mensajes de detalle.
 
 ## Pendiente
 

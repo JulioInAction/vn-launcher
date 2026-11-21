@@ -167,7 +167,14 @@ final class CoverGallery {
                     return null;
                 },
                 ignored -> onChanged.run(),
-                error -> Dialogs.error(owner, "No se pudo cambiar la portada", error.getMessage()));
+                error -> {
+                    // Sin conexión (no se pudo descargar la imagen): aviso normal. Lo demás no debería pasar.
+                    if (ErrorReporter.isExpected(error)) {
+                        Dialogs.error(owner, "No se pudo cambiar la portada", error.getMessage());
+                    } else {
+                        ErrorReporter.report("No se ha podido cambiar la portada.", error);
+                    }
+                });
     }
 
     @FunctionalInterface
@@ -219,7 +226,9 @@ final class CoverGallery {
         tiles.getChildren().addAll(added);
 
         // Miniaturas en segundo plano, de una en una: aparecen según llegan
-        ctx.background().submit(() -> {
+        // execute y no submit: con submit, una excepción se guardaría en un Future que nadie mira; con
+        // execute llega al manejador global de errores (ErrorReporter)
+        ctx.background().execute(() -> {
             for (ToggleButton tile : added) {
                 if (closed) {
                     return;

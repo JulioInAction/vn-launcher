@@ -130,7 +130,7 @@ class RoutesPane extends VBox {
                     render();
                     onRoutesChanged.accept(loaded);
                 },
-                error -> Dialogs.error(this, error.getMessage()));
+                "No se ha podido guardar la ruta.");
     }
 
     /** Título de la VN, para el subtítulo del diálogo de ruta. */
