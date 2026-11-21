@@ -15,7 +15,7 @@
 <!-- Biblioteca (docs/diseño/capturas/biblioteca_*.png):
        · cabecera: título, número de novelas y "Añadir VN"
        · franja "Continuar" con la última VN jugada (la rellena LibraryController)
-       · filtros por estado con contadores y "Ordenar por"
+       · filtro por etiqueta (si hay uno), filtros por estado con contadores y "Ordenar por"
        · cuadrícula de portadas (TilePane: filas que saltan de línea cuando no caben) -->
 <ScrollPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
@@ -42,14 +42,18 @@
 
         <HBox fx:id="continueCard" styleClass="card, continue-card" spacing="20" alignment="CENTER_LEFT"/>
 
-        <HBox fx:id="filtersRow" spacing="8" alignment="CENTER_LEFT">
-            <!-- FlowPane: si las pastillas no caben en una línea (ventana estrecha), pasan a la de
-                 abajo en vez de empujar y cortar el desplegable de orden -->
-            <FlowPane fx:id="chipsBox" hgap="8" vgap="8" HBox.hgrow="ALWAYS" alignment="CENTER_LEFT"/>
-            <!-- minWidth="-Infinity" = Region.USE_PREF_SIZE: no encoger por debajo de su texto -->
-            <Label text="Ordenar por" styleClass="meta" minWidth="-Infinity"/>
-            <ComboBox fx:id="sortBox" prefWidth="200" minWidth="-Infinity"/>
-        </HBox>
+        <!-- Filtro por etiqueta (al pulsar una en la ficha) encima de los de estado: se combinan -->
+        <VBox spacing="14">
+            <HBox fx:id="tagFilterRow" spacing="14" alignment="CENTER_LEFT"/>
+            <HBox fx:id="filtersRow" spacing="8" alignment="CENTER_LEFT">
+                <!-- FlowPane: si las pastillas no caben en una línea (ventana estrecha), pasan a la de
+                     abajo en vez de empujar y cortar el desplegable de orden -->
+                <FlowPane fx:id="chipsBox" hgap="8" vgap="8" HBox.hgrow="ALWAYS" alignment="CENTER_LEFT"/>
+                <!-- minWidth="-Infinity" = Region.USE_PREF_SIZE: no encoger por debajo de su texto -->
+                <Label text="Ordenar por" styleClass="meta" minWidth="-Infinity"/>
+                <ComboBox fx:id="sortBox" prefWidth="200" minWidth="-Infinity"/>
+            </HBox>
+        </VBox>
 
         <Label fx:id="emptyLabel" styleClass="muted" wrapText="true"/>
 

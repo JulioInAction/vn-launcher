@@ -1,6 +1,7 @@
 package com.vnlauncher.ui;
 
 import com.vnlauncher.model.PlayStatus;
+import com.vnlauncher.model.VnTag;
 
 /**
  * Cambiar de pantalla. Lo implementa MainController (que es quien tiene la zona central)
@@ -13,6 +14,12 @@ public interface Navigator {
 
     /** Biblioteca mostrando solo una estantería (Jugando, Pendientes o Completadas). */
     void showLibrary(PlayStatus shelf);
+
+    /** Biblioteca mostrando solo las VNs con esta etiqueta (al pulsarla en la ficha). */
+    void showLibraryWithTag(VnTag tag);
+
+    /** Vuelve a la biblioteca tal como estaba (con su estantería y su etiqueta), p. ej. desde la ficha. */
+    void backToLibrary();
 
     void showSearch();
 

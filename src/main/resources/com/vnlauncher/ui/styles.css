@@ -824,6 +824,51 @@
     -fx-text-fill: -vn-text;
 }
 
+/* «Etiquetas» de la ficha (TagChips). El diseño pone 12 px en el título y 13 px en los chips; aquí
+   van con el mismo +3/+4 px que el resto del texto pequeño de la app (como «Tiempo jugado»). */
+.tags-label {
+    -fx-font-size: 16px;
+    -fx-text-fill: -vn-muted;
+}
+
+/* Los chips son botones (se pueden pulsar y recorrer con el tabulador): se quitan el radio, la
+   fuente y la altura de .button. 32 px de alto y esquinas completamente redondeadas. */
+.button.tag-chip {
+    -fx-background-color: -vn-surface2;
+    -fx-background-radius: 999;
+    -fx-border-color: -vn-border;
+    -fx-border-radius: 999;
+    -fx-font-family: "Inter";
+    -fx-font-size: 16px;
+    -fx-text-fill: -vn-text2;
+    -fx-padding: 0 14 0 14;
+    -fx-min-height: 32;
+    -fx-pref-height: 32;
+    -fx-max-height: 32;
+}
+
+.button.tag-chip:hover {
+    -fx-border-color: -vn-border2;
+    -fx-text-fill: -vn-text;
+}
+
+.button.tag-chip:focused {
+    -fx-border-color: -vn-accent-ink;
+}
+
+/* «+12 más» / «Mostrar menos»: sin relleno, borde discontinuo y texto en el color de acento */
+.button.tag-more {
+    -fx-background-color: transparent;
+    -fx-border-color: -vn-border2;
+    -fx-border-style: segments(4, 3);
+    -fx-text-fill: -vn-accent-ink;
+}
+
+.button.tag-more:hover {
+    -fx-background-color: -vn-sel;
+    -fx-text-fill: -vn-accent-ink;
+}
+
 .exe-path {
     -fx-font-size: 16px;
     -fx-text-fill: -vn-muted;

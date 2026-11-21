@@ -7,6 +7,7 @@ import com.vnlauncher.db.repo.CharacterRepository;
 import com.vnlauncher.db.repo.LibraryRepository;
 import com.vnlauncher.db.repo.PlaySessionRepository;
 import com.vnlauncher.db.repo.RouteRepository;
+import com.vnlauncher.db.repo.VnDetailsRepository;
 import com.vnlauncher.db.repo.VnRepository;
 import com.vnlauncher.model.Route;
 import com.vnlauncher.model.VisualNovel;
@@ -45,6 +46,7 @@ class RefreshServiceTest {
     private RouteService routes;
     private LibraryService library;
     private RefreshService refresh;
+    private VnDetailsService details;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -62,8 +64,9 @@ class RefreshServiceTest {
         routes = new RouteService(new RouteRepository(db), clock);
         library = new LibraryService(vnRepo, libraryRepo, new RouteRepository(db),
                 new PlaySessionRepository(db), images, clock);
+        details = new VnDetailsService(vndb, new VnDetailsRepository(db), clock);
         refresh = new RefreshService(new CatalogService(vndb), library,
-                new CharacterService(vndb, new CharacterRepository(db), images, clock));
+                new CharacterService(vndb, new CharacterRepository(db), images, clock), details);
 
         // Estado de partida: CLANNAD en la biblioteca con los datos "viejos", su portada vieja
         // descargada, un ejecutable elegido y una ruta.
@@ -98,16 +101,29 @@ class RefreshServiceTest {
         }
     }
 
+    private static final String TAGS_RESPONSE = """
+            {"results": [{"id": "v4",
+              "tags": [{"id": "g1", "name": "Drama", "rating": 2.9, "spoiler": 0, "lie": false, "category": "cont"}],
+              "screenshots": [{"url": "https://t.vndb.org/sf/1.jpg", "thumbnail": "https://t.vndb.org/st/1.jpg",
+                               "sexual": 0, "violence": 0}]}],
+             "more": false}
+            """;
+
     @Test
-    void updatesDataCoverAndCharactersButKeepsUserData() throws Exception {
+    void updatesDataCoverCharactersAndTagsButKeepsUserData() throws Exception {
         server.enqueue(vnResponse("CLANNAD", "/cv/new.jpg"));
         server.enqueue(charactersResponse());
+        server.enqueue(TAGS_RESPONSE);
 
         RefreshService.Result result = refresh.refresh("v4");
 
         assertTrue(result.found());
         assertEquals(2, result.characters(), "Nagisa y Ushio, como en CharacterServiceTest");
-        assertEquals(2, server.apiRequests().size(), "1 petición de la VN + 1 de personajes");
+        assertEquals(3, server.apiRequests().size(), "1 petición de la VN + 1 de personajes + 1 de etiquetas");
+        assertTrue(server.apiRequests().get(2).contains("tags.spoiler"), server.apiRequests().get(2));
+        assertEquals(List.of("Drama"), details.get("v4").tags().stream().map(t -> t.name()).toList(),
+                "Etiquetas guardadas: la ficha ya no las pide");
+        assertEquals(3, server.apiRequests().size());
         assertTrue(server.apiRequests().getFirst().contains("[\"id\",\"=\",\"v4\"]"),
                 "Se pide la VN por su id: " + server.apiRequests().getFirst());
 
@@ -129,6 +145,7 @@ class RefreshServiceTest {
     void sameCoverUrlIsNotDownloadedAgain() throws Exception {
         server.enqueue(vnResponse("CLANNAD", "/cv/old.jpg"));
         server.enqueue("{\"results\": [], \"more\": false}");
+        server.enqueue("{\"results\": [], \"more\": false}");
         int imagesBefore = server.imageRequests().size();
 
         refresh.refresh("v4");
@@ -143,7 +160,7 @@ class RefreshServiceTest {
         RefreshService.Result result = refresh.refresh("v4");
 
         assertFalse(result.found());
-        assertEquals(1, server.apiRequests().size(), "Sin VN no se piden personajes");
+        assertEquals(1, server.apiRequests().size(), "Sin VN no se piden personajes ni etiquetas");
         assertEquals("Clannad (viejo)", vnRepo.findById("v4").orElseThrow().title());
         assertEquals(ADDED, library.fetchedAt("v4").orElseThrow());
     }

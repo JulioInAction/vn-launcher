@@ -60,7 +60,7 @@
             <HBox styleClass="settings-row">
                 <VBox styleClass="settings-text" HBox.hgrow="ALWAYS">
                     <Label text="Mostrar spoilers" styleClass="settings-label"/>
-                    <Label text="Personajes que VNDB marca como spoiler. Si está apagado, salen tapados con un botón para verlos."
+                    <Label text="Personajes y etiquetas que VNDB marca como spoiler. Si está apagado, los personajes salen tapados con un botón para verlos y las etiquetas no se muestran."
                            styleClass="settings-desc" wrapText="true"/>
                 </VBox>
                 <HBox fx:id="spoilersBox" maxHeight="-Infinity"/>

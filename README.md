@@ -129,8 +129,8 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
 
 ## Ficha de una VN
 
-- **Actualizar desde VNDB:** vuelve a pedir la ficha y los personajes principales (2 peticiones) y
-  descarga la portada si ha cambiado. Las rutas, el tiempo de juego y el ejecutable no se tocan. El
+- **Actualizar desde VNDB:** vuelve a pedir la ficha, los personajes principales y las etiquetas y
+  capturas (3 peticiones) y descarga la portada si ha cambiado. Las rutas, el tiempo de juego y el ejecutable no se tocan. El
   resto del tiempo la aplicación no vuelve a preguntar a VNDB por algo que ya tiene.
 - **Cambiar portada:** bajo la portada hay una franja rosa que, al pasar el ratón por ella o al
   llegar con el tabulador, crece hasta un botón «Cambiar portada»
@@ -140,6 +140,14 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
   archivo…». La elegida se guarda en `library_entry.cover_override` (migración 004) y su archivo
   en la carpeta `covers/`, fuera de `images/` para que «Vaciar caché» no la borre. «Volver a la de
   VNDB» la pone a `NULL`. Se ve en la ficha, la biblioteca, «Continuar» y «Recientes».
+- **Etiquetas:** la primera vez que se abre la ficha se piden a VNDB sus etiquetas y capturas
+  (1 petición, como los personajes) y se guardan en `vn_tag` y `vn_screenshot` (migración 005), así
+  que después funciona sin conexión. Se ven las 8 mejor puntuadas como chips (`TagChips`) y «+N más»
+  despliega el resto. Las spoiler solo con «Mostrar spoilers»; las de contenido sexual, solo con
+  «Difuminar imágenes: No difuminar» (como en la búsqueda). Pulsar una abre la biblioteca filtrada
+  por ella: arriba sale «Etiqueta: X ✕» y se combina con los filtros de estado. Solo cuenta las VNs
+  cuya ficha se ha abierto alguna vez (las demás aún no tienen etiquetas guardadas; lo avisa).
+  «‹ Biblioteca» vuelve a la biblioteca con los filtros que tenía.
 - **Programa de configuración:** además del juego, cada VN puede tener su `config.exe` (o como se
   llame). Se abre con el botón «Configuración», desde su carpeta y con Locale Emulator si la VN lo
   usa. No cuenta como partida.

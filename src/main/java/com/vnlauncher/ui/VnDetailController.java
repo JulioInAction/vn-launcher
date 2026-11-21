@@ -1,12 +1,15 @@
 package com.vnlauncher.ui;
 
 import com.vnlauncher.app.AppContext;
+import com.vnlauncher.model.BlurLevel;
 import com.vnlauncher.model.GameCharacter;
 import com.vnlauncher.model.LibraryEntry;
 import com.vnlauncher.model.Route;
 import com.vnlauncher.model.RouteProgress;
 import com.vnlauncher.model.VisualNovel;
 import com.vnlauncher.model.VnCharacter;
+import com.vnlauncher.model.VnDetails;
+import com.vnlauncher.model.VnTag;
 import com.vnlauncher.util.PlayTime;
 import com.vnlauncher.util.RelativeTime;
 import javafx.beans.binding.Bindings;
@@ -74,6 +77,7 @@ public class VnDetailController implements PlaytimeAware {
     @FXML private Label routesStatLabel;
     @FXML private ProgressBar routesStatBar;
     @FXML private Label launchStatusLabel;
+    @FXML private VBox tagsContainer;
     @FXML private Label descriptionLabel;
     @FXML private Hyperlink readMoreLink;
     @FXML private Button removeButton;
@@ -86,6 +90,7 @@ public class VnDetailController implements PlaytimeAware {
 
     private RoutesPane routesPane;
     private LaunchFlow launchFlow;
+    private TagChips tagChips;
 
     private LibraryEntry entry;
     private boolean descriptionExpanded = false;
@@ -95,6 +100,8 @@ public class VnDetailController implements PlaytimeAware {
     private List<VnCharacter> characters;
     /** Rutas actuales de la VN. */
     private List<Route> routes = List.of();
+    /** Etiquetas y capturas; null mientras se cargan. */
+    private VnDetails details;
     /** Personajes spoiler que el usuario ha destapado uno a uno con "Mostrar". */
     private final Set<String> revealedSpoilers = new HashSet<>();
 
@@ -138,8 +145,18 @@ public class VnDetailController implements PlaytimeAware {
         routesContainer.getChildren().add(routesPane);
         routesPane.reload();
 
+        // Etiquetas: pulsar una abre la biblioteca filtrada por ella
+        tagChips = new TagChips(navigator::showLibraryWithTag);
+        tagsContainer.getChildren().add(tagChips);
+        show(tagsContainer, false); // hasta que se carguen (sin ellas no deja hueco)
+        loadDetails();
+
         // Personajes: se cargan a la vez, en otra tarea (la primera vez tardan: VNDB + imágenes).
-        showSpoilersCheck.selectedProperty().addListener((obs, oldValue, selected) -> renderCharacters());
+        // «Mostrar spoilers» vale también para las etiquetas.
+        showSpoilersCheck.selectedProperty().addListener((obs, oldValue, selected) -> {
+            renderCharacters();
+            renderTags();
+        });
         // Valor inicial de "Mostrar spoilers": el de Ajustes → Contenido
         BackgroundTasks.run(ctx.background(), () -> ctx.settingsService().showSpoilers(),
                 showSpoilersCheck::setSelected, error -> { });
@@ -158,6 +175,38 @@ public class VnDetailController implements PlaytimeAware {
                 },
                 error -> charactersStatus.setText(
                         "No se pudieron cargar los personajes: " + error.getMessage()));
+    }
+
+    /**
+     * Etiquetas y capturas: la primera vez se piden a VNDB (1 petición, como los personajes);
+     * después salen de la base de datos, también sin conexión.
+     */
+    private void loadDetails() {
+        BackgroundTasks.run(ctx.background(), () -> ctx.vnDetailsService().get(vnId),
+                loaded -> {
+                    details = loaded;
+                    renderTags();
+                },
+                error -> {
+                    // Sin conexión la primera vez: se vuelven a pedir al abrir la ficha otra vez
+                    Label message = new Label("No se han podido cargar las etiquetas. Se intentará de "
+                            + "nuevo la próxima vez que abras la ficha.");
+                    message.getStyleClass().add("muted");
+                    message.setWrapText(true);
+                    tagsContainer.getChildren().setAll(message);
+                    show(tagsContainer, true);
+                });
+    }
+
+    private void renderTags() {
+        if (details == null) {
+            return;
+        }
+        boolean showSexual = ctx.contentFilter().level() == BlurLevel.NONE;
+        List<VnTag> tags = details.tagsToShow(showSpoilersCheck.isSelected(), showSexual);
+        tagChips.setTags(tags);
+        tagsContainer.getChildren().setAll(tagChips); // por si antes había un aviso de error
+        show(tagsContainer, !tags.isEmpty());       // sin etiquetas, la sección no se ve
     }
 
     // =========================================================== cabecera
@@ -179,8 +228,8 @@ public class VnDetailController implements PlaytimeAware {
                     String when = header.fetchedAt()
                             .map(t -> RelativeTime.format(t, Instant.now(), ZoneId.systemDefault()))
                             .orElse("nunca");
-                    refreshLink.setTooltip(new Tooltip("Vuelve a pedir a VNDB la ficha y los personajes "
-                            + "(2 peticiones).\nDatos descargados: " + when + "."));
+                    refreshLink.setTooltip(new Tooltip("Vuelve a pedir a VNDB la ficha, los personajes y "
+                            + "las etiquetas y capturas (3 peticiones).\nDatos descargados: " + when + "."));
                 },
                 error -> titleLabel.setText("Error: " + error.getMessage()));
     }
@@ -304,7 +353,8 @@ public class VnDetailController implements PlaytimeAware {
     }
 
     /**
-     * "Actualizar desde VNDB": vuelve a pedir la ficha y los personajes y repinta la pantalla.
+     * "Actualizar desde VNDB": vuelve a pedir la ficha, los personajes y las etiquetas y capturas,
+     * y repinta la pantalla.
      * Las rutas, el tiempo de juego y el ejecutable no cambian (son datos del usuario).
      */
     @FXML
@@ -330,6 +380,7 @@ public class VnDetailController implements PlaytimeAware {
                     refreshStatus.setText("✓  Actualizado");
                     loadHeader();
                     loadCharacters();
+                    loadDetails();
                     navigator.refreshSidebar(); // la portada o el título pueden haber cambiado
                 },
                 error -> {
@@ -496,9 +547,10 @@ public class VnDetailController implements PlaytimeAware {
 
     // =========================================================== otras acciones
 
+    /** «‹ Biblioteca»: vuelve a la biblioteca como estaba (con su filtro de estado o de etiqueta). */
     @FXML
     private void onBack() {
-        navigator.showLibrary();
+        navigator.backToLibrary();
     }
 
     @FXML

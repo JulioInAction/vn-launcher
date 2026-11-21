@@ -8,6 +8,7 @@ import com.vnlauncher.db.repo.LibraryRepository;
 import com.vnlauncher.db.repo.PlaySessionRepository;
 import com.vnlauncher.db.repo.RouteRepository;
 import com.vnlauncher.db.repo.SettingsRepository;
+import com.vnlauncher.db.repo.VnDetailsRepository;
 import com.vnlauncher.db.repo.VnRepository;
 import com.vnlauncher.service.CatalogService;
 import com.vnlauncher.service.CharacterService;
@@ -22,6 +23,7 @@ import com.vnlauncher.service.ProcessStarter;
 import com.vnlauncher.service.RefreshService;
 import com.vnlauncher.service.RouteService;
 import com.vnlauncher.service.SettingsService;
+import com.vnlauncher.service.VnDetailsService;
 import com.vnlauncher.util.AppPaths;
 import com.vnlauncher.util.Sleeper;
 
@@ -67,6 +69,7 @@ public final class AppContext {
     private final PlaytimeTracker playtimeTracker;
     private final RefreshService refreshService;
     private final CoverService coverService;
+    private final VnDetailsService vnDetailsService;
 
     // Constructor con muchos parámetros: es el precio de la inyección manual. Si crece demasiado,
     // se podría agrupar (p. ej. un record con los servicios), pero así se ve todo de un vistazo.
@@ -75,7 +78,8 @@ public final class AppContext {
                        ImageCacheService imageCache, ContentFilter contentFilter,
                        CharacterService characterService, RouteService routeService,
                        SettingsService settingsService, LaunchService launchService, RateLimiter rateLimiter,
-                       PlaytimeTracker playtimeTracker, CoverService coverService) {
+                       PlaytimeTracker playtimeTracker, CoverService coverService,
+                       VnDetailsService vnDetailsService) {
         this.paths = paths;
         this.database = database;
         this.httpClient = httpClient;
@@ -91,8 +95,10 @@ public final class AppContext {
         this.rateLimiter = rateLimiter;
         this.playtimeTracker = playtimeTracker;
         // Solo combina servicios que ya existen: se crea aquí y no hace falta otro parámetro más
-        this.refreshService = new RefreshService(catalogService, libraryService, characterService);
+        this.refreshService = new RefreshService(catalogService, libraryService, characterService,
+                vnDetailsService);
         this.coverService = coverService;
+        this.vnDetailsService = vnDetailsService;
     }
 
     /** Prepara carpetas, base de datos y servicios. Si algo falla aquí la app no puede arrancar. */
@@ -145,11 +151,12 @@ public final class AppContext {
                 libraryRepository, settingsService, ProcessStarter.system(), playtimeTracker, clock);
 
         CoverService coverService = new CoverService(vndb, libraryRepository, imageCache, paths, clock);
+        VnDetailsService vnDetailsService = new VnDetailsService(vndb, new VnDetailsRepository(database), clock);
 
         return new AppContext(paths, database, httpClient, background,
                 new CatalogService(vndb), libraryService, imageCache, contentFilter,
                 characterService, new RouteService(routeRepository, clock),
-                settingsService, launchService, rateLimiter, playtimeTracker, coverService);
+                settingsService, launchService, rateLimiter, playtimeTracker, coverService, vnDetailsService);
     }
 
     /** Se llama al cerrar la ventana: corta las tareas y conexiones pendientes. */
@@ -210,6 +217,11 @@ public final class AppContext {
     }
 
     /** "Actualizar desde VNDB" en la ficha. */
+    /** Etiquetas y capturas de la ficha. */
+    public VnDetailsService vnDetailsService() {
+        return vnDetailsService;
+    }
+
     public RefreshService refreshService() {
         return refreshService;
     }

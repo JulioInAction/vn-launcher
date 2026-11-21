@@ -32,7 +32,8 @@ public class Database {
             "migration/001_initial.sql",
             "migration/002_play_session_last_seen.sql",
             "migration/003_library_config_exe.sql",
-            "migration/004_library_cover_override.sql"
+            "migration/004_library_cover_override.sql",
+            "migration/005_vn_tags_screenshots.sql"
     );
 
     private final String url;

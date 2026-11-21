@@ -2,6 +2,7 @@ package com.vnlauncher.ui;
 
 import com.vnlauncher.app.AppContext;
 import com.vnlauncher.model.PlayStatus;
+import com.vnlauncher.model.VnTag;
 import com.vnlauncher.model.Theme;
 import com.vnlauncher.service.PlaytimeTracker;
 import javafx.application.Platform;
@@ -91,11 +92,32 @@ public class MainController implements Navigator {
 
     @Override
     public void showLibrary(PlayStatus shelf) {
+        library().show(shelf); // recarga: puede haber VNs nuevas añadidas desde la búsqueda
+        displayLibrary();
+    }
+
+    @Override
+    public void showLibraryWithTag(VnTag tag) {
+        library().showTag(tag);
+        displayLibrary();
+    }
+
+    @Override
+    public void backToLibrary() {
+        library().reload(); // mismos filtros que antes de abrir la ficha
+        displayLibrary();
+    }
+
+    /** La vista de la biblioteca se crea una vez y se reutiliza (así recuerda sus filtros). */
+    private LibraryController library() {
         if (libraryView == null) {
             libraryController = new LibraryController(context, this);
             libraryView = Views.load("library-view.fxml", libraryController);
         }
-        libraryController.show(shelf); // recarga: puede haber VNs nuevas añadidas desde la búsqueda
+        return libraryController;
+    }
+
+    private void displayLibrary() {
         root.setCenter(libraryView);
         currentController = libraryController;
         sidebar.setActive(SidebarController.Section.LIBRARY);

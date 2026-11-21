@@ -7,6 +7,7 @@ import com.vnlauncher.model.LibraryItem;
 import com.vnlauncher.model.PlayStatus;
 import com.vnlauncher.model.RouteSummary;
 import com.vnlauncher.model.VisualNovel;
+import com.vnlauncher.model.VnTag;
 import com.vnlauncher.service.LibraryService;
 import com.vnlauncher.service.LibrarySort;
 import com.vnlauncher.util.PlayTime;
@@ -23,6 +24,7 @@ import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -35,11 +37,12 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Vista "Biblioteca": franja "Continuar" con la última VN jugada, filtros por estado con sus
- * contadores, orden y cuadrícula de portadas. Todo sale de la base de datos y del disco, así que
- * funciona sin conexión.
+ * contadores, filtro por etiqueta (desde la ficha), orden y cuadrícula de portadas. Todo sale de la
+ * base de datos y del disco, así que funciona sin conexión.
  */
 public class LibraryController implements PlaytimeAware {
 
@@ -47,8 +50,12 @@ public class LibraryController implements PlaytimeAware {
     private static final double COVER_WIDTH = 176;
     private static final double COVER_HEIGHT = 264;
 
-    /** Lo que carga la tarea de fondo: la biblioteca y la ruta en curso de la última VN jugada. */
-    private record LibraryData(List<LibraryItem> items, Optional<CurrentRoute> currentRoute) {
+    /**
+     * Lo que carga la tarea de fondo: la biblioteca, la ruta en curso de la última VN jugada y, si
+     * se filtra por etiqueta, qué VNs la tienen y cuántas aún no tienen sus etiquetas guardadas.
+     */
+    private record LibraryData(List<LibraryItem> items, Optional<CurrentRoute> currentRoute,
+                               Set<String> withTag, int withoutTags) {
     }
 
     private final AppContext ctx;
@@ -60,6 +67,7 @@ public class LibraryController implements PlaytimeAware {
     @FXML private Button addButton;
     @FXML private VBox emptyBox;
     @FXML private HBox filtersRow;
+    @FXML private HBox tagFilterRow;
     @FXML private HBox continueCard;
     @FXML private FlowPane chipsBox;
     @FXML private CheckBox showSensitiveCheck;
@@ -69,7 +77,9 @@ public class LibraryController implements PlaytimeAware {
 
     /** Estantería mostrada; null = todas. */
     private PlayStatus shelf;
-    private LibraryData data = new LibraryData(List.of(), Optional.empty());
+    /** Etiqueta por la que se filtra (se combina con la estantería); null = ninguna. */
+    private VnTag tag;
+    private LibraryData data = new LibraryData(List.of(), Optional.empty(), Set.of(), 0);
     /** Las portadas que hay en pantalla, para (des)difuminarlas al marcar la casilla. */
     private final List<CoverView> covers = new ArrayList<>();
 
@@ -101,6 +111,19 @@ public class LibraryController implements PlaytimeAware {
      */
     public void show(PlayStatus shelf) {
         this.shelf = shelf;
+        this.tag = null;
+        load(true);
+    }
+
+    /** Muestra solo las VNs con esta etiqueta (todas las estanterías). */
+    public void showTag(VnTag tag) {
+        this.shelf = null;
+        this.tag = tag;
+        load(true);
+    }
+
+    /** Vuelve a cargar sin cambiar los filtros (al volver de una ficha). */
+    public void reload() {
         load(true);
     }
 
@@ -122,6 +145,7 @@ public class LibraryController implements PlaytimeAware {
      */
     private void load(boolean repairCovers) {
         LibraryService library = ctx.libraryService();
+        VnTag filter = tag; // la lambda corre en otro hilo: mejor no leer el campo desde allí
         BackgroundTasks.run(ctx.background(), () -> {
                     List<LibraryItem> items = library.findAllWithStatus();
                     Optional<CurrentRoute> current = Optional.empty();
@@ -129,7 +153,13 @@ public class LibraryController implements PlaytimeAware {
                     if (!recent.isEmpty()) {
                         current = library.currentRoute(recent.getFirst().vn().id());
                     }
-                    return new LibraryData(items, current);
+                    Set<String> withTag = Set.of();
+                    int withoutTags = 0;
+                    if (filter != null) {
+                        withTag = ctx.vnDetailsService().vnIdsWithTag(filter.id());
+                        withoutTags = ctx.vnDetailsService().countLibraryWithoutTags();
+                    }
+                    return new LibraryData(items, current, withTag, withoutTags);
                 },
                 loaded -> {
                     data = loaded;
@@ -199,9 +229,15 @@ public class LibraryController implements PlaytimeAware {
             return;
         }
         renderContinue();
-        renderChips();
+        renderTagFilter();
+        // Primero la etiqueta y después la estantería: así los contadores de las pastillas
+        // (Todas 3 · Jugando 1...) cuentan solo las VNs con esa etiqueta
+        List<LibraryItem> tagged = all.stream()
+                .filter(item -> tag == null || data.withTag().contains(item.entry().vn().id()))
+                .toList();
+        renderChips(tagged);
 
-        List<LibraryItem> visible = all.stream()
+        List<LibraryItem> visible = tagged.stream()
                 .filter(item -> shelf == null || item.status() == shelf)
                 .sorted(sortBox.getValue().comparator())
                 .toList();
@@ -212,9 +248,42 @@ public class LibraryController implements PlaytimeAware {
         }
 
         boolean empty = visible.isEmpty();
-        emptyLabel.setText("No hay novelas en esta estantería.");
+        emptyLabel.setText(tag == null ? "No hay novelas en esta estantería."
+                : "Ninguna novela " + (shelf == null ? "de tu biblioteca" : "de esta estantería")
+                        + " tiene la etiqueta «" + tag.name() + "».");
         emptyLabel.setVisible(empty);
         emptyLabel.setManaged(empty);
+    }
+
+    /**
+     * Filtro por etiqueta activo: un chip «Etiqueta: Drama ✕» que lo quita al pulsarlo y, si hay
+     * VNs cuya ficha nunca se ha abierto (sus etiquetas aún no se han descargado), un aviso.
+     */
+    private void renderTagFilter() {
+        tagFilterRow.getChildren().clear();
+        boolean active = tag != null;
+        tagFilterRow.setVisible(active);
+        tagFilterRow.setManaged(active);
+        if (!active) {
+            return;
+        }
+        Button chip = new Button("Etiqueta: " + tag.name() + "   ✕");
+        chip.getStyleClass().addAll("chip", "active", "tag-filter");
+        chip.setMinWidth(Region.USE_PREF_SIZE);
+        chip.setTooltip(new Tooltip("Quitar el filtro"));
+        chip.setOnAction(event -> {
+            tag = null;
+            render(); // no hace falta volver a la base de datos: sin etiqueta no se usa withTag
+        });
+        tagFilterRow.getChildren().add(chip);
+        if (data.withoutTags() > 0) {
+            Label note = new Label((data.withoutTags() == 1 ? "1 novela aún no tiene"
+                    : data.withoutTags() + " novelas aún no tienen")
+                    + " sus etiquetas: se descargan al abrir su ficha.");
+            note.getStyleClass().add("meta");
+            note.setWrapText(true);
+            tagFilterRow.getChildren().add(note);
+        }
     }
 
     /** Con la biblioteca vacía, en vez de franja, filtros y cuadrícula: explicación + botón. */
@@ -239,6 +308,10 @@ public class LibraryController implements PlaytimeAware {
         for (Node n : List.of(filtersRow, showSensitiveCheck, addButton, countLabel)) {
             n.setVisible(!empty);
             n.setManaged(!empty);
+        }
+        if (empty) {
+            tagFilterRow.setVisible(false);
+            tagFilterRow.setManaged(false);
         }
     }
 
@@ -307,12 +380,12 @@ public class LibraryController implements PlaytimeAware {
         texts.setOnMouseClicked(event -> navigator.showVnDetail(vn.id()));
     }
 
-    /** Filtros: Todas 8 · Jugando 2 · Pendientes 3 · Completadas 3. */
-    private void renderChips() {
+    /** Filtros: Todas 8 · Jugando 2 · Pendientes 3 · Completadas 3 (de las VNs que se cuentan). */
+    private void renderChips(List<LibraryItem> items) {
         chipsBox.getChildren().clear();
-        chipsBox.getChildren().add(chip("Todas", data.items().size(), null));
+        chipsBox.getChildren().add(chip("Todas", items.size(), null));
         for (PlayStatus status : PlayStatus.values()) {
-            long n = data.items().stream().filter(i -> i.status() == status).count();
+            long n = items.stream().filter(i -> i.status() == status).count();
             chipsBox.getChildren().add(chip(status.shelfName(), n, status));
         }
     }

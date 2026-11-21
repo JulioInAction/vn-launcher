@@ -56,6 +56,14 @@ public class VndbClient {
             + "screenshots.url, screenshots.thumbnail, screenshots.sexual, screenshots.violence, "
             + "relations.id, relations.title, relations.relation, relations.relation_official";
 
+    /**
+     * Etiquetas y capturas para la ficha (se guardan en la base de datos). Los campos de las
+     * etiquetas son los mismos que en la búsqueda, más el id para poder filtrar por ella.
+     */
+    static final String VN_TAGS_SCREENSHOTS_FIELDS = "id, "
+            + "tags.id, tags.name, tags.rating, tags.spoiler, tags.lie, tags.category, "
+            + "screenshots.url, screenshots.thumbnail, screenshots.sexual, screenshots.violence";
+
     static final String CHARACTER_FIELDS = "id, name, original, description, "
             + "image.url, image.sexual, image.violence, "
             + "vns.id, vns.role, vns.spoiler";
@@ -118,6 +126,15 @@ public class VndbClient {
      */
     public Optional<VnDetailsDto> vnDetails(String id) throws VndbException {
         VndbQuery query = new VndbQuery(List.of("id", "=", id), VN_DETAIL_FIELDS, null, 1, null);
+        return post("vn", query, VnDetailsDto.class).results().stream().findFirst();
+    }
+
+    /**
+     * Etiquetas y capturas de una VN para la ficha. Gasta 1 petición. Vacío si VNDB no tiene esa VN.
+     * Devuelve el mismo DTO que {@link #vnDetails} pero sin las relaciones (relations = null).
+     */
+    public Optional<VnDetailsDto> vnTagsAndScreenshots(String id) throws VndbException {
+        VndbQuery query = new VndbQuery(List.of("id", "=", id), VN_TAGS_SCREENSHOTS_FIELDS, null, 1, null);
         return post("vn", query, VnDetailsDto.class).results().stream().findFirst();
     }
 
