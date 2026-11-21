@@ -20,9 +20,10 @@ import javafx.scene.shape.SVGPath;
 import java.util.function.Consumer;
 
 /**
- * Selector «Estado» de la ficha (docs/diseño/capturas/ficha-estado-*.png). El botón dice el estado
- * que se ve y si es automático o fijado a mano («○ En pausa · fijado a mano ⌄»); al pulsarlo se
- * abre la lista: «Automático (ahora: Jugando)» y los cinco estados.
+ * Estado de la VN en la ficha: una pastilla al principio de la fila de chips
+ * (ficha-simplificada-*.png) que dice el estado que se ve y si es automático o fijado a mano
+ * («● Jugando · automático ⌄»). Al pulsarla se abre la lista (ficha-estado-*.png): «Automático
+ * (ahora: Jugando)» y los cinco estados.
  *
  * <p>La lista es un ContextMenu: trae de serie el moverse con las flechas, Enter, Esc y cerrarse
  * al pulsar fuera, y hereda los colores del tema de la ventana (un Popup normal no).
@@ -33,8 +34,8 @@ final class StatusPicker extends Button {
     /** «Según tus rutas y partidas (ahora: Jugando)» */
     static final String AUTOMATIC_HINT = "Según tus rutas y partidas (ahora: %s)";
     static final String MANUAL_HINT = "Fijado a mano";
-    /** Lo que se ve en el botón detrás del estado: «En pausa · fijado a mano». */
-    static final String MANUAL_SUFFIX = "· fijado a mano";
+    /** Lo que se ve en la pastilla detrás del estado: «En pausa · fijado». */
+    static final String MANUAL_SUFFIX = "· fijado";
     static final String AUTOMATIC_SUFFIX = "· automático";
 
     private static final String CHEVRON = "M1 1 L6 6 L11 1";

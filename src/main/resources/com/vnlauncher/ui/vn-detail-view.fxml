@@ -6,16 +6,19 @@
 <?import javafx.scene.control.Hyperlink?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.TextFlow?>
 
-<!-- Ficha de una VN (según el prototipo):
-       · cabecera: portada + título, acciones (Jugar, ejecutable, Locale Emulator), datos, etiquetas
-         y descripción, y la galería de capturas (a la derecha o debajo, según el ancho)
+<!-- Ficha de una VN (ficha-simplificada-*.png):
+       · cabecera: portada + título, chips de estado y estanterías, acciones (Jugar, Opciones del
+         juego, ⋯), datos en una línea, etiquetas y descripción, y la galería de capturas (a la
+         derecha o debajo, según el ancho)
        · sección Rutas (la crea VnDetailController: RoutesPane)
        · sección Personajes principales
      Todo dentro de un ScrollPane porque puede ser largo. -->
@@ -41,81 +44,44 @@
             <!-- 330 de portada + 50 reservados debajo para el control «Cambiar portada» -->
             <StackPane fx:id="coverBox" alignment="TOP_CENTER" minWidth="220" minHeight="380"/>
 
-            <VBox fx:id="infoColumn" spacing="12" HBox.hgrow="ALWAYS" minWidth="400">
+            <!-- Columna central (ficha-simplificada-*.png), de arriba abajo -->
+            <VBox fx:id="infoColumn" spacing="16" HBox.hgrow="ALWAYS" minWidth="400">
+                <!-- 1. Título, título original y «Desarrollador · año» -->
                 <VBox spacing="4">
                     <Label fx:id="titleLabel" styleClass="detail-title" wrapText="true"/>
                     <Label fx:id="altTitleLabel" styleClass="muted, original-text" wrapText="true"/>
-                    <!-- FlowPane en vez de HBox (aquí y más abajo): con la galería a la derecha esta
-                         columna puede quedarse en 400 px, y entonces salta de línea en vez de cortarse -->
-                    <FlowPane hgap="6" vgap="2" rowValignment="BASELINE">
-                        <Label fx:id="metaLabel" styleClass="muted"/>
-                        <Label text="·" styleClass="muted"/>
-                        <Hyperlink text="Ver en VNDB" onAction="#onOpenVndb"/>
-                        <Label text="·" styleClass="muted"/>
-                        <!-- Vuelve a pedir la ficha, los personajes y las etiquetas y capturas (3 peticiones) -->
-                        <Hyperlink fx:id="refreshLink" text="Actualizar desde VNDB" onAction="#onRefresh"/>
-                        <Label fx:id="refreshStatus" styleClass="muted"/>
-                    </FlowPane>
+                    <Label fx:id="metaLabel" styleClass="text2"/>
                 </VBox>
 
-                <FlowPane hgap="10" vgap="10" alignment="CENTER_LEFT">
+                <!-- 2. Chips sin rótulos: el estado (StatusPicker) y las estanterías con ✕ y un «+»
+                        redondo (ShelfChips). Los pone VnDetailController. -->
+                <FlowPane fx:id="chipsRow" hgap="8" vgap="8" alignment="CENTER_LEFT"/>
+
+                <!-- 3. Acciones: «Jugar», «Opciones del juego» (engranaje) y «Más opciones» (⋯). A la
+                        derecha, lo que pasa al actualizar desde VNDB: no mueve nada al aparecer -->
+                <HBox fx:id="actionsRow" spacing="10" alignment="CENTER_LEFT">
                     <Button fx:id="playButton" text="▶  Jugar" onAction="#onPlay"
-                            styleClass="primary-button, big-button"/>
-                    <Button fx:id="exeButton" text="Elegir ejecutable" onAction="#onChooseExecutable"
-                            styleClass="secondary-button"/>
-                    <!-- Solo se ve cuando hay programa de configuración (config.exe...) -->
-                    <Button fx:id="configButton" text="Configuración" onAction="#onOpenConfig"
-                            styleClass="secondary-button"/>
-                </FlowPane>
-                <VBox spacing="2">
-                    <Label fx:id="exePathLabel" styleClass="exe-path"/>
-                    <!-- "Configuración: C:\...\config.exe · Cambiar · Quitar", o el enlace para añadirlo -->
-                    <HBox fx:id="configRow" spacing="6" alignment="BASELINE_LEFT">
-                        <Label fx:id="configPathLabel" styleClass="exe-path"/>
-                        <Hyperlink fx:id="configChangeLink" onAction="#onChooseConfig" styleClass="small-link"/>
-                        <Hyperlink fx:id="configRemoveLink" text="Quitar" onAction="#onRemoveConfig"
-                                   styleClass="small-link"/>
+                            styleClass="primary-button, big-button" minWidth="-Infinity"/>
+                    <Button fx:id="optionsButton" onAction="#onOptions" styleClass="square-button"/>
+                    <Button fx:id="moreButton" onAction="#onMore" styleClass="square-button"/>
+                    <HBox spacing="8" alignment="CENTER_LEFT">
+                        <HBox.margin><Insets left="6"/></HBox.margin>
+                        <ProgressIndicator fx:id="refreshSpinner" styleClass="small-spinner"/>
+                        <Label fx:id="refreshStatus" styleClass="action-status"/>
                     </HBox>
-                </VBox>
-                <CheckBox fx:id="localeEmulatorCheck" text="Lanzar con Locale Emulator (perfil japonés)"
-                          wrapText="true"/>
-
-                <!-- «Estanterías» (ShelfChips) y «Estado» (StatusPicker), en código; ficha-estado-*.png.
-                     Las etiquetas tienen el mismo ancho fijo para que los controles queden en columna. -->
-                <HBox fx:id="shelvesRow" spacing="0" alignment="CENTER_LEFT">
-                    <Label text="Estanterías" styleClass="text2" minWidth="126" prefWidth="126"/>
-                </HBox>
-                <HBox fx:id="statusRow" spacing="0" alignment="CENTER_LEFT">
-                    <Label text="Estado" styleClass="text2" minWidth="126" prefWidth="126"/>
                 </HBox>
 
-                <!-- Tarjetas de datos (si no caben las tres en una fila, pasan a la siguiente) -->
-                <FlowPane hgap="10" vgap="10">
-                    <VBox styleClass="stat-card">
-                        <Label text="Tiempo jugado" styleClass="stat-label"/>
-                        <Label fx:id="playTimeLabel" text="0 min" styleClass="stat-value"/>
-                    </VBox>
-                    <VBox styleClass="stat-card">
-                        <Label text="Última partida" styleClass="stat-label"/>
-                        <Label fx:id="lastPlayedLabel" text="Nunca" styleClass="stat-value"/>
-                    </VBox>
-                    <VBox styleClass="stat-card">
-                        <Label text="Rutas" styleClass="stat-label"/>
-                        <Label fx:id="routesStatLabel" text="Sin rutas" styleClass="stat-value"/>
-                        <ProgressBar fx:id="routesStatBar" progress="0" maxWidth="Infinity" prefHeight="6"/>
-                    </VBox>
-                </FlowPane>
+                <!-- 4. «37 min jugados · última partida hace 3 h · 0 de 4 rutas» + barra de las rutas -->
+                <HBox spacing="12" alignment="CENTER_LEFT">
+                    <TextFlow fx:id="statsText" styleClass="stats-line"/>
+                    <ProgressBar fx:id="routesBar" progress="0" styleClass="thin-bar, routes-mini-bar"
+                                 minWidth="80" prefWidth="80" maxWidth="80"/>
+                </HBox>
 
-                <!-- Etiquetas (TagChips, en código): debajo de las tarjetas y antes de la descripción.
-                     Se oculta si la VN no tiene ninguna que enseñar. -->
-                <VBox fx:id="tagsContainer">
-                    <VBox.margin>
-                        <Insets top="6" bottom="8"/>
-                    </VBox.margin>
-                </VBox>
+                <!-- 5. Etiquetas en una línea + «+N más» (TagChips, en código). Se oculta si no hay -->
+                <VBox fx:id="tagsContainer"/>
 
-                <Label fx:id="launchStatusLabel" styleClass="muted" wrapText="true"/>
-
+                <!-- 6. Descripción, 3 líneas hasta pulsar «Leer más» -->
                 <VBox spacing="4">
                     <Label fx:id="descriptionLabel" wrapText="true" styleClass="description"/>
                     <Hyperlink fx:id="readMoreLink" text="Leer más" onAction="#onToggleDescription"/>
@@ -142,9 +108,5 @@
             <FlowPane fx:id="charactersPane" hgap="14" vgap="14"/>
         </VBox>
 
-        <HBox>
-            <Button fx:id="removeButton" text="Quitar de la biblioteca"
-                    onAction="#onRemove" styleClass="danger-button"/>
-        </HBox>
     </VBox>
 </ScrollPane>

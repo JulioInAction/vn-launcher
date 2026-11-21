@@ -138,7 +138,25 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
 
 ## Ficha de una VN
 
-- **Actualizar desde VNDB:** vuelve a pedir la ficha, los personajes principales y las etiquetas y
+- **Cabecera simplificada** (`ficha-simplificada-*.png`). En la columna central, de arriba abajo:
+  título, título original y «Desarrollador · año»; una fila de chips sin rótulos (el estado como
+  pastilla «● Jugando · automático ⌄», las estanterías con ✕ y un «+» redondo); «Jugar» con dos
+  botones cuadrados de 52 px, el engranaje («Opciones del juego») y «⋯» («Más opciones»: abrir el
+  programa de configuración si hay uno, Ver en VNDB, Actualizar desde VNDB y Quitar de la
+  biblioteca, en rojo); los datos en una línea («**37 min** jugados · última partida **hace 3 h** ·
+  **0 de 4** rutas» con una barra de 80 × 5); las etiquetas que quepan en una línea (como mucho 5)
+  con «+N más»; y la descripción recortada a 3 líneas con «Leer más» (recortada, los párrafos van
+  seguidos para no gastar una línea en blanco). La ruta del ejecutable ya no se ve: va en el
+  tooltip de «Jugar». Las negritas salen de plantillas con `<b>…</b>` (`RichText`), para que cada
+  frase siga siendo una sola plantilla traducible.
+- **Opciones del juego** (`GameOptionsDialog`, `opciones-juego-*.png`): el ejecutable (ruta de solo
+  lectura recortada por el principio, entera en el tooltip, y «Cambiar…»), el programa de
+  configuración («Sin configurar» + «Elegir…», o la ruta con «Cambiar…» y «Quitar») y el interruptor
+  de Locale Emulator. Cada cambio se guarda al momento; «Listo» solo cierra.
+- **Actualizar desde VNDB:** desde el «⋯». Lo que pasa se ve a la derecha del «⋯», en pequeño y sin
+  mover nada: «Actualizando…» con un indicador de carga (o «Esperando al límite de VNDB (1:42)…» con
+  la cuenta atrás) y al terminar «✓ Actualizado» en azul, que se va solo a los 3 segundos. Los
+  errores siguen saliendo en su aviso. Vuelve a pedir la ficha, los personajes principales y las etiquetas y
   capturas (3 peticiones) y descarga la portada si ha cambiado. Las rutas, el tiempo de juego y el ejecutable no se tocan. El
   resto del tiempo la aplicación no vuelve a preguntar a VNDB por algo que ya tiene.
 - **Cambiar portada:** bajo la portada hay una franja rosa que, al pasar el ratón por ella o al
@@ -152,7 +170,7 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
 - **Etiquetas:** la primera vez que se abre la ficha se piden a VNDB sus etiquetas y capturas
   (1 petición, como los personajes) y se guardan en `vn_tag` y `vn_screenshot` (migración 005), así
   que después funciona sin conexión. Se ven las 8 mejor puntuadas como chips (`TagChips`) y «+N más»
-  despliega el resto. Las spoiler solo con «Mostrar spoilers»; las de contenido sexual, solo con
+  despliega el resto (en la cabecera simplificada, solo las que quepan en una línea). Las spoiler solo con «Mostrar spoilers»; las de contenido sexual, solo con
   «Difuminar imágenes: No difuminar» (como en la búsqueda). Pulsar una abre la biblioteca filtrada
   por ella: arriba sale «Etiqueta: X ✕» y se combina con el filtro de estado. Solo cuenta las VNs
   cuya ficha se ha abierto alguna vez (las demás aún no tienen etiquetas guardadas; lo avisa).
@@ -176,11 +194,11 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
   tarjeta gráfica, p. ej. en una máquina virtual, eso tarda segundos por fotograma). Se difumina una
   vez una copia de 64 px con `BoxBlur` y se muestra ampliada.
 - **Programa de configuración:** además del juego, cada VN puede tener su `config.exe` (o como se
-  llame). Se abre con el botón «Configuración», desde su carpeta y con Locale Emulator si la VN lo
-  usa. No cuenta como partida.
+  llame). Se elige en «Opciones del juego» y se abre desde el «⋯», desde su carpeta y con Locale
+  Emulator si la VN lo usa. No cuenta como partida.
 - **Estado:** cada VN tiene uno de cinco (`PlayStatus`): Jugando, Pendiente y Completada salen
-  solos con sus rutas y partidas (`PlayStatus.of`); En pausa y Abandonada solo se fijan a mano. El
-  selector «Estado» de la ficha (`StatusPicker`, un `ContextMenu`) ofrece «Automático (ahora:
+  solos con sus rutas y partidas (`PlayStatus.of`); En pausa y Abandonada solo se fijan a mano. La
+  pastilla de estado de la ficha (`StatusPicker`, un `ContextMenu`) ofrece «Automático (ahora:
   Jugando)» y los cinco. El fijado a mano va en `library_entry.status_override` (migración 006,
   `NULL` = automático) y manda aunque se juegue, hasta volver a «Automático». Cada estado tiene su
   equivalente en las listas de VNDB (`vndbLabelId`: Playing 1, Finished 2, Stalled 3, Dropped 4;
@@ -197,8 +215,8 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
   «Editar…» (`ShelfDialog`) se cambian nombre y color, se mueven con «Subir»/«Bajar» o se eliminan
   (las novelas no se borran). Nombres de 1 a 40 caracteres y sin repetir, sin distinguir
   mayúsculas ni con acentos (`ShelfService.nameProblem`, que el diálogo usa mientras se escribe; el
-  índice `UNIQUE ... COLLATE NOCASE` lo respalda). En la ficha, fila «Estanterías» con chips
-  (`ShelfChips`) y «+ Añadir a estantería». Al quitar una VN de la biblioteca sale sola de sus
+  índice `UNIQUE ... COLLATE NOCASE` lo respalda). En la ficha, en la fila de chips, detrás del
+  estado (`ShelfChips`), con un «+» redondo para añadir. Al quitar una VN de la biblioteca sale sola de sus
   estanterías (`ON DELETE CASCADE`).
 - **Filtros** (`LibraryQuery`, sin nada de interfaz y con tests): un estado **o** una estantería
   (elegir uno quita el otro), más la etiqueta y un texto de búsqueda (título, título original o

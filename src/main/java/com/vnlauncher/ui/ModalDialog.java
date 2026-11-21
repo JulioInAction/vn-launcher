@@ -229,6 +229,11 @@ class ModalDialog {
         stage.setY(Math.round(y));
     }
 
+    /** Cierra el diálogo desde fuera, como si se pulsara la × (showAndWait devuelve null). */
+    void dismiss() {
+        close(null);
+    }
+
     private void close(String id) {
         result = id;
         stage.close();

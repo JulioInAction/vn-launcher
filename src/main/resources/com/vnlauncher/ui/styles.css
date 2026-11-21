@@ -677,8 +677,10 @@
     -fx-border-radius: 10;
 }
 
+/* Peso normal: si no, heredan la negrita del botón que abre el menú */
 .context-menu .menu-item .label {
     -fx-text-fill: -vn-text;
+    -fx-font-family: "Inter";
 }
 
 .context-menu .menu-item:focused {
@@ -693,8 +695,9 @@
 .shelf-chip {
     -fx-background-color: -vn-surface2;
     -fx-background-radius: 999;
-    -fx-padding: 4 6 4 14;
-    -fx-min-height: 38;
+    -fx-padding: 0 6 0 14;
+    -fx-min-height: 34;
+    -fx-pref-height: 34;
 }
 
 .button.chip-remove {
@@ -712,22 +715,118 @@
     -fx-text-fill: -vn-text;
 }
 
-/* «+ Añadir a estantería»: borde de rayas en rosa */
-.button.add-shelf-chip {
+/* «+» redondo de 34 px con borde discontinuo: añadir a una estantería */
+.button.add-shelf-round {
     -fx-background-color: transparent;
     -fx-background-radius: 999;
-    -fx-border-color: -vn-accent-ink;
-    -fx-border-style: segments(4, 3);
+    -fx-border-color: -vn-border2;
+    -fx-border-style: segments(3, 3);
     -fx-border-radius: 999;
-    -fx-padding: 0 14 0 14;
-    -fx-min-height: 38;
+    -fx-padding: 0;
+    -fx-min-width: 34;
+    -fx-pref-width: 34;
+    -fx-max-width: 34;
+    -fx-min-height: 34;
+    -fx-pref-height: 34;
+    -fx-max-height: 34;
     -fx-text-fill: -vn-accent-ink;
-    -fx-font-family: "Inter Medium";
-    -fx-font-size: 16px;
+    -fx-font-size: 20px;
 }
 
-.button.add-shelf-chip:hover {
+.button.add-shelf-round:hover {
     -fx-background-color: -vn-sel;
+}
+
+/* ---- Fila de acciones de la ficha: «Jugar» + dos botones cuadrados de 52 px */
+.button.square-button {
+    -fx-padding: 0;
+    -fx-min-width: 52;
+    -fx-pref-width: 52;
+    -fx-max-width: 52;
+    -fx-min-height: 52;
+    -fx-pref-height: 52;
+    -fx-max-height: 52;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+}
+
+.button.square-button:hover {
+    -fx-background-color: -vn-sel;
+}
+
+/* Iconos de Icons: con trazo (engranaje) o rellenos (los tres puntos), del color del texto */
+.icon-stroke {
+    -fx-fill: transparent;
+    -fx-stroke: -vn-text;
+    -fx-stroke-width: 1.6;
+    -fx-stroke-line-join: round;
+}
+
+.icon-fill {
+    -fx-fill: -vn-text;
+}
+
+/* «Actualizando…», «Esperando al límite de VNDB (1:42)…» y «✓ Actualizado», a la derecha del «⋯» */
+.action-status {
+    -fx-font-size: 14px;
+    -fx-text-fill: -vn-muted;
+}
+
+.action-status.done {
+    -fx-text-fill: -vn-blue;
+}
+
+.progress-indicator.small-spinner {
+    -fx-pref-width: 16;
+    -fx-pref-height: 16;
+    -fx-max-width: 16;
+    -fx-max-height: 16;
+}
+
+/* «Quitar de la biblioteca» en el menú «⋯» */
+.context-menu .menu-item.danger-item .label {
+    -fx-text-fill: -vn-danger;
+}
+
+/* ---- Fila de datos: «37 min jugados · última partida hace 3 h · 0 de 4 rutas» (RichText) */
+.rich-text, .rich-strong, .rich-separator {
+    -fx-font-size: 16px;
+    -fx-font-smoothing-type: lcd;
+}
+
+.rich-text      { -fx-fill: -vn-text2; -fx-font-family: "Inter"; }
+.rich-strong    { -fx-fill: -vn-text;  -fx-font-family: "Inter SemiBold"; }
+.rich-separator { -fx-fill: -vn-faint; -fx-font-family: "Inter"; }
+
+/* Barra de las rutas, al lado: 80 × 5 px */
+.progress-bar.routes-mini-bar {
+    -fx-pref-height: 5;
+    -fx-max-height: 5;
+    -fx-min-height: 5;
+}
+
+/* ---- «Opciones del juego» (GameOptionsDialog, opciones-juego-*.png) */
+.path-field {
+    -fx-background-color: -vn-bg;
+    -fx-background-radius: 10;
+    -fx-border-color: -vn-border;
+    -fx-border-radius: 10;
+    -fx-padding: 0 14 0 14;
+    -fx-min-height: 44;
+    -fx-text-fill: -vn-text;
+}
+
+.path-field-empty {
+    -fx-border-color: -vn-border2;
+    -fx-border-style: segments(4, 3);
+    -fx-border-radius: 10;
+    -fx-padding: 0 4 0 14;
+    -fx-min-height: 44;
+}
+
+.form-help {
+    -fx-font-size: 15px;
+    -fx-text-fill: -vn-muted;
 }
 
 /* La casilla de cada estantería en el menú «+ Añadir a estantería»: sin los 44 px de alto que
@@ -785,12 +884,19 @@
 }
 
 /* ---- Selector «Estado» de la ficha (StatusPicker, ficha-estado-*.png) */
+/* El estado es una pastilla de 34 px al principio de la fila de chips (ficha-simplificada-*.png) */
 .button.status-picker {
     -fx-background-color: transparent;
     -fx-border-color: -vn-border2;
-    -fx-border-radius: 10;
-    -fx-background-radius: 10;
-    -fx-padding: 9 14 9 14;
+    -fx-border-radius: 999;
+    -fx-background-radius: 999;
+    -fx-padding: 0 12 0 12;
+    -fx-min-height: 34;
+    -fx-pref-height: 34;
+}
+
+.status-picker .muted {
+    -fx-font-size: 15px;
 }
 
 .button.status-picker:hover {
@@ -1103,16 +1209,19 @@
 }
 
 /* «+12 más» / «Mostrar menos»: sin relleno, borde discontinuo y texto en el color de acento */
-.button.tag-more {
+/* «+52 más» / «Mostrar menos» de las etiquetas: enlace rosa, no chip */
+.button.tag-more-link {
     -fx-background-color: transparent;
-    -fx-border-color: -vn-border2;
-    -fx-border-style: segments(4, 3);
+    -fx-border-color: transparent;
+    -fx-padding: 0 4 0 4;
+    -fx-min-height: 34;
     -fx-text-fill: -vn-accent-ink;
+    -fx-font-family: "Inter Medium";
+    -fx-font-size: 15px;
 }
 
-.button.tag-more:hover {
-    -fx-background-color: -vn-sel;
-    -fx-text-fill: -vn-accent-ink;
+.button.tag-more-link:hover {
+    -fx-underline: true;
 }
 
 .exe-path {

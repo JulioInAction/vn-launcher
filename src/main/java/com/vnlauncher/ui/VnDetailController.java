@@ -15,16 +15,25 @@ import com.vnlauncher.model.VnDetails;
 import com.vnlauncher.model.VnTag;
 import com.vnlauncher.util.PlayTime;
 import com.vnlauncher.util.RelativeTime;
+import javafx.animation.KeyFrame;
+import javafx.animation.PauseTransition;
+import javafx.animation.Timeline;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.fxml.FXML;
+import javafx.geometry.Side;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.FlowPane;
@@ -34,6 +43,8 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -48,9 +59,9 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- * Ficha de una VN de la biblioteca: cabecera con acciones (jugar, elegir ejecutable,
- * Locale Emulator), datos (tiempo jugado, última partida, rutas), descripción, rutas y
- * personajes principales.
+ * Ficha de una VN de la biblioteca (ficha-simplificada-*.png): cabecera con la portada, el título,
+ * los chips de estado y estanterías, «Jugar» con «Opciones del juego» y «⋯», los datos en una línea,
+ * las etiquetas, la descripción y la galería; debajo, las rutas y los personajes principales.
  *
  * <p>Recibe el AppContext entero en vez de cada servicio por separado porque usa casi todos;
  * con ocho parámetros en el constructor se volvía ilegible.
@@ -68,8 +79,30 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
 
     private static final String CHARACTERS_ERROR = "No se pudieron cargar los personajes: %s";
 
-    /** Descripción recortada a unos 4-5 renglones hasta pulsar "Leer más". */
-    private static final int DESCRIPTION_PREVIEW_CHARS = 380;
+    /** Descripción recortada a 3 líneas hasta pulsar «Leer más». */
+    private static final int DESCRIPTION_LINES = 3;
+
+    // --- Textos de la fila de datos: plantillas completas; lo que va entre <b> sale en negrita
+    private static final String PLAYED = "<b>%s</b> jugados";
+    private static final String LAST_PLAYED = "última partida <b>%s</b>";
+    private static final String PLAYING_NOW = "<b>jugando ahora</b>";
+    private static final String NEVER_PLAYED = "sin partidas todavía";
+    private static final String ROUTES = "<b>%d de %d</b> rutas";
+    private static final String NO_ROUTES = "sin rutas";
+
+    // --- Botones y menú «⋯»
+    private static final String OPTIONS_TOOLTIP = "Opciones del juego";
+    private static final String MORE_TOOLTIP = "Más opciones";
+    private static final String OPEN_CONFIG = "Abrir programa de configuración";
+    private static final String OPEN_VNDB = "Ver en VNDB";
+    private static final String REFRESH = "Actualizar desde VNDB";
+    private static final String REMOVE = "Quitar de la biblioteca";
+
+    // --- Lo que pasa al actualizar desde VNDB (a la derecha del «⋯»)
+    private static final String REFRESHING = "Actualizando…";
+    /** «Esperando al límite de VNDB (1:42)…» */
+    private static final String WAITING = "Esperando al límite de VNDB (%d:%02d)…";
+    private static final String REFRESHED = "✓  Actualizado";
 
     private final AppContext ctx;
     private final Navigator navigator;
@@ -81,32 +114,21 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
     @FXML private VBox pageContent;
     @FXML private HBox headerRow;
     @FXML private VBox noticeBox;
-    @FXML private Hyperlink refreshLink;
-    @FXML private Label refreshStatus;
     @FXML private StackPane coverBox;
     @FXML private Label titleLabel;
     @FXML private Label altTitleLabel;
     @FXML private Label metaLabel;
+    @FXML private FlowPane chipsRow;
     @FXML private Button playButton;
-    @FXML private Button exeButton;
-    @FXML private Label exePathLabel;
-    @FXML private Button configButton;
-    @FXML private HBox configRow;
-    @FXML private Label configPathLabel;
-    @FXML private Hyperlink configChangeLink;
-    @FXML private Hyperlink configRemoveLink;
-    @FXML private CheckBox localeEmulatorCheck;
-    @FXML private Label playTimeLabel;
-    @FXML private Label lastPlayedLabel;
-    @FXML private Label routesStatLabel;
-    @FXML private ProgressBar routesStatBar;
-    @FXML private Label launchStatusLabel;
-    @FXML private HBox statusRow;
-    @FXML private HBox shelvesRow;
+    @FXML private Button optionsButton;
+    @FXML private Button moreButton;
+    @FXML private ProgressIndicator refreshSpinner;
+    @FXML private Label refreshStatus;
+    @FXML private TextFlow statsText;
+    @FXML private ProgressBar routesBar;
     @FXML private VBox tagsContainer;
     @FXML private Label descriptionLabel;
     @FXML private Hyperlink readMoreLink;
-    @FXML private Button removeButton;
     // --- rutas y personajes
     @FXML private VBox routesContainer;
     @FXML private CheckBox showSpoilersCheck;
@@ -125,11 +147,23 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
     private final DoubleProperty pageWidth = new SimpleDoubleProperty();
 
     private LibraryEntry entry;
+    /** Segundos jugados (suma de sesiones), para la fila de datos. */
+    private long playSeconds;
+    /** «Opciones del juego» mientras está abierto (para pintarle los cambios); si no, null. */
+    private GameOptionsDialog optionsDialog;
+    /** true mientras se actualiza desde VNDB (el «⋯» no deja pedirlo otra vez). */
+    private boolean refreshing;
+    /** Cuenta atrás de «Esperando al límite de VNDB (1:42)…». */
+    private Timeline refreshCountdown;
+    /** Borra «✓ Actualizado» a los 3 segundos. */
+    private final PauseTransition refreshDoneHide = new PauseTransition(javafx.util.Duration.seconds(3));
     private StatusPicker statusPicker;
     private ShelfChips shelfChips;
     /** Todas las estanterías (para el menú y para comprobar el nombre de una nueva). */
     private List<Shelf> allShelves = List.of();
     private boolean descriptionExpanded = false;
+    /** La descripción entera, con sus párrafos (la etiqueta enseña la recortada o esta). */
+    private String descriptionText = "";
     /** true mientras se está lanzando (entre pulsar Jugar y que el juego arranque). */
     private boolean launching = false;
     /** Personajes cargados (todos, incluidos los spoiler); null mientras se cargan. */
@@ -151,37 +185,36 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
     @FXML
     private void initialize() {
         launchFlow = new LaunchFlow(ctx, navigator, playButton);
+        // Fila de chips: primero el estado y detrás las estanterías con su «+»
         statusPicker = new StatusPicker(this::onStatusChosen);
         statusPicker.setDisable(true); // hasta que se cargue la VN
-        statusRow.getChildren().add(statusPicker);
-        shelfChips = new ShelfChips(this::addToShelf, this::removeFromShelf, this::createShelfAndAdd);
-        HBox.setHgrow(shelfChips, Priority.ALWAYS);
-        shelvesRow.getChildren().add(shelfChips);
+        chipsRow.getChildren().add(statusPicker);
+        shelfChips = new ShelfChips(chipsRow, this::addToShelf, this::removeFromShelf, this::createShelfAndAdd);
         loadShelves();
-        removeButton.setDisable(true);   // hasta que se cargue la VN
-        playButton.setDisable(true);
+        // Botones cuadrados con icono: engranaje (Opciones del juego) y «⋯» (Más opciones)
+        optionsButton.setGraphic(Icons.gear());
+        optionsButton.setTooltip(new Tooltip(OPTIONS_TOOLTIP));
+        moreButton.setGraphic(Icons.moreDots());
+        moreButton.setTooltip(new Tooltip(MORE_TOOLTIP));
+        for (Button button : List.of(playButton, optionsButton, moreButton)) {
+            button.setDisable(true); // hasta que se cargue la VN
+        }
+        refreshSpinner.setVisible(false);
+        refreshDoneHide.setOnFinished(event -> clearRefreshStatus());
         loadHeader();
         reloadPlayData(); // tiempo jugado (suma de sesiones)
 
-        // La etiqueta de estado solo ocupa sitio cuando tiene texto (binding: se recalcula sola)
-        launchStatusLabel.managedProperty().bind(launchStatusLabel.textProperty().isNotEmpty());
         // La zona de avisos, solo cuando tiene alguno
         noticeBox.managedProperty().bind(Bindings.isNotEmpty(noticeBox.getChildren()));
-        // Guardar el cambio de Locale Emulator. Al pintar la VN también se cambia la casilla, pero
-        // onLocaleEmulatorToggled ve que coincide con lo guardado y no hace nada.
-        localeEmulatorCheck.selectedProperty().addListener(
-                (obs, oldValue, selected) -> onLocaleEmulatorToggled(selected));
-
-        localeEmulatorCheck.setTooltip(new Tooltip(
-                "Lanza el juego con LEProc.exe -run (perfil por defecto de Locale Emulator, japonés).\n"
-                        + "Útil para juegos japoneses que muestran texto ilegible o no arrancan."));
+        // La descripción se recorta a 3 líneas: depende del ancho, así que se recalcula al cambiar
+        descriptionLabel.widthProperty().addListener((obs, old, width) -> fitDescription());
 
         // Rutas: un componente propio (RoutesPane) que avisa cuando cambian las rutas.
         routesPane = new RoutesPane(ctx.routeService(), ctx.background(), ctx.imageCache(),
                 ctx.contentFilter(), vnId);
         routesPane.setOnRoutesChanged(changed -> {
             routes = changed;
-            renderRouteStats();
+            renderStats();
             renderStatus();             // el estado automático depende de las rutas
             navigator.refreshSidebar(); // y los contadores de la barra, del estado
             renderCharacters(); // actualizar "Tiene ruta" / "Marcar con ruta"
@@ -334,25 +367,19 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
 
     // =========================================================== cabecera
 
-    /** Lee la VN (y la fecha de sus datos de VNDB) y pinta la cabecera. */
+    /** Lee la VN y pinta la cabecera. */
     private void loadHeader() {
-        record Header(Optional<LibraryEntry> entry, Optional<Instant> fetchedAt) {
-        }
         BackgroundTasks.run(ctx.background(),
-                () -> new Header(ctx.libraryService().find(vnId), ctx.libraryService().fetchedAt(vnId)),
-                header -> {
-                    if (header.entry().isEmpty()) {
+                () -> ctx.libraryService().find(vnId),
+                found -> {
+                    if (found.isEmpty()) {
                         navigator.showLibrary(); // ya no está en la biblioteca
                         return;
                     }
-                    renderVn(header.entry().get());
-                    renderLaunchInfo(header.entry().get());
-                    removeButton.setDisable(false);
-                    String when = header.fetchedAt()
-                            .map(t -> RelativeTime.format(t, Instant.now(), ZoneId.systemDefault()))
-                            .orElse("nunca");
-                    refreshLink.setTooltip(new Tooltip("Vuelve a pedir a VNDB la ficha, los personajes y "
-                            + "las etiquetas y capturas (3 peticiones).\nDatos descargados: " + when + "."));
+                    renderVn(found.get());
+                    renderLaunchInfo(found.get());
+                    optionsButton.setDisable(false);
+                    moreButton.setDisable(false);
                 },
                 "No se ha podido cargar la ficha.");
     }
@@ -382,17 +409,19 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
         renderDescription(vn.description());
     }
 
-    /** Parte de la cabecera que cambia al configurar o lanzar el juego. */
+    /**
+     * Parte de la cabecera que cambia al configurar o lanzar el juego. La ruta del ejecutable ya
+     * no se ve en la ficha: va en el tooltip de «Jugar» y en «Opciones del juego».
+     */
     private void renderLaunchInfo(LibraryEntry loaded) {
         entry = loaded;
-        exeButton.setText(loaded.hasExecutable() ? "Cambiar ejecutable" : "Elegir ejecutable");
-        exePathLabel.setText(loaded.hasExecutable() ? loaded.exePath()
-                : "Aún no has elegido el ejecutable del juego.");
-        localeEmulatorCheck.setSelected(loaded.useLocaleEmulator());
-        renderConfigInfo(loaded);
-        lastPlayedLabel.setText(RelativeTime.format(loaded.lastPlayedAt(), Instant.now(), ZoneId.systemDefault()));
+        playButton.setTooltip(loaded.hasExecutable() ? new Tooltip(loaded.exePath()) : null);
         renderPlayButton();
         renderStatus();
+        renderStats();
+        if (optionsDialog != null) {
+            optionsDialog.update(loaded); // si está abierto, que enseñe lo recién guardado
+        }
     }
 
     /**
@@ -439,7 +468,7 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
 
     /** «+ Nueva estantería…» en el menú: se crea y la VN entra directamente en ella. */
     private void createShelfAndAdd() {
-        ShelfDialog.create(shelvesRow, allShelves).ifPresent(result -> saveShelves(() -> {
+        ShelfDialog.create(chipsRow, allShelves).ifPresent(result -> saveShelves(() -> {
             Shelf created = ctx.shelfService().create(result.name(), result.color());
             ctx.shelfService().addVn(created.id(), vnId);
         }));
@@ -476,20 +505,6 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
                 "No se ha podido guardar el estado.");
     }
 
-    /**
-     * Programa de configuración: con él, botón "Configuración" y "Configuración: ruta · Cambiar ·
-     * Quitar"; sin él, solo el enlace para añadirlo (y nada si aún no hay ni ejecutable del juego).
-     */
-    private void renderConfigInfo(LibraryEntry loaded) {
-        boolean hasConfig = loaded.hasConfigExecutable();
-        show(configButton, hasConfig);
-        show(configRow, hasConfig || loaded.hasExecutable());
-        show(configPathLabel, hasConfig);
-        show(configRemoveLink, hasConfig);
-        configPathLabel.setText(hasConfig ? "Configuración: " + loaded.configExePath() : "");
-        configChangeLink.setText(hasConfig ? "Cambiar" : "+  Añadir programa de configuración (config.exe...)");
-    }
-
     /** Muestra u oculta un nodo sin que ocupe sitio cuando está oculto. */
     private static void show(javafx.scene.Node node, boolean visible) {
         node.setVisible(visible);
@@ -511,50 +526,101 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
         BackgroundTasks.run(ctx.background(),
                 () -> new PlayData(ctx.libraryService().find(vnId), ctx.libraryService().totalPlaySeconds(vnId)),
                 data -> {
+                    playSeconds = data.seconds();
                     data.entry().ifPresent(this::renderLaunchInfo);
-                    playTimeLabel.setText(PlayTime.format(data.seconds()));
                 },
                 "No se ha podido leer el tiempo de juego.");
     }
 
-    private void renderRouteStats() {
+    /**
+     * La fila de datos: «37 min jugados · última partida hace 3 h · 0 de 4 rutas», con los valores
+     * en negrita, los puntos en -vn-faint y la barra de las rutas al lado.
+     */
+    private void renderStats() {
+        if (entry == null) {
+            return;
+        }
         RouteProgress progress = ctx.routeService().progressOf(routes);
-        routesStatLabel.setText(progress.total() == 0 ? "Sin rutas"
-                : progress.completed() + " de " + progress.total());
-        routesStatBar.setProgress(progress.fraction());
+        String lastPlayed = ctx.launchService().isRunning(vnId) ? PLAYING_NOW
+                : entry.lastPlayedAt() == null ? NEVER_PLAYED
+                : String.format(LAST_PLAYED, RelativeTime.format(entry.lastPlayedAt(), Instant.now(),
+                        ZoneId.systemDefault()));
+        String routeText = progress.total() == 0 ? NO_ROUTES
+                : String.format(ROUTES, progress.completed(), progress.total());
+        statsText.getChildren().setAll(RichText.line(List.of(
+                String.format(PLAYED, PlayTime.format(playSeconds)), lastPlayed, routeText)));
+        routesBar.setProgress(progress.fraction());
+        show(routesBar, progress.total() > 0);
     }
 
     private void renderDescription(String description) {
-        if (description == null || description.isBlank()) {
-            descriptionLabel.setText("Sin descripción.");
-            readMoreLink.setVisible(false);
-            readMoreLink.setManaged(false);
-            return;
+        boolean empty = description == null || description.isBlank();
+        descriptionText = empty ? "Sin descripción." : description;
+        fitDescription();
+    }
+
+    /**
+     * Recorta la descripción a {@link #DESCRIPTION_LINES} líneas (con «…» al final) y enseña «Leer
+     * más» solo si de verdad no cabe. Cuántas líneas ocupa depende del ancho, así que se mide con un
+     * Text igual que la etiqueta (misma letra, interlineado y ancho) cada vez que cambia el ancho.
+     */
+    private void fitDescription() {
+        double width = descriptionLabel.getWidth();
+        if (width <= 0) {
+            descriptionLabel.setText(descriptionText);
+            return; // aún sin colocar: se vuelve a llamar cuando tenga ancho
         }
-        boolean longText = description.length() > DESCRIPTION_PREVIEW_CHARS;
-        readMoreLink.setVisible(longText);
-        readMoreLink.setManaged(longText);
-        if (!longText || descriptionExpanded) {
-            descriptionLabel.setText(description);
-            readMoreLink.setText("Leer menos");
-        } else {
-            // Cortar en el último espacio antes del límite, para no partir una palabra
-            String cut = description.substring(0, DESCRIPTION_PREVIEW_CHARS);
-            int lastSpace = cut.lastIndexOf(' ');
-            descriptionLabel.setText((lastSpace > 0 ? cut.substring(0, lastSpace) : cut) + "…");
-            readMoreLink.setText("Leer más");
-        }
+        Text probe = new Text(descriptionText);
+        probe.setFont(descriptionLabel.getFont());
+        probe.setLineSpacing(descriptionLabel.getLineSpacing());
+        probe.setWrappingWidth(width);
+        double fullHeight = probe.getLayoutBounds().getHeight();
+        probe.setText(String.join("\n", java.util.Collections.nCopies(DESCRIPTION_LINES, "Ag")));
+        // + un interlineado: la etiqueta lo cuenta también detrás de la última línea al recortar
+        double maxHeight = probe.getLayoutBounds().getHeight() + descriptionLabel.getLineSpacing();
+        boolean overflows = fullHeight > maxHeight + 1;
+        // Recortada, los párrafos van seguidos: una línea en blanco gastaría una de las tres
+        descriptionLabel.setText(overflows && !descriptionExpanded
+                ? descriptionText.replaceAll("\\s*\\n+\\s*", " ") : descriptionText);
+        show(readMoreLink, overflows);
+        readMoreLink.setText(descriptionExpanded ? "Leer menos" : "Leer más");
+        // Con un alto máximo, la etiqueta corta el texto ella sola y pone «…» al final
+        descriptionLabel.setMaxHeight(overflows && !descriptionExpanded ? Math.ceil(maxHeight) : Region.USE_PREF_SIZE);
     }
 
     @FXML
     private void onToggleDescription() {
         descriptionExpanded = !descriptionExpanded;
-        renderDescription(entry.vn().description());
+        fitDescription();
     }
 
-    @FXML
     private void onOpenVndb() {
         urlOpener.accept("https://vndb.org/" + vnId);
+    }
+
+    /**
+     * «⋯» (Más opciones): abrir el programa de configuración (si hay uno), ver en VNDB, actualizar
+     * desde VNDB y, separado y en rojo, quitar de la biblioteca.
+     */
+    @FXML
+    private void onMore() {
+        ContextMenu menu = new ContextMenu();
+        menu.getStyleClass().add("more-menu");
+        if (entry != null && entry.hasConfigExecutable()) {
+            menu.getItems().addAll(menuItem(OPEN_CONFIG, this::onOpenConfig), new SeparatorMenuItem());
+        }
+        MenuItem refresh = menuItem(REFRESH, this::onRefresh);
+        refresh.setDisable(refreshing);
+        MenuItem remove = menuItem(REMOVE, this::onRemove);
+        remove.getStyleClass().add("danger-item");
+        menu.getItems().addAll(menuItem(OPEN_VNDB, this::onOpenVndb), refresh, new SeparatorMenuItem(), remove);
+        menu.show(moreButton, Side.BOTTOM, 0, 6);
+    }
+
+    private static MenuItem menuItem(String text, Runnable action) {
+        MenuItem item = new MenuItem(text);
+        item.setOnAction(event -> action.run());
+        return item;
     }
 
     /**
@@ -562,37 +628,81 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
      * y repinta la pantalla.
      * Las rutas, el tiempo de juego y el ejecutable no cambian (son datos del usuario).
      */
-    @FXML
     private void onRefresh() {
         noticeBox.getChildren().clear();
-        refreshLink.setDisable(true);
-        // Si ahora mismo hay que esperar por el límite de VNDB, decirlo (la tarea espera sola)
-        Duration wait = ctx.rateLimiter().timeUntilAvailable();
-        refreshStatus.setText(wait.isZero() ? "Actualizando..."
-                : "Esperando al límite de VNDB (" + wait.toMinutesPart() + ":"
-                        + String.format("%02d", wait.toSecondsPart()) + ")...");
+        refreshing = true;
+        showRefreshProgress();
         BackgroundTasks.run(ctx.background(), () -> ctx.refreshService().refresh(vnId),
                 result -> {
-                    refreshLink.setDisable(false);
+                    refreshing = false;
                     if (!result.found()) {
-                        refreshStatus.setText("");
+                        clearRefreshStatus();
                         noticeBox.getChildren().setAll(new Notice(Notice.Kind.WARNING)
                                 .title("VNDB ya no tiene esta novela")
                                 .text("Puede que la hayan borrado o unido a otra. Se conservan los "
                                         + "datos que ya tenías."));
                         return;
                     }
-                    refreshStatus.setText("✓  Actualizado");
+                    showRefreshDone();
                     loadHeader();
                     loadCharacters();
                     loadDetails();
                     navigator.refreshSidebar(); // la portada o el título pueden haber cambiado
                 },
                 error -> {
-                    refreshLink.setDisable(false);
-                    refreshStatus.setText("");
+                    refreshing = false;
+                    clearRefreshStatus(); // los errores van en su aviso, no en esta línea
                     noticeBox.getChildren().setAll(Notice.vndbError(error, this::onRefresh));
                 });
+    }
+
+    /**
+     * A la derecha del «⋯», mientras se actualiza: un indicador de carga y «Actualizando…» o, si
+     * hay que esperar por el límite de VNDB, «Esperando al límite de VNDB (1:42)…» con la cuenta
+     * atrás (la tarea espera sola; esto solo lo cuenta).
+     */
+    private void showRefreshProgress() {
+        refreshDoneHide.stop();
+        refreshStatus.getStyleClass().remove("done");
+        refreshSpinner.setVisible(true);
+        stopCountdown();
+        Runnable tick = () -> {
+            Duration wait = ctx.rateLimiter().timeUntilAvailable();
+            refreshStatus.setText(wait.isZero() ? REFRESHING
+                    : String.format(WAITING, wait.toMinutes(), wait.toSecondsPart()));
+            if (wait.isZero()) {
+                stopCountdown();
+            }
+        };
+        tick.run();
+        if (!ctx.rateLimiter().timeUntilAvailable().isZero()) {
+            refreshCountdown = new Timeline(new KeyFrame(javafx.util.Duration.seconds(1), event -> tick.run()));
+            refreshCountdown.setCycleCount(Timeline.INDEFINITE);
+            refreshCountdown.play();
+        }
+    }
+
+    /** «✓ Actualizado» en azul, que se va solo a los 3 segundos. */
+    private void showRefreshDone() {
+        stopCountdown();
+        refreshSpinner.setVisible(false);
+        refreshStatus.setText(REFRESHED);
+        refreshStatus.getStyleClass().add("done");
+        refreshDoneHide.playFromStart();
+    }
+
+    private void clearRefreshStatus() {
+        stopCountdown();
+        refreshSpinner.setVisible(false);
+        refreshStatus.setText("");
+        refreshStatus.getStyleClass().remove("done");
+    }
+
+    private void stopCountdown() {
+        if (refreshCountdown != null) {
+            refreshCountdown.stop();
+            refreshCountdown = null;
+        }
     }
 
     // =========================================================== lanzar el juego
@@ -607,7 +717,6 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
         launchFlow.play(vnId, entry.vn().title(),
                 () -> {
                     launching = false;
-                    launchStatusLabel.setText("Juego lanzado. El tiempo se cuenta mientras siga abierto.");
                     reloadPlayData();   // última partida + botón "Jugando..."
                     navigator.refreshSidebar(); // "Recientes" y estantería "Jugando"
                 },
@@ -621,39 +730,54 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
     @Override
     public void playtimeChanged(String changedVnId) {
         if (vnId.equals(changedVnId)) {
-            if (!ctx.launchService().isRunning(vnId)) {
-                launchStatusLabel.setText("");
-            }
             reloadPlayData();
         }
     }
 
+    // =========================================================== Opciones del juego
+
+    /** Engranaje: ejecutable, programa de configuración y Locale Emulator (GameOptionsDialog). */
     @FXML
-    private void onChooseExecutable() {
-        launchFlow.chooseExecutable(vnId, entry.vn().title(), entry.exePath(), () -> {
-            launchStatusLabel.setText("Ejecutable guardado.");
-            reloadPlayData();
+    private void onOptions() {
+        if (entry == null) {
+            return;
+        }
+        optionsDialog = new GameOptionsDialog(optionsButton, entry, new GameOptionsDialog.Actions() {
+            @Override
+            public void chooseExecutable(Node owner) {
+                // Con un LaunchFlow anclado al diálogo: el selector de archivos sale encima de él
+                new LaunchFlow(ctx, navigator, owner).chooseExecutable(vnId, entry.vn().title(),
+                        entry.exePath(), VnDetailController.this::reloadPlayData);
+            }
+
+            @Override
+            public void chooseConfig(Node owner) {
+                // Empieza en la carpeta del programa actual o, si no hay, en la del juego
+                String startFrom = entry.hasConfigExecutable() ? entry.configExePath() : entry.exePath();
+                new LaunchFlow(ctx, navigator, owner).chooseConfig(vnId, entry.vn().title(), startFrom,
+                        VnDetailController.this::reloadPlayData);
+            }
+
+            @Override
+            public void removeConfig() {
+                onRemoveConfig();
+            }
+
+            @Override
+            public void setLocaleEmulator(boolean use, Node owner) {
+                onLocaleEmulatorToggled(use, owner);
+            }
         });
+        optionsDialog.showAndWait();
+        optionsDialog = null;
     }
 
-    @FXML
+    /** «Abrir programa de configuración» en el «⋯». */
     private void onOpenConfig() {
-        launchFlow.openConfig(vnId, entry.vn().title(),
-                () -> launchStatusLabel.setText("Programa de configuración abierto."),
+        launchFlow.openConfig(vnId, entry.vn().title(), () -> { },
                 this::reloadPlayData); // por si se eligió otro .exe en el diálogo de error
     }
 
-    @FXML
-    private void onChooseConfig() {
-        // Empieza en la carpeta del programa actual o, si no hay, en la del juego
-        String startFrom = entry.hasConfigExecutable() ? entry.configExePath() : entry.exePath();
-        launchFlow.chooseConfig(vnId, entry.vn().title(), startFrom, () -> {
-            launchStatusLabel.setText("Programa de configuración guardado.");
-            reloadPlayData();
-        });
-    }
-
-    @FXML
     private void onRemoveConfig() {
         // Solo se olvida la ruta; el archivo no se toca. Por eso no hace falta confirmar.
         BackgroundTasks.run(ctx.background(), () -> {
@@ -664,9 +788,10 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
                 "No se ha podido quitar el programa de configuración.");
     }
 
-    private void onLocaleEmulatorToggled(boolean selected) {
+    /** El interruptor de «Opciones del juego». {@code owner}: un nodo del diálogo, para el aviso. */
+    private void onLocaleEmulatorToggled(boolean selected, Node owner) {
         if (entry == null || selected == entry.useLocaleEmulator()) {
-            return; // nada que guardar (p. ej. el cambio lo hizo renderLaunchInfo)
+            return; // nada que guardar
         }
         BackgroundTasks.run(ctx.background(), () -> {
                     ctx.launchService().setUseLocaleEmulator(vnId, selected);
@@ -676,13 +801,16 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
                 needsPath -> {
                     reloadPlayData();
                     if (needsPath) {
-                        ModalDialog dialog = new ModalDialog(playButton, 480)
+                        ModalDialog dialog = new ModalDialog(owner, 480)
                                 .title("Falta indicar dónde está Locale Emulator", false)
                                 .text("Elige el archivo LEProc.exe en Ajustes → Locale Emulator. "
                                         + "Solo hay que hacerlo una vez para todas las novelas.");
                         dialog.button("later", "Más tarde", ModalDialog.ButtonKind.SECONDARY);
                         dialog.button("settings", "Ir a Ajustes", ModalDialog.ButtonKind.PRIMARY);
                         if ("settings".equals(dialog.showAndWait())) {
+                            if (optionsDialog != null) {
+                                optionsDialog.close(); // primero se cierra «Opciones del juego»
+                            }
                             navigator.showSettings();
                         }
                     }
@@ -758,24 +886,24 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
         navigator.backToLibrary();
     }
 
-    @FXML
+    /** «Quitar de la biblioteca» en el «⋯». */
     private void onRemove() {
         if (ctx.launchService().isRunning(vnId)) {
-            Dialogs.error(removeButton, "Cierra el juego antes de quitarlo de la biblioteca.");
+            Dialogs.error(moreButton, "Cierra el juego antes de quitarlo de la biblioteca.");
             return;
         }
-        if (!Dialogs.confirm(removeButton, "¿Quitar \"" + entry.vn().title() + "\" de la biblioteca?",
+        if (!Dialogs.confirm(moreButton, "¿Quitar \"" + entry.vn().title() + "\" de la biblioteca?",
                 "Se borrarán también sus rutas y el tiempo de juego registrado.", "Quitar", true)) {
             return;
         }
-        removeButton.setDisable(true);
+        moreButton.setDisable(true);
         BackgroundTasks.run(ctx.background(), () -> {
                     ctx.libraryService().remove(vnId);
                     return null; // Callable debe devolver algo; aquí no hay nada útil que devolver
                 },
                 ignored -> navigator.showLibrary(),
                 error -> {
-                    removeButton.setDisable(false);
+                    moreButton.setDisable(false);
                     ErrorReporter.report("No se ha podido quitar la novela de la biblioteca.", error);
                 });
     }

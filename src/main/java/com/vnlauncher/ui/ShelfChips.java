@@ -18,33 +18,40 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Las estanterías de una VN en su ficha (ficha-estado-*.png): un chip por estantería con su color y
- * una × para sacarla, y «+ Añadir a estantería», que abre la lista de todas con una casilla (marcada
+ * Las estanterías de una VN en su ficha (ficha-simplificada-*.png): un chip por estantería con su
+ * color y una × para sacarla, y un «+» redondo que abre la lista de todas con una casilla (marcada
  * si ya está) y «+ Nueva estantería…» al final.
+ *
+ * <p>No es un nodo propio: pone sus chips en la fila que le dan, detrás de lo que ya haya en ella
+ * (el selector de estado), para que todo salte de línea junto si no cabe.
  */
-final class ShelfChips extends FlowPane {
+final class ShelfChips {
 
-    static final String ADD = "+ Añadir a estantería";
+    static final String ADD_TOOLTIP = "Añadir a estantería";
     static final String NEW_SHELF = "+   Nueva estantería…";
     /** «Sacar de Favoritas» */
     static final String REMOVE_TOOLTIP = "Sacar de «%s»";
 
+    private final FlowPane row;
+    /** Cuántos nodos de la fila son de otro (van delante y no se tocan). */
+    private final int fixed;
     private final Consumer<Shelf> onAdd;
     private final Consumer<Shelf> onRemove;
     private final Runnable onNewShelf;
     private final ContextMenu menu = new ContextMenu();
 
     /**
+     * @param row        la fila de chips de la ficha; lo que ya tenga se queda delante
      * @param onAdd      meter la VN en una estantería
      * @param onRemove   sacarla de una
      * @param onNewShelf crear una estantería nueva y meterla en ella
      */
-    ShelfChips(Consumer<Shelf> onAdd, Consumer<Shelf> onRemove, Runnable onNewShelf) {
-        super(8, 8);
+    ShelfChips(FlowPane row, Consumer<Shelf> onAdd, Consumer<Shelf> onRemove, Runnable onNewShelf) {
+        this.row = row;
+        this.fixed = row.getChildren().size();
         this.onAdd = onAdd;
         this.onRemove = onRemove;
         this.onNewShelf = onNewShelf;
-        setAlignment(Pos.CENTER_LEFT);
         menu.getStyleClass().add("status-menu"); // mismo aspecto que el selector de estado
     }
 
@@ -53,14 +60,16 @@ final class ShelfChips extends FlowPane {
      * @param all  todas, para el menú de «+ Añadir a estantería»
      */
     void setShelves(List<Shelf> mine, List<Shelf> all) {
-        getChildren().clear();
+        row.getChildren().remove(fixed, row.getChildren().size());
         for (Shelf shelf : mine) {
-            getChildren().add(chip(shelf));
+            row.getChildren().add(chip(shelf));
         }
-        Button add = new Button(ADD);
-        add.getStyleClass().add("add-shelf-chip");
+        // «+» redondo de 34 px con borde discontinuo
+        Button add = new Button("+");
+        add.getStyleClass().add("add-shelf-round");
+        add.setTooltip(new Tooltip(ADD_TOOLTIP));
         add.setOnAction(event -> openMenu(add, mine, all));
-        getChildren().add(add);
+        row.getChildren().add(add);
     }
 
     private HBox chip(Shelf shelf) {
