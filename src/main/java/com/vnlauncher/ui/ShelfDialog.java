@@ -146,6 +146,9 @@ final class ShelfDialog {
             HBox order = new HBox(8, where, space, up, down);
             order.setAlignment(Pos.CENTER_LEFT);
             dialog.content(order);
+        }
+        // «Eliminar» siempre al editar, aunque sea la única (Subir/Bajar solo tienen sentido con dos o más)
+        if (editing != null) {
             dialog.button("delete", DELETE, ModalDialog.ButtonKind.DANGER);
         }
         dialog.button("cancel", "Cancelar", ModalDialog.ButtonKind.SECONDARY);
