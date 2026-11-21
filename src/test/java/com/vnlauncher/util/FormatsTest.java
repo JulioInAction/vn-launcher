@@ -12,6 +12,7 @@ class FormatsTest {
     void numericDateWithoutLocaleData() {
         assertEquals("21/11/2026, 10:42", Formats.DATE_TIME.format(LocalDateTime.of(2026, 11, 21, 10, 42, 3)));
         assertEquals("07/01/2027, 09:05", Formats.DATE_TIME.format(LocalDateTime.of(2027, 1, 7, 9, 5)));
+        assertEquals("07/01/2027", Formats.DATE.format(LocalDateTime.of(2027, 1, 7, 9, 5)));
     }
 
     @Test

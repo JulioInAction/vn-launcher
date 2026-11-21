@@ -44,6 +44,16 @@ final class BackgroundTasks {
         return start(executor, work, onSuccess, error -> ErrorReporter.report(errorMessage, error), false);
     }
 
+    /**
+     * Igual que la primera, pero sin registrar el error aquí: {@code onError} decide. Para acciones
+     * que explican sus propios errores de usuario (un archivo que no vale) y mandan el resto a
+     * {@link ErrorReporter#report}, que ya lo registra: así no queda escrito dos veces.
+     */
+    static <T> Task<T> runAndHandle(ExecutorService executor, Callable<T> work,
+                                    Consumer<T> onSuccess, Consumer<Throwable> onError) {
+        return start(executor, work, onSuccess, onError, false);
+    }
+
     private static <T> Task<T> start(ExecutorService executor, Callable<T> work, Consumer<T> onSuccess,
                                      Consumer<Throwable> onError, boolean logFailure) {
         Task<T> task = new Task<>() {

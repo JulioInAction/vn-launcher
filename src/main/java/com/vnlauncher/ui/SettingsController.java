@@ -5,8 +5,10 @@ import com.vnlauncher.app.AppInfo;
 import com.vnlauncher.app.SystemInfo;
 import com.vnlauncher.model.BackupInfo;
 import com.vnlauncher.model.BlurLevel;
+import com.vnlauncher.model.ProfilePreview;
 import com.vnlauncher.model.Theme;
-import com.vnlauncher.service.InvalidBackupException;
+import com.vnlauncher.service.InvalidDataFileException;
+import com.vnlauncher.util.DisplayPaths;
 import com.vnlauncher.util.Formats;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
@@ -33,6 +35,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -53,9 +56,22 @@ public class SettingsController {
     private static final String BACKUP_DETAILS = "%s · %s";
     private static final String RESTORE = "Restaurar";
     private static final String GAME_RUNNING_TITLE = "Hay un juego abierto";
-    private static final String GAME_RUNNING = "Cierra el juego antes de restaurar una copia: VN Launcher "
-            + "se reinicia para aplicarla y se perdería el tiempo de juego de esta partida.";
+    private static final String GAME_RUNNING = "Cierra el juego antes de seguir: VN Launcher tiene que "
+            + "reiniciarse y se perdería el tiempo de juego de esta partida.";
     private static final String CANNOT_RESTORE_TITLE = "No se puede restaurar esta copia";
+    private static final String EXPORT_TITLE = "Exportar perfil";
+    private static final String EXPORT_FILTER = "Perfil de VN Launcher (*.zip)";
+    private static final String EXPORTING = "Exportando…";
+    private static final String EXPORT = "Exportar…";
+    private static final String EXPORTED_TITLE = "Perfil exportado";
+    /** «Se ha guardado en %USERPROFILE%\Documents\vn-launcher-perfil-2026-11-21.zip. …» */
+    private static final String EXPORTED = "Se ha guardado en %s. Para usarlo en otro ordenador, ábrelo "
+            + "allí con «Importar…».";
+    private static final String EXPORT_FAILED = "No se ha podido exportar el perfil.";
+    private static final String IMPORT_TITLE = "Importar perfil";
+    private static final String OPENING = "Abriendo…";
+    private static final String IMPORT = "Importar…";
+    private static final String CANNOT_IMPORT_TITLE = "No se puede importar este perfil";
     private static final String CONFIRM_RESTORE_TITLE = "¿Restaurar esta copia?";
     /** «… como estaba el 21/11/2026, 10:42 (Semanal). …» */
     private static final String CONFIRM_RESTORE = "Tu biblioteca volverá a estar como estaba el %s (%s). "
@@ -85,6 +101,8 @@ public class SettingsController {
     @FXML private Button clearCacheButton;
     @FXML private HBox weeklyBackupsBox;
     @FXML private VBox backupList;
+    @FXML private Button exportButton;
+    @FXML private Button importButton;
     @FXML private Button openLogsButton;
     @FXML private Button copySystemInfoButton;
     @FXML private Text appNameText;
@@ -285,14 +303,12 @@ public class SettingsController {
      * está todo ahora) y reinicia la app, que la pone en su sitio al arrancar (ver RestoreService).
      */
     private void onRestore(BackupInfo backup) {
-        // El tiempo de la partida en curso se guardaría en la base que se va a sustituir
-        if (ctx.launchService().isAnyRunning()) {
-            Dialogs.info(backupList, GAME_RUNNING_TITLE, GAME_RUNNING);
+        if (refuseWhileAGameRuns()) {
             return;
         }
         setRestoring(true);
         // Primero se comprueba (en segundo plano: lee la copia entera), para no preguntar en balde
-        BackgroundTasks.run(ctx.background(),
+        BackgroundTasks.runAndHandle(ctx.background(),
                 () -> {
                     ctx.restoreService().check(backup.file());
                     return backup;
@@ -308,7 +324,7 @@ public class SettingsController {
             setRestoring(false);
             return;
         }
-        BackgroundTasks.run(ctx.background(),
+        BackgroundTasks.runAndHandle(ctx.background(),
                 () -> {
                     ctx.restoreService().prepare(backup);
                     return backup;
@@ -317,7 +333,21 @@ public class SettingsController {
                 this::restoreFailed);
     }
 
-    /** La copia ya está preparada: se abre una VN Launcher nueva y esta se cierra. */
+    /**
+     * Restaurar o importar reinician la app: el tiempo de la partida en curso se guardaría en la
+     * base que se va a sustituir. Mejor no dejar.
+     *
+     * @return true si hay un juego abierto (y ya se ha avisado)
+     */
+    private boolean refuseWhileAGameRuns() {
+        if (ctx.launchService().isAnyRunning()) {
+            Dialogs.info(backupList, GAME_RUNNING_TITLE, GAME_RUNNING);
+            return true;
+        }
+        return false;
+    }
+
+    /** La copia o el perfil ya están preparados: se abre una VN Launcher nueva y esta se cierra. */
     private void restart() {
         if (!relauncher.getAsBoolean()) {
             // Lo pendiente se termina igualmente la próxima vez que se abra
@@ -328,7 +358,7 @@ public class SettingsController {
 
     private void restoreFailed(Throwable error) {
         setRestoring(false);
-        if (error instanceof InvalidBackupException invalid) {
+        if (error instanceof InvalidDataFileException invalid) {
             Dialogs.error(backupList, CANNOT_RESTORE_TITLE, invalid.getMessage());
         } else {
             ErrorReporter.report(StartupNotices.RESTORE_FAILED, error);
@@ -337,6 +367,93 @@ public class SettingsController {
 
     private void setRestoring(boolean restoring) {
         restoreButtons.forEach(button -> button.setDisable(restoring));
+        importButton.setDisable(restoring);
+    }
+
+    // =========================================================== Exportar e importar el perfil
+
+    /** «Exportar…»: se elige dónde y se escribe el .zip en segundo plano. */
+    @FXML
+    private void onExportProfile() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle(EXPORT_TITLE);
+        chooser.setInitialFileName(ctx.profileService().suggestedFileName());
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(EXPORT_FILTER, "*.zip"));
+        File chosen = chooser.showSaveDialog(exportButton.getScene().getWindow());
+        if (chosen == null) {
+            return;
+        }
+        // En Linux el selector no añade la extensión si no se escribe
+        Path target = chosen.getName().toLowerCase(Locale.ROOT).endsWith(".zip")
+                ? chosen.toPath() : chosen.toPath().resolveSibling(chosen.getName() + ".zip");
+        exportButton.setDisable(true);
+        exportButton.setText(EXPORTING);
+        BackgroundTasks.runAndHandle(ctx.background(),
+                () -> ctx.profileService().export(target),
+                manifest -> {
+                    exportDone();
+                    Dialogs.info(exportButton, EXPORTED_TITLE,
+                            String.format(EXPORTED, DisplayPaths.forDisplay(target)));
+                },
+                error -> {
+                    exportDone();
+                    ErrorReporter.report(EXPORT_FAILED, error);
+                });
+    }
+
+    private void exportDone() {
+        exportButton.setDisable(false);
+        exportButton.setText(EXPORT);
+    }
+
+    /**
+     * «Importar…»: se elige el .zip, se abre y comprueba en segundo plano, se enseña el resumen
+     * (ImportProfileDialog) y, si se confirma, se prepara y se reinicia, como al restaurar.
+     */
+    @FXML
+    private void onImportProfile() {
+        if (refuseWhileAGameRuns()) {
+            return;
+        }
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle(IMPORT_TITLE);
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(EXPORT_FILTER, "*.zip"));
+        File chosen = chooser.showOpenDialog(importButton.getScene().getWindow());
+        if (chosen == null) {
+            return;
+        }
+        setRestoring(true);
+        importButton.setText(OPENING);
+        BackgroundTasks.runAndHandle(ctx.background(),
+                () -> ctx.profileService().open(chosen.toPath()),
+                this::confirmImport,
+                this::importFailed);
+    }
+
+    private void confirmImport(ProfilePreview preview) {
+        importButton.setText(IMPORT);
+        if (!ImportProfileDialog.confirm(importButton, preview)) {
+            setRestoring(false);
+            ctx.background().execute(() -> ctx.profileService().discardPreview());
+            return;
+        }
+        BackgroundTasks.runAndHandle(ctx.background(),
+                () -> {
+                    ctx.profileService().prepareImport(preview);
+                    return preview;
+                },
+                prepared -> restart(),
+                this::importFailed);
+    }
+
+    private void importFailed(Throwable error) {
+        setRestoring(false);
+        importButton.setText(IMPORT);
+        if (error instanceof InvalidDataFileException invalid) {
+            Dialogs.error(importButton, CANNOT_IMPORT_TITLE, invalid.getMessage());
+        } else {
+            ErrorReporter.report(StartupNotices.IMPORT_FAILED, error);
+        }
     }
 
     @FXML

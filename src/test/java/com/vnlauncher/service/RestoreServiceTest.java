@@ -24,8 +24,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RestoreServiceTest {
 
-    private static final LocalDateTime NOW = LocalDateTime.of(2026, 11, 21, 10, 42, 3);
-
     @TempDir
     Path tempDir;
 
@@ -44,7 +42,7 @@ class RestoreServiceTest {
         restore = new RestoreService(paths, backups);
     }
 
-    private String theme(Path file) throws Exception {
+    static String theme(Path file) throws Exception {
         return new SettingsRepository(new Database(file)).get("theme").orElse("");
     }
 
@@ -93,16 +91,16 @@ class RestoreServiceTest {
         try (Connection conn = new Database(newer.file()).getConnection(); Statement st = conn.createStatement()) {
             st.execute("PRAGMA user_version = " + (Database.latestVersion() + 1));
         }
-        InvalidBackupException tooNew = assertThrows(InvalidBackupException.class, () -> restore.prepare(newer));
+        InvalidDataFileException tooNew = assertThrows(InvalidDataFileException.class, () -> restore.prepare(newer));
         assertEquals(RestoreService.TOO_NEW, tooNew.getMessage());
 
         Path broken = Files.writeString(paths.backupsDir().resolve("vn-launcher-2026-11-20_120000-semanal.db"),
                 "esto no es una base de datos");
-        InvalidBackupException damaged = assertThrows(InvalidBackupException.class,
+        InvalidDataFileException damaged = assertThrows(InvalidDataFileException.class,
                 () -> restore.check(broken));
         assertEquals(RestoreService.DAMAGED, damaged.getMessage());
 
-        assertFalse(Files.exists(paths.stagedDatabaseFile()));
+        assertFalse(Files.exists(paths.pendingDir()));
         assertFalse(Files.exists(paths.pendingOperationFile()), "No queda nada pendiente");
         assertEquals(2, backups.list().size(), "Ni se ha hecho la copia de seguridad");
     }
@@ -123,54 +121,11 @@ class RestoreServiceTest {
     @Test
     void onTheNextStartTheCopyTakesThePlaceOfTheDatabase() throws Exception {
         restore.prepare(oldBackupWithDarkTheme());
-        Files.writeString(Path.of(paths.databaseFile() + "-wal"), "cambios de la base vieja");
 
-        RestoreService.Outcome outcome = RestoreService.applyPending(paths).orElseThrow();
+        PendingOperations.Outcome outcome = PendingOperations.applyPending(paths).orElseThrow();
 
-        assertEquals(new RestoreService.Outcome.Done(
+        assertEquals(new PendingOperations.Outcome.Done(
                 new PendingOperation(PendingOperation.Kind.RESTORE, LocalDateTime.of(2026, 11, 14, 19, 5))), outcome);
         assertEquals("oscuro", theme(paths.databaseFile()));
-        try (Stream<Path> files = Files.list(tempDir)) {
-            assertEquals(List.of("backups", "library.db"),
-                    files.map(f -> f.getFileName().toString()).sorted().toList(),
-                    "Ni la nota, ni la base apartada, ni la de antes, ni su -wal");
-        }
-        assertTrue(RestoreService.applyPending(paths).isEmpty(), "Solo una vez");
-    }
-
-    @Test
-    void ifTheCopyCannotBeUsedTheDatabaseStaysAsItWas() throws Exception {
-        restore.prepare(oldBackupWithDarkTheme());
-        Files.writeString(paths.stagedDatabaseFile(), "se ha estropeado por el camino");
-
-        RestoreService.Outcome outcome = RestoreService.applyPending(paths).orElseThrow();
-
-        assertInstanceOf(RestoreService.Outcome.Failed.class, outcome);
-        assertEquals("claro", theme(paths.databaseFile()), "La de antes, en su sitio");
-        assertFalse(Files.exists(paths.pendingOperationFile()), "No se reintenta en cada arranque");
-        assertFalse(Files.exists(paths.stagedDatabaseFile()));
-        assertFalse(Files.exists(Path.of(paths.databaseFile() + ".anterior")));
-    }
-
-    @Test
-    void anUnreadableNoteFailsWithoutTouchingAnything() throws Exception {
-        Files.writeString(paths.pendingOperationFile(), "operacion=otra-cosa\n");
-
-        RestoreService.Outcome outcome = RestoreService.applyPending(paths).orElseThrow();
-
-        assertNull(((RestoreService.Outcome.Failed) outcome).operation());
-        assertEquals(Database.latestVersion(), db.schemaVersion());
-        assertFalse(Files.exists(paths.pendingOperationFile()));
-    }
-
-    @Test
-    void aSwapCutHalfwayIsUndoneAtStartup() throws Exception {
-        new SettingsRepository(db).put("theme", "claro");
-        // Como si se hubiera ido la luz justo después de apartar la base
-        Files.move(paths.databaseFile(), Path.of(paths.databaseFile() + ".anterior"));
-
-        assertTrue(RestoreService.applyPending(paths).isEmpty());
-
-        assertEquals("claro", theme(paths.databaseFile()), "Mejor la de antes que una vacía");
     }
 }

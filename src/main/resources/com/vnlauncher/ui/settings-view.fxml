@@ -119,10 +119,27 @@
             </HBox>
         </VBox>
 
-        <!-- ================================================= Perfil y copias de seguridad (ajustes-1-0)
-             Exportar e importar el perfil llegarán en la fase 4; restaurar, en la 3. -->
+        <!-- ================================================= Perfil y copias de seguridad (ajustes-1-0) -->
         <VBox styleClass="card, settings-card">
             <Label text="Perfil y copias de seguridad" styleClass="settings-card-title"/>
+            <HBox styleClass="settings-row">
+                <VBox styleClass="settings-text" HBox.hgrow="ALWAYS">
+                    <Label text="Exportar perfil" styleClass="settings-label"/>
+                    <Label text="Biblioteca, rutas, tiempo de juego, estanterías, ajustes y portadas propias, en un único archivo .zip."
+                           styleClass="settings-desc" wrapText="true"/>
+                </VBox>
+                <Button fx:id="exportButton" text="Exportar…" onAction="#onExportProfile" minWidth="-Infinity"/>
+            </HBox>
+            <Region styleClass="divider"/>
+            <HBox styleClass="settings-row">
+                <VBox styleClass="settings-text" HBox.hgrow="ALWAYS">
+                    <Label text="Importar perfil" styleClass="settings-label"/>
+                    <Label text="Sustituye tu perfil actual por el del archivo. Antes se guarda una copia automática por si quieres volver atrás."
+                           styleClass="settings-desc" wrapText="true"/>
+                </VBox>
+                <Button fx:id="importButton" text="Importar…" onAction="#onImportProfile" minWidth="-Infinity"/>
+            </HBox>
+            <Region styleClass="divider"/>
             <HBox styleClass="settings-row">
                 <VBox styleClass="settings-text" HBox.hgrow="ALWAYS">
                     <Label text="Copias automáticas" styleClass="settings-label"/>

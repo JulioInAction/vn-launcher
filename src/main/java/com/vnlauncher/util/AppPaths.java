@@ -72,9 +72,22 @@ public final class AppPaths {
         return root.resolve("operacion-pendiente.properties");
     }
 
-    /** Base de datos que espera a sustituir a la actual en el próximo arranque. */
+    /**
+     * Lo que espera al próximo arranque para sustituir a lo actual: la base de datos de una copia o
+     * de un perfil, y las portadas del perfil. Ver PendingOperations.
+     */
+    public Path pendingDir() {
+        return root.resolve("pendiente");
+    }
+
+    /** La base de datos que sustituirá a la actual en el próximo arranque. */
     public Path stagedDatabaseFile() {
-        return root.resolve("restaurar.db");
+        return pendingDir().resolve("library.db");
+    }
+
+    /** Las portadas de un perfil importado, que se suman a las de covers/ en el próximo arranque. */
+    public Path stagedCoversDir() {
+        return pendingDir().resolve("covers");
     }
 
     /** Copias de seguridad automáticas de la base de datos. Ver BackupService. */

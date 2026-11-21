@@ -35,6 +35,9 @@ class Notice extends HBox {
         icon.getStyleClass().add("notice-icon");
 
         title.getStyleClass().add("notice-title");
+        // Sin título (solo texto), que no ocupe sitio
+        title.managedProperty().bind(title.textProperty().isNotEmpty());
+        title.visibleProperty().bind(title.managedProperty());
         text.getStyleClass().add("text2");
         text.setWrapText(true);
         progress.getStyleClass().add("thin-bar");

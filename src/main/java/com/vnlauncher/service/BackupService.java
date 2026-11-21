@@ -25,7 +25,7 @@ import java.util.stream.Stream;
  * <ul>
  *   <li>antes de aplicar migraciones nuevas (al arrancar una versión nueva de la app);</li>
  *   <li>una cada semana (se puede desactivar en Ajustes);</li>
- *   <li>antes de restaurar una copia (ver RestoreService) y de importar un perfil (fase siguiente).</li>
+ *   <li>antes de restaurar una copia (RestoreService) y de importar un perfil (ProfileService).</li>
  * </ul>
  * Se guardan las {@link #KEEP} últimas, de todos los tipos juntos.
  *

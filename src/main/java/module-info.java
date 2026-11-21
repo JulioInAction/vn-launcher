@@ -31,6 +31,8 @@ module com.vnlauncher {
     // reflexión: necesita ver el paquete.
     exports com.vnlauncher.ui to javafx.controls;
 
-    // Jackson también usa reflexión para leer/crear los records de los DTO.
+    // Jackson también usa reflexión para leer/crear los records de los DTO y el manifest.json de
+    // los perfiles exportados (model.ProfileManifest).
     opens com.vnlauncher.api.dto to com.fasterxml.jackson.databind;
+    opens com.vnlauncher.model to com.fasterxml.jackson.databind;
 }

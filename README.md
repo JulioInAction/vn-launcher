@@ -98,7 +98,7 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
 - [x] Fase 7: pulido («Actualizar desde VNDB», programa de configuración, instalador)
 - [ ] Fase 8: Discord Rich Presence
 - [ ] Versión 1.0 (en curso): registro de errores ✓, copias de seguridad automáticas ✓, restaurar
-  una copia ✓, exportar e importar el perfil, estado manual, estanterías, ejecutables perdidos,
+  una copia ✓, exportar e importar el perfil ✓, estado manual, estanterías, ejecutables perdidos,
   vista previa de la ficha, búsqueda en la biblioteca, aviso de actualizaciones
 - Después de la 1.0: GitHub Action que construya el instalador al subir una etiqueta; en la 1.1,
   traducción completa al inglés (ResourceBundle, selector de idioma, plurales con MessageFormat y
@@ -203,7 +203,7 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
 
 - Copias automáticas de la base de datos en `backups/` dentro de la carpeta de datos
   (`BackupService`): antes de aplicar migraciones nuevas (al arrancar una versión nueva de la app),
-  una cada semana, antes de restaurar una copia y (en la fase siguiente) antes de importar un perfil.
+  una cada semana, antes de restaurar una copia y antes de importar un perfil.
   Se guardan las 5 últimas, de todos los tipos juntos.
 - Se hacen con `VACUUM INTO`: SQLite escribe una base nueva y compacta con el contenido de ese
   momento (también lo que aún está en el WAL) sin bloquear la app. Se escribe con otro nombre
@@ -228,20 +228,49 @@ al arrancar todavía no hay nada abierto, y el cambio es solo mover archivos.
 
 1. Con la app abierta (`RestoreService.prepare`): no se deja si hay un juego abierto (su tiempo de
    juego se guardaría en la base que se va a sustituir); se comprueba la copia abriéndola en solo
-   lectura (`PRAGMA integrity_check` y que su esquema no sea más nuevo que el de la app); tras
-   confirmar, se aparta como `restaurar.db` (antes de nada: la copia «Antes de restaurar una
-   copia» puede borrar la más vieja, que podría ser la elegida), se hace esa copia y se apunta la
-   operación en `operacion-pendiente.properties`.
+   lectura (`PRAGMA integrity_check`, `PRAGMA foreign_key_check` y que su esquema no sea más nuevo
+   que el de la app); tras confirmar, se aparta en `pendiente/library.db` (antes de nada: la copia
+   «Antes de restaurar una copia» puede borrar la más vieja, que podría ser la elegida), se hace
+   esa copia y se apunta la operación en `operacion-pendiente.properties`.
 2. Reinicio (`Relauncher`): se abre un proceso nuevo con `--esperar-pid=<pid>` y este se cierra. El
    nuevo espera a que el viejo termine. Instalada, la app se vuelve a abrir con su `.exe` (jpackage
    deja la ruta en la propiedad `jpackage.app-path`); en desarrollo, con el mismo `java` y los
    mismos argumentos. Si no se puede, se avisa de que hay que abrirla a mano: lo pendiente se
    termina igualmente en el siguiente arranque.
-3. Al arrancar, antes de abrir la base (`RestoreService.applyPending`): `library.db` se aparta como
-   `library.db.anterior` (con su `-wal`, que tiene cambios de la base vieja y estropearía la nueva),
-   se pone la copia y se comprueba que SQLite la lee. Si algo falla, vuelve la de antes. Se intenta
-   una sola vez, y al abrir la ventana se avisa de cómo ha ido («Copia restaurada» o el diálogo de
-   error). Si la copia es de una versión anterior, las migraciones la ponen al día.
+3. Al arrancar, antes de abrir la base (`PendingOperations.applyPending`): `library.db` se aparta
+   como `library.db.anterior` (con su `-wal`, que tiene cambios de la base vieja y estropearía la
+   nueva), se pone la copia y se comprueba que SQLite la lee. Si algo falla, vuelve la de antes. Se
+   intenta una sola vez, y al abrir la ventana se avisa de cómo ha ido («Copia restaurada» o el
+   diálogo de error). Si la copia es de una versión anterior, las migraciones la ponen al día.
+4. Los ajustes que son de este ordenador se quedan: la posición y el tamaño de la ventana, siempre;
+   la ruta de LEProc.exe de los datos nuevos solo si existe aquí (si no existe y la de aquí sí, se
+   queda la de aquí). El resto de ajustes viene con los datos nuevos.
+
+### Exportar e importar el perfil
+
+Para llevarse la biblioteca a otro ordenador (o guardarla aparte). En Ajustes → Perfil y copias
+de seguridad (`ProfileService`):
+
+- **Exportar** escribe un `.zip` (`vn-launcher-perfil-2026-11-21.zip`) con `manifest.json` (versión
+  del formato y de la app, esquema, fecha y recuentos: novelas, rutas, tiempo de juego, portadas),
+  `library.db` (copia con `VACUUM INTO`, aunque la app esté en uso) y `covers/` (las portadas
+  propias). La caché de imágenes no va: se vuelve a descargar de VNDB. Se escribe en un `.part`
+  que se renombra al terminar.
+- **Importar** usa el mismo mecanismo que restaurar: no se deja con un juego abierto; el zip se
+  descomprime en `pendiente/` y se comprueba **antes** de preguntar; el diálogo «Importar perfil»
+  (`ImportProfileDialog`) enseña el resumen y avisa de que sustituye al perfil actual; al
+  confirmar se hace la copia «Antes de importar un perfil» y se reinicia. Al arrancar se pone la
+  base, se aplican las reglas de ajustes de este ordenador de arriba y las portadas del perfil se
+  **suman** a las de `covers/` (nunca se borra ninguna; si coincide el nombre es la misma imagen).
+- El zip puede venir de cualquier sitio, así que no se fía de él: se lee con `ZipFile` (el índice
+  del final, lo mismo que ve cualquier programa), solo se extraen `manifest.json`, `library.db` y
+  `covers/<nombre>` con nombres de portada (letras, números, `.`, `_` y `-`); un nombre absoluto,
+  con `..`, `\` o `:` rechaza el perfil entero, y además se comprueba que el destino queda dentro
+  de `pendiente/`. Se cuentan los bytes de verdad al descomprimir (como mucho 2 GB) para parar un
+  zip que se infla a lo bestia. La base se comprueba entera (integridad y claves foráneas) y ni el
+  formato ni el esquema pueden ser más nuevos que los de la app; uno más viejo se migra al arrancar.
+- Los campos que no conoce del `manifest.json` se ignoran, así una versión futura puede añadir
+  cosas sin romper las anteriores.
 
 **Una sola ventana a la vez** (`SingleInstance`): al arrancar se coge un bloqueo del sistema sobre
 `vn-launcher.lock` (`FileChannel.tryLock`). Si otra VN Launcher lo tiene, sale «VN Launcher ya está

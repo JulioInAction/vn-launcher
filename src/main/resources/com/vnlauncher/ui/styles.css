@@ -1604,6 +1604,13 @@
     -fx-border-color: -vn-blue;
 }
 
+/* Dentro de un diálogo (importar-perfil-*.png): más apretado */
+.notice.compact {
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 14 16 14 16;
+}
+
 .notice-icon {
     -fx-fill: transparent;
     -fx-stroke-width: 1.8;
@@ -1664,6 +1671,15 @@
     -fx-border-color: -vn-border;
     -fx-border-radius: 10;
     -fx-padding: 4 18 4 18;
+}
+
+/* Resumen del perfil en «Importar perfil» (importar-perfil-*.png): como la lista de copias */
+.profile-summary {
+    -fx-background-color: -vn-bg;
+    -fx-background-radius: 10;
+    -fx-border-color: -vn-border;
+    -fx-border-radius: 10;
+    -fx-padding: 16 18 16 18;
 }
 
 .backup-row {

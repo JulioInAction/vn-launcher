@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Reinicia la aplicación (después de preparar una copia para restaurar). Se abre un proceso nuevo
+ * Reinicia la aplicación (después de preparar una copia o un perfil para importar). Se abre un proceso nuevo
  * ANTES de cerrar este, y el nuevo espera a que este termine: así nunca hay dos usando la base de
  * datos a la vez.
  *

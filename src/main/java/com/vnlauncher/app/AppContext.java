@@ -19,6 +19,7 @@ import com.vnlauncher.service.ImageCacheService;
 import com.vnlauncher.service.LaunchService;
 import com.vnlauncher.service.LibraryService;
 import com.vnlauncher.service.PlaytimeTracker;
+import com.vnlauncher.service.ProfileService;
 import com.vnlauncher.service.ProcessScanner;
 import com.vnlauncher.service.ProcessStarter;
 import com.vnlauncher.service.RefreshService;
@@ -78,6 +79,7 @@ public final class AppContext {
     private final ScreenshotService screenshotService;
     private final BackupService backupService;
     private final RestoreService restoreService;
+    private final ProfileService profileService;
     /** Si falló la copia de antes de actualizar (se avisa al abrir la ventana); si no, null. */
     private final Exception preMigrationBackupError;
 
@@ -90,7 +92,7 @@ public final class AppContext {
                        SettingsService settingsService, LaunchService launchService, RateLimiter rateLimiter,
                        PlaytimeTracker playtimeTracker, CoverService coverService,
                        VnDetailsService vnDetailsService, BackupService backupService,
-                       Exception preMigrationBackupError) {
+                       ProfileService profileService, Exception preMigrationBackupError) {
         this.paths = paths;
         this.database = database;
         this.httpClient = httpClient;
@@ -112,6 +114,7 @@ public final class AppContext {
         this.vnDetailsService = vnDetailsService;
         this.backupService = backupService;
         this.restoreService = new RestoreService(paths, backupService);
+        this.profileService = profileService;
         this.preMigrationBackupError = preMigrationBackupError;
         // Solo necesita la caché de imágenes: se crea aquí, como RefreshService
         this.screenshotService = new ScreenshotService(imageCache);
@@ -120,8 +123,9 @@ public final class AppContext {
     /**
      * Prepara carpetas, base de datos y servicios. Si algo falla aquí la app no puede arrancar.
      *
-     * @param backupBeforeMigration false justo después de restaurar una copia: la base ES una copia
-     *                              (y hay otra de cómo estaba antes), no hace falta una más
+     * @param backupBeforeMigration false justo después de restaurar una copia o importar un perfil:
+     *                              hay una copia de cómo estaba antes y la base nueva es un archivo
+     *                              que el usuario ya tiene; no hace falta otra más
      */
     public static AppContext create(AppPaths paths, boolean backupBeforeMigration) throws SQLException {
         paths.createDirectories();
@@ -190,7 +194,8 @@ public final class AppContext {
                 new CatalogService(vndb), libraryService, imageCache, contentFilter,
                 characterService, new RouteService(routeRepository, clock),
                 settingsService, launchService, rateLimiter, playtimeTracker, coverService, vnDetailsService,
-                backupService, backupError);
+                backupService, new ProfileService(database, paths, backupService, clock, AppInfo.VERSION),
+                backupError);
     }
 
     /**
@@ -277,6 +282,11 @@ public final class AppContext {
     /** Restaurar una copia de seguridad (se termina al reiniciar). */
     public RestoreService restoreService() {
         return restoreService;
+    }
+
+    /** Exportar e importar el perfil (Ajustes). */
+    public ProfileService profileService() {
+        return profileService;
     }
 
     /** Imágenes de las capturas (miniaturas y tamaño completo) en la caché. */

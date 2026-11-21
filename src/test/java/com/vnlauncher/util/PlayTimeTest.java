@@ -20,4 +20,12 @@ class PlayTimeTest {
         assertEquals("12 min", PlayTime.formatShort(12 * 60));
         assertEquals("36 h", PlayTime.formatShort(36 * 3600 + 50 * 60));
     }
+
+    @Test
+    void totalOfAWholeProfileInHoursOrMinutes() {
+        assertEquals("0 min", PlayTime.formatTotal(0));
+        assertEquals("59 min", PlayTime.formatTotal(3599));
+        assertEquals("1 h", PlayTime.formatTotal(3600));
+        assertEquals("312 h", PlayTime.formatTotal(312 * 3600 + 1800));
+    }
 }

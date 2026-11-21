@@ -2,7 +2,7 @@ package com.vnlauncher.app;
 
 import com.vnlauncher.model.Theme;
 import com.vnlauncher.model.WindowBounds;
-import com.vnlauncher.service.RestoreService;
+import com.vnlauncher.service.PendingOperations;
 import com.vnlauncher.ui.DebugFailures;
 import com.vnlauncher.ui.ErrorReporter;
 import com.vnlauncher.ui.Fonts;
@@ -53,7 +53,7 @@ public class Main extends Application {
     public void start(Stage stage) {
         this.stage = stage;
         AppPaths paths = AppPaths.fromEnvironment();
-        // 1. Si es un reinicio (tras preparar una copia para restaurar), esperar a que se cierre la
+        // 1. Si es un reinicio (tras preparar una copia o un perfil), esperar a que se cierre la
         //    ventana anterior: hasta entonces la base de datos sigue siendo suya
         String previousPid = getParameters().getNamed().get(Relauncher.WAIT_FOR_PID);
         Relauncher.waitForPrevious(previousPid);
@@ -72,15 +72,16 @@ public class Main extends Application {
         // Las fuentes tienen que estar registradas antes de que se aplique el CSS (también el del
         // diálogo de error si falla el arranque)
         Fonts.load();
-        // 5. Lo que quedó pendiente (restaurar una copia) se termina ANTES de abrir la base de datos
-        Optional<RestoreService.Outcome> pending = RestoreService.applyPending(paths);
-        boolean restored = pending.filter(RestoreService.Outcome.Done.class::isInstance).isPresent();
+        // 5. Lo que quedó pendiente (restaurar una copia, importar un perfil) se termina ANTES de
+        //    abrir la base de datos
+        Optional<PendingOperations.Outcome> pending = PendingOperations.applyPending(paths);
+        boolean replaced = pending.filter(PendingOperations.Outcome.Done.class::isInstance).isPresent();
 
         Theme theme;
         Optional<WindowBounds> savedWindow;
         try {
             DebugFailures.atStartup(); // solo con -Dvnlauncher.debug.fallo=arranque
-            context = AppContext.create(paths, !restored);
+            context = AppContext.create(paths, !replaced);
             LOG.log(System.Logger.Level.INFO, "Arranque\n{0}",
                     SystemInfo.current(context.database().schemaVersion(), paths.root()));
             // Leer el tema guardado ANTES de crear la ventana, para que no se vea un "parpadeo"

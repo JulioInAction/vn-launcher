@@ -125,7 +125,8 @@ public class Database {
     /**
      * Resultado de comprobar un archivo de base de datos sin tocarlo (ver {@link #inspect}).
      *
-     * @param intact        true si SQLite lo abre y {@code PRAGMA integrity_check} dice "ok"
+     * @param intact        true si SQLite lo abre, {@code PRAGMA integrity_check} dice "ok" y no hay
+     *                      referencias rotas (una ruta de una VN que no está, p. ej.)
      * @param schemaVersion su versión del esquema (0 si no está intacto)
      */
     public record FileCheck(boolean intact, int schemaVersion) {
@@ -147,6 +148,12 @@ public class Database {
              Statement st = conn.createStatement()) {
             try (ResultSet rs = st.executeQuery("PRAGMA integrity_check")) {
                 if (!rs.next() || !"ok".equalsIgnoreCase(rs.getString(1))) {
+                    return new FileCheck(false, 0);
+                }
+            }
+            // integrity_check no mira las claves foráneas: esto devuelve una fila por cada una rota
+            try (ResultSet rs = st.executeQuery("PRAGMA foreign_key_check")) {
+                if (rs.next()) {
                     return new FileCheck(false, 0);
                 }
             }

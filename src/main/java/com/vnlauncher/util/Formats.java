@@ -11,6 +11,8 @@ public final class Formats {
 
     /** «21/11/2026, 10:42». Solo números: igual en cualquier idioma del sistema. */
     public static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy, HH:mm");
+    /** «21/11/2026», sin la hora. */
+    public static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private static final String KB = "%d KB";
     private static final String MB = "%s MB";

@@ -16,6 +16,11 @@ public final class PlayTime {
         return minutes == 0 ? hours + " h" : hours + " h " + minutes + " min";
     }
 
+    /** Total de un perfil entero: «312 h», o en minutos si no llega a una hora («45 min», «0 min»). */
+    public static String formatTotal(long seconds) {
+        return seconds < 3600 ? String.format("%d min", seconds / 60) : String.format("%d h", seconds / 3600);
+    }
+
     /** Formato corto para las tarjetas: "36 h", "45 min" o "Sin jugar". */
     public static String formatShort(long seconds) {
         if (seconds < 60) {

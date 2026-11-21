@@ -14,18 +14,21 @@ import java.util.Properties;
 
 /**
  * Algo que hay que terminar en el próximo arranque, antes de abrir la base de datos: sustituirla
- * por una copia de seguridad (y, en la fase siguiente, por un perfil importado).
+ * por una copia de seguridad o por un perfil importado.
  *
- * <p>Se apunta en operacion-pendiente.properties junto a la base nueva ya preparada (restaurar.db).
- * Si la app no consigue reiniciarse sola, se termina igualmente la próxima vez que se abra.
+ * <p>Se apunta en operacion-pendiente.properties; lo que se va a poner espera ya preparado en la
+ * carpeta pendiente/. Si la app no consigue reiniciarse sola, se termina igualmente la próxima vez
+ * que se abra (ver PendingOperations).
  *
  * @param kind     qué se está haciendo
- * @param dataDate de cuándo son los datos que se ponen (la fecha de la copia); para avisar luego
+ * @param dataDate de cuándo son los datos que se ponen (la fecha de la copia, o cuándo se exportó
+ *                 el perfil); para el aviso de después
  */
 public record PendingOperation(Kind kind, LocalDateTime dataDate) {
 
     public enum Kind {
-        RESTORE("restaurar");
+        RESTORE("restaurar"),
+        IMPORT("importar");
 
         private final String key;
 
