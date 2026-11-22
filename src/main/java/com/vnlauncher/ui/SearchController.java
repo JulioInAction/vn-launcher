@@ -334,20 +334,16 @@ public class SearchController {
         HBox.setHgrow(texts, Priority.ALWAYS);
         texts.setMinWidth(0); // permite que los textos se corten con "..." si no caben
 
-        Node action;
+        // Solo se marca lo que ya está en la biblioteca; para añadir, el botón del panel de la derecha
+        Node action = null;
         if (inLibrary.contains(vn.id())) {
             Label done = new Label("✓  En tu biblioteca");
             done.getStyleClass().add("in-library");
             done.setMinWidth(Region.USE_PREF_SIZE);
             action = done;
-        } else {
-            Button add = new Button("Añadir");
-            add.setOnAction(event -> addToLibrary(vn, add));
-            add.setMinWidth(Region.USE_PREF_SIZE); // con un título largo, se corta el título y no el botón
-            action = add;
         }
 
-        HBox card = new HBox(16, thumb, texts, action);
+        HBox card = new HBox(16, thumb, texts);
         card.setAlignment(Pos.CENTER_LEFT);
         card.getStyleClass().add("result-card");
         card.setOnMouseClicked(event -> {
@@ -360,15 +356,20 @@ public class SearchController {
         // «✓ En tu biblioteca» pasa debajo del desarrollador: si no, al título le quedarían 70 px y
         // se partiría letra a letra. El ancho de la tarjeta no depende de dónde vaya el botón, así
         // que moverlo no vuelve a disparar el listener.
-        VBox.setMargin(action, new Insets(6, 0, 0, 0));
+        if (action == null) {
+            return card;
+        }
+        card.getChildren().add(action);
+        Node moving = action;
+        VBox.setMargin(moving, new Insets(6, 0, 0, 0));
         card.widthProperty().addListener((obs, old, width) -> {
             boolean compact = width.doubleValue() < COMPACT_CARD_WIDTH;
-            if (compact && action.getParent() == card) {
-                card.getChildren().remove(action);
-                texts.getChildren().add(action);
-            } else if (!compact && action.getParent() == texts) {
-                texts.getChildren().remove(action);
-                card.getChildren().add(action);
+            if (compact && moving.getParent() == card) {
+                card.getChildren().remove(moving);
+                texts.getChildren().add(moving);
+            } else if (!compact && moving.getParent() == texts) {
+                texts.getChildren().remove(moving);
+                card.getChildren().add(moving);
             }
         });
         return card;

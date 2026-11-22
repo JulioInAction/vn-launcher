@@ -415,6 +415,24 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
     }
 
     /**
+     * Se ha quitado de la biblioteca una VN que se había visto como vista previa: la misma ficha vuelve
+     * a ser la vista previa, en el sitio (en vez de mandar a la biblioteca).
+     */
+    private void switchToPreview() {
+        mode = DetailLayout.Mode.PREVIEW;
+        entry = null;
+        files = new GameFiles(GameFiles.FileStatus.NOT_SET, GameFiles.FileStatus.NOT_SET);
+        noticeBox.getChildren().clear();
+        addButton.setDisable(false);
+        addButton.setText(ADD);
+        moreButton.setDisable(false);
+        renderPreviewVn(previewHit.vn()); // portada de VNDB, tarjetas y estado; también aplica el modo
+        renderTags();
+        renderCharacters(); // sin «Marcar con ruta»
+        navigator.refreshSidebar();
+    }
+
+    /**
      * La VN acaba de entrar en la biblioteca: la ficha pasa a ser la de la biblioteca, en el sitio.
      * Las tarjetas dejan su lugar a la línea de datos («sin partidas todavía · sin rutas»).
      */
@@ -1166,7 +1184,8 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
     private void onRemove() {
         LibraryRemoval.confirmAndRemove(ctx, moreButton, entry,
                 () -> moreButton.setDisable(true),
-                navigator::showLibrary,
+                // Si se llegó por la vista previa, se vuelve a ella; si no, a la biblioteca
+                previewHit != null ? this::switchToPreview : navigator::showLibrary,
                 () -> moreButton.setDisable(false));
     }
 }
