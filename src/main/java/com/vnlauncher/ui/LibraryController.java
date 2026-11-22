@@ -20,12 +20,17 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
+import javafx.scene.Scene;
+import javafx.event.EventHandler;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
@@ -39,6 +44,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -66,6 +72,9 @@ public class LibraryController implements PlaytimeAware, ShelvesAware {
             + "con «+ Añadir a estantería».";
     private static final String NONE_IN_SHELF_WITH_TAG = "Ninguna novela de «%s» tiene la etiqueta «%s».";
     private static final String TAG_FILTER = "Etiqueta: %s   ✕";
+    private static final String NONE_MATCHING = "Ninguna novela coincide con «%s».";
+    private static final String SHOW_SENSITIVE = "Mostrar imágenes sensibles";
+    private static final String HIDE_SENSITIVE = "Ocultar imágenes sensibles";
     private static final String REMOVE_FILTER = "Quitar el filtro";
     private static final String NONE_WITH_STATUS = "No hay ninguna novela con el estado «%s».";
     private static final String NONE_WITH_TAG = "Ninguna novela de tu biblioteca tiene la etiqueta «%s».";
@@ -95,12 +104,18 @@ public class LibraryController implements PlaytimeAware, ShelvesAware {
     @FXML private FlowPane activeFiltersBox;
     @FXML private Label filterNote;
     @FXML private HBox continueCard;
-    @FXML private CheckBox showSensitiveCheck;
+    @FXML private ToggleButton revealToggle;
+    @FXML private TextField searchField;
     @FXML private ComboBox<LibrarySort> sortBox;
     @FXML private Label emptyLabel;
     @FXML private TilePane grid;
 
-    /** Los filtros: estado o estantería, etiqueta y texto (este, en la fase 11). */
+    /** true mientras se pone el texto del buscador por código (no es el usuario escribiendo). */
+    private boolean syncingText;
+    /** Ctrl+F, en la escena donde esté la biblioteca. */
+    private final EventHandler<KeyEvent> findShortcut = this::onFindShortcut;
+
+    /** Los filtros: estado o estantería, etiqueta y texto del buscador. */
     private LibraryQuery query = LibraryQuery.ALL;
     /** Para que la barra lateral resalte el estado o la estantería filtrados (lo conecta MainController). */
     private Consumer<LibraryQuery> onQueryChanged = q -> { };
@@ -120,14 +135,73 @@ public class LibraryController implements PlaytimeAware, ShelvesAware {
         showCoversProgress(false);
         grid.setPrefTileWidth(COVER_WIDTH);
         // Un "listener" se ejecuta cada vez que cambia la propiedad (aquí, marcar/desmarcar).
-        showSensitiveCheck.selectedProperty().addListener((obs, oldValue, selected) ->
-                covers.forEach(cover -> cover.setRevealed(selected)));
+        // El ojo: solo dura la sesión; no toca el ajuste de difuminado
+        revealToggle.selectedProperty().addListener((obs, oldValue, selected) -> {
+            showReveal(selected);
+            covers.forEach(cover -> cover.setRevealed(selected));
+        });
+        showReveal(false);
+
+        searchField.textProperty().addListener((obs, oldText, text) -> {
+            if (!syncingText) {
+                setQuery(query.withText(text));
+                render();
+            }
+        });
+        searchField.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ESCAPE) {
+                searchField.clear(); // Esc vacía el buscador
+                event.consume();
+            }
+        });
+        searchField.sceneProperty().addListener((obs, oldScene, scene) -> {
+            if (oldScene != null) {
+                oldScene.removeEventFilter(KeyEvent.KEY_PRESSED, findShortcut);
+            }
+            if (scene != null) {
+                scene.addEventFilter(KeyEvent.KEY_PRESSED, findShortcut);
+            }
+        });
 
         sortBox.getItems().setAll(LibrarySort.values());
         sortBox.setCellFactory(list -> new SortCell());
         sortBox.setButtonCell(new SortCell());
         sortBox.setValue(LibrarySort.LAST_PLAYED);
+        // El orden elegido se recuerda (y viaja con el perfil). Se lee de los ajustes en cuanto se puede
+        BackgroundTasks.run(ctx.background(), () -> ctx.settingsService().librarySort(),
+                sort -> {
+                    sortBox.setValue(sort);
+                    // Solo desde aquí se guarda lo que el usuario elija: no se pisa nada mientras se lee
+                    sortBox.valueProperty().addListener((obs, oldValue, chosen) -> onSortChosen(chosen));
+                },
+                error -> sortBox.valueProperty().addListener((obs, oldValue, chosen) -> onSortChosen(chosen)));
         sortBox.valueProperty().addListener((obs, oldValue, sort) -> render());
+    }
+
+    private void onSortChosen(LibrarySort sort) {
+        BackgroundTasks.run(ctx.background(), () -> {
+                    ctx.settingsService().setLibrarySort(sort);
+                    return null;
+                },
+                saved -> { },
+                "No se ha podido guardar el orden.");
+    }
+
+    /** Ctrl+F: al buscador, con lo escrito seleccionado. Solo si la biblioteca está a la vista. */
+    private void onFindShortcut(KeyEvent event) {
+        Scene scene = searchField.getScene();
+        if (scene != null && event.isShortcutDown() && event.getCode() == KeyCode.F
+                && searchField.isVisible() && searchField.isManaged()) {
+            searchField.requestFocus();
+            searchField.selectAll();
+            event.consume();
+        }
+    }
+
+    /** El icono y la pista del ojo: abierto = las imágenes sensibles se ven. */
+    private void showReveal(boolean revealed) {
+        revealToggle.setGraphic(revealed ? Icons.eye() : Icons.eyeOff());
+        revealToggle.setTooltip(new Tooltip(revealed ? HIDE_SENSITIVE : SHOW_SENSITIVE));
     }
 
     /**
@@ -172,6 +246,13 @@ public class LibraryController implements PlaytimeAware, ShelvesAware {
 
     private void setQuery(LibraryQuery newQuery) {
         query = newQuery;
+        // Si el cambio no viene de escribir (p. ej. «Biblioteca» limpia los filtros), el buscador lo refleja
+        String text = newQuery.text() == null ? "" : newQuery.text();
+        if (!Objects.equals(searchField.getText(), text)) {
+            syncingText = true;
+            searchField.setText(text);
+            syncingText = false;
+        }
         onQueryChanged.accept(newQuery);
     }
 
@@ -323,6 +404,9 @@ public class LibraryController implements PlaytimeAware, ShelvesAware {
 
     /** Por qué no sale ninguna novela, según los filtros que haya. */
     private String emptyMessage() {
+        if (query.hasText()) {
+            return String.format(NONE_MATCHING, query.text().strip());
+        }
         VnTag tag = query.tag();
         if (query.shelf() != null) {
             return tag == null ? String.format(EMPTY_SHELF, query.shelf().name())
@@ -399,7 +483,7 @@ public class LibraryController implements PlaytimeAware, ShelvesAware {
         }
         emptyBox.setVisible(empty);
         emptyBox.setManaged(empty);
-        for (Node n : List.of(filtersRow, showSensitiveCheck, addButton, countLabel)) {
+        for (Node n : List.of(filtersRow, revealToggle, addButton, countLabel)) {
             n.setVisible(!empty);
             n.setManaged(!empty);
         }
@@ -422,7 +506,7 @@ public class LibraryController implements PlaytimeAware, ShelvesAware {
         VisualNovel vn = entry.vn();
 
         CoverView cover = new CoverView(Covers.file(ctx, entry), Covers.sensitive(ctx, entry), 62, 93, vn.title());
-        cover.setRevealed(showSensitiveCheck.isSelected());
+        cover.setRevealed(revealToggle.isSelected());
 
         Label caps = new Label("CONTINUAR");
         caps.getStyleClass().addAll("caps", "continue-caps");
@@ -488,7 +572,7 @@ public class LibraryController implements PlaytimeAware, ShelvesAware {
                 ? new CoverView((String) null, false, COVER_WIDTH, COVER_HEIGHT, null)
                 : new CoverView(Covers.file(ctx, entry), Covers.sensitive(ctx, entry), COVER_WIDTH, COVER_HEIGHT,
                 vn.title());
-        cover.setRevealed(showSensitiveCheck.isSelected());
+        cover.setRevealed(revealToggle.isSelected());
         if (item.exeMissing()) {
             cover.markMissing(); // el juego se ha movido o desinstalado
         }

@@ -128,6 +128,11 @@ class CatalogServiceTest {
             assertEquals(1, server.apiRequests().size(), "La segunda vez sale de la caché");
             assertSame(first, second);
             assertTrue(service.cachedExtras("v11").isPresent());
+            // Lo que se guardará al «Ver ficha»: entero (con la etiqueta spoiler y su id, de mayor a menor puntuación), sin otra petición
+            var details = service.cachedDetails("v11").orElseThrow();
+            assertEquals(List.of("g2", "g1"), details.tags().stream().map(t -> t.id()).toList());
+            assertEquals(1, details.screenshots().size());
+            assertEquals(1, server.apiRequests().size());
             String body = server.apiRequests().getFirst();
             assertTrue(body.contains("[\"id\",\"=\",\"v11\"]"), body);
             assertTrue(body.contains("tags.spoiler") && body.contains("screenshots.thumbnail")

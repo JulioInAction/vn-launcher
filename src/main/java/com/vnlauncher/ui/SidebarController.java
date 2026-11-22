@@ -9,6 +9,7 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
@@ -42,6 +43,8 @@ import java.util.Map;
  * (nombre, color, sitio con «Subir»/«Bajar») o se eliminan.
  */
 public class SidebarController {
+
+    private final Region updateDot = new Region();
 
     /** Secciones de la navegación, en orden. */
     public enum Section {
@@ -137,6 +140,14 @@ public class SidebarController {
 
         HBox content = new HBox(0, bookmark, spacer(18), text);
         content.setAlignment(Pos.CENTER_LEFT);
+        if (section == Section.SETTINGS) {
+            // Punto de «hay versión nueva»: oculto hasta que UpdateService avise
+            updateDot.getStyleClass().add("update-dot");
+            updateDot.setVisible(false);
+            updateDot.setManaged(false);
+            HBox.setMargin(updateDot, new Insets(0, 0, 0, 10));
+            content.getChildren().add(updateDot);
+        }
         Button button = new Button(null, content);
         button.getStyleClass().setAll("nav-item"); // setAll: sin el estilo general de .button
         button.setMaxWidth(Double.MAX_VALUE);
@@ -301,6 +312,12 @@ public class SidebarController {
     }
 
     // ------------------------------------------------------------------ estado
+
+    /** El punto de 8 px a la derecha de «Ajustes»: hay una versión nueva de la que aún no se ha avisado. */
+    public void setUpdateDot(boolean visible) {
+        updateDot.setVisible(visible);
+        updateDot.setManaged(visible);
+    }
 
     /**
      * Marca la sección activa (texto en color normal + marcapáginas rosa). Fuera de la biblioteca

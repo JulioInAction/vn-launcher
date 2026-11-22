@@ -5,6 +5,7 @@ import com.vnlauncher.model.VnScreenshot;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -74,6 +75,11 @@ public class ScreenshotService {
             }
         }
         return images.resolve(relative);
+    }
+
+    /** Rutas relativas (images/shots/...) de la miniatura y la imagen grande de una captura, estén o no en disco. */
+    static List<String> relativePathsOf(VnScreenshot shot) {
+        return List.of(relativePath(thumbnailUrl(shot)), relativePath(shot.url()));
     }
 
     private static String relativePath(String url) {

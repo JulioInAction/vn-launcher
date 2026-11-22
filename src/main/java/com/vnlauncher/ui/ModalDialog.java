@@ -9,6 +9,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -28,6 +30,8 @@ import javafx.stage.Window;
  * título (con icono opcional), contenido y botones abajo; la acción principal en rosa a la derecha
  * del todo y la destructiva ("Eliminar ruta") abajo a la izquierda. Detrás, la ventana principal
  * queda tapada con -vn-backdrop.
+ *
+ * <p>Se cierra sin elegir nada (devuelve null) con Esc, la × o un clic fuera de la tarjeta.
  *
  * <p>Uso: crear, añadir contenido y botones, y llamar a {@link #showAndWait()}, que devuelve el
  * identificador del botón pulsado (o null si se cerró con Esc o la ×).
@@ -54,6 +58,8 @@ class ModalDialog {
     private final HBox leftButtons = new HBox(8);
     private final HBox rightButtons = new HBox(10);
     private String result;
+    /** true si el último clic empezó fuera de la tarjeta. */
+    private boolean pressedOutside;
 
     /**
      * @param owner nodo de la ventana sobre la que se abre (para centrarlo y taparla)
@@ -86,6 +92,19 @@ class ModalDialog {
         scene.setFill(Color.TRANSPARENT);
         scene.getStylesheets().add(Views.class.getResource("styles.css").toExternalForm());
         Themes.apply(root, Themes.current(owner));
+        // Clic fuera de la tarjeta = lo mismo que Esc. Hace falta que la ventana cubra la de la app (ver
+        // centerOnOwner) y que ese fondo no sea del todo transparente: en Windows, lo que tiene alfa 0
+        // deja pasar los clics a lo que hay debajo. 1 % de opacidad no se ve y sí los recoge. (No es un
+        // color del diseño: como Color.TRANSPARENT, es «sin fondo».)
+        root.setBackground(new Background(new BackgroundFill(Color.rgb(0, 0, 0, 0.01), null, null)));
+        root.setOnMousePressed(event -> pressedOutside = event.getTarget() == root);
+        root.setOnMouseReleased(event -> {
+            // Pulsar y soltar fuera: así, arrastrar para seleccionar texto y soltar fuera no cierra
+            if (pressedOutside && event.getTarget() == root) {
+                close(null);
+            }
+            pressedOutside = false;
+        });
         // Esc = cerrar sin elegir nada. Con un filtro (se ejecuta ANTES que los controles): si no,
         // un campo de texto con el foco se queda la tecla y el diálogo no se cierra
         scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
@@ -216,6 +235,16 @@ class ModalDialog {
         root.applyCss();
         double width = root.prefWidth(-1);
         double height = root.prefHeight(width);
+        // Con sitio de sobra, la ventana del diálogo cubre la zona útil de la app (transparente) y la
+        // tarjeta se centra dentro: así un clic fuera de la tarjeta llega al diálogo y lo cierra
+        Scene ownerScene = owner.getScene();
+        if (ownerScene.getWidth() >= width && ownerScene.getHeight() >= height) {
+            stage.setX(window.getX() + ownerScene.getX());
+            stage.setY(window.getY() + ownerScene.getY());
+            stage.setWidth(ownerScene.getWidth());
+            stage.setHeight(ownerScene.getHeight());
+            return;
+        }
         double x = window.getX() + (window.getWidth() - width) / 2;
         double y = window.getY() + (window.getHeight() - height) / 2;
         // Si la ventana es más pequeña que el diálogo, centrado se saldría de la pantalla: se mete

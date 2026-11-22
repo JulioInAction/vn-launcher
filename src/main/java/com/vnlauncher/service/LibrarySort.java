@@ -35,6 +35,16 @@ public enum LibrarySort {
         this.comparator = comparator;
     }
 
+    /** El orden guardado en Ajustes; «Último jugado» si el texto no es ninguno de los conocidos. */
+    public static LibrarySort fromSetting(String value) {
+        for (LibrarySort sort : values()) {
+            if (sort.name().equals(value)) {
+                return sort;
+            }
+        }
+        return LAST_PLAYED;
+    }
+
     public String label() {
         return label;
     }

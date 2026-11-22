@@ -68,7 +68,7 @@ public class Main extends Application {
         // 3. El registro: así queda constancia hasta de un fallo al arrancar
         Path logFile = setUpLogging(paths);
         // 4. Manejador global de errores. Abre carpetas con getHostServices (el explorador de archivos)
-        ErrorReporter.install(logFile, uri -> getHostServices().showDocument(uri));
+        ErrorReporter.install(logFile, uri -> ExternalOpener.open(uri, getHostServices()::showDocument));
         // Las fuentes tienen que estar registradas antes de que se aplique el CSS (también el del
         // diálogo de error si falla el arranque)
         Fonts.load();
@@ -94,10 +94,10 @@ public class Main extends Application {
         }
 
         try {
-            // getHostServices().showDocument(url) abre una URL en el navegador del sistema.
+            // ExternalOpener abre una URL en el navegador del sistema (showDocument) y una carpeta en el explorador.
             // Se lo pasamos al controlador como una función, para no atarlo a la clase Application.
             Parent root = Views.load("main-view.fxml",
-                    new MainController(context, url -> getHostServices().showDocument(url), theme,
+                    new MainController(context, url -> ExternalOpener.open(url, getHostServices()::showDocument), theme,
                             Relauncher::start));
 
             // Sin tamaño: lo pone placeWindow (el de la última vez, o uno grande la primera)

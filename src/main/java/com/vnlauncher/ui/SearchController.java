@@ -285,6 +285,8 @@ public class SearchController {
         sourceButton.setText("Añadiendo...");
         BackgroundTasks.run(ctx.background(),
                 () -> {
+                    // Lo que ya se vio de ella (etiquetas, capturas) se guarda ahora: la ficha no lo pide otra vez
+                    ctx.previewService().remember(vn, ctx.catalogService().cachedDetails(vn.id()).orElse(null));
                     ctx.libraryService().addToLibrary(vn);
                     return null;
                 },
@@ -332,39 +334,72 @@ public class SearchController {
         HBox.setHgrow(texts, Priority.ALWAYS);
         texts.setMinWidth(0); // permite que los textos se corten con "..." si no caben
 
-        Node action;
+        // Solo se marca lo que ya está en la biblioteca; para añadir, el botón del panel de la derecha
+        Node action = null;
         if (inLibrary.contains(vn.id())) {
             Label done = new Label("✓  En tu biblioteca");
             done.getStyleClass().add("in-library");
             done.setMinWidth(Region.USE_PREF_SIZE);
             action = done;
-        } else {
-            Button add = new Button("Añadir");
-            add.setOnAction(event -> addToLibrary(vn, add));
-            add.setMinWidth(Region.USE_PREF_SIZE); // con un título largo, se corta el título y no el botón
-            action = add;
         }
 
-        HBox card = new HBox(16, thumb, texts, action);
+        HBox card = new HBox(16, thumb, texts);
         card.setAlignment(Pos.CENTER_LEFT);
         card.getStyleClass().add("result-card");
-        card.setOnMouseClicked(event -> select(hit));
+        card.setOnMouseClicked(event -> {
+            select(hit);
+            if (event.getClickCount() == 2) {
+                openFicha(hit); // doble clic: la ficha (la vista previa, si aún no está en la biblioteca)
+            }
+        });
         // Con la ventana estrecha (la lista comparte fila con el panel de 540 px), el botón o
         // «✓ En tu biblioteca» pasa debajo del desarrollador: si no, al título le quedarían 70 px y
         // se partiría letra a letra. El ancho de la tarjeta no depende de dónde vaya el botón, así
         // que moverlo no vuelve a disparar el listener.
-        VBox.setMargin(action, new Insets(6, 0, 0, 0));
+        if (action == null) {
+            return card;
+        }
+        card.getChildren().add(action);
+        Node moving = action;
+        VBox.setMargin(moving, new Insets(6, 0, 0, 0));
         card.widthProperty().addListener((obs, old, width) -> {
             boolean compact = width.doubleValue() < COMPACT_CARD_WIDTH;
-            if (compact && action.getParent() == card) {
-                card.getChildren().remove(action);
-                texts.getChildren().add(action);
-            } else if (!compact && action.getParent() == texts) {
-                texts.getChildren().remove(action);
-                card.getChildren().add(action);
+            if (compact && moving.getParent() == card) {
+                card.getChildren().remove(moving);
+                texts.getChildren().add(moving);
+            } else if (!compact && moving.getParent() == texts) {
+                texts.getChildren().remove(moving);
+                card.getChildren().add(moving);
             }
         });
         return card;
+    }
+
+    /** «Ver ficha» / doble clic: la vista previa; si ya está en la biblioteca, su ficha de siempre. */
+    private void openFicha(SearchHit hit) {
+        if (inLibrary.contains(hit.vn().id())) {
+            navigator.showVnDetailFromSearch(hit.vn().id());
+        } else {
+            navigator.showVnPreview(hit);
+        }
+    }
+
+    /**
+     * Se vuelve a «Buscar» desde una ficha: puede haberse añadido (o quitado) la VN, y los resultados
+     * tienen que decirlo. Lo demás (resultados, selección, scroll, descripción desplegada) no se toca.
+     */
+    void libraryChanged() {
+        BackgroundTasks.run(ctx.background(), this::libraryIds,
+                ids -> {
+                    if (ids.equals(inLibrary)) {
+                        return;
+                    }
+                    inLibrary.clear();
+                    inLibrary.addAll(ids);
+                    renderResults();
+                    renderFooter();
+                },
+                error -> { }); // sin esto solo se queda «Añadir» donde ya está añadida: no merece un aviso
     }
 
     private void markSelected() {
@@ -633,8 +668,8 @@ public class SearchController {
     }
 
     /**
-     * Pie del panel, fuera del scroll: «Añadir a la biblioteca» a todo el ancho o, si ya está en
-     * ella, «✓ En tu biblioteca» y «Abrir ficha».
+     * Pie del panel, fuera del scroll: «Añadir a la biblioteca» y «Ver ficha» (la vista previa) o, si
+     * ya está en la biblioteca, «✓ En tu biblioteca» y «Abrir ficha».
      */
     private void renderFooter() {
         previewFooter.getChildren().clear();
@@ -652,7 +687,7 @@ public class SearchController {
             HBox.setHgrow(spacer, Priority.ALWAYS);
             Button open = new Button("Abrir ficha");
             open.getStyleClass().add("preview-action");
-            open.setOnAction(event -> navigator.showVnDetail(vn.id()));
+            open.setOnAction(event -> navigator.showVnDetailFromSearch(vn.id()));
             HBox row = new HBox(16, done, spacer, open);
             row.setAlignment(Pos.CENTER_LEFT);
             previewFooter.getChildren().add(row);
@@ -661,7 +696,14 @@ public class SearchController {
             add.getStyleClass().addAll("primary-button", "preview-action");
             add.setMaxWidth(Double.MAX_VALUE);
             add.setOnAction(event -> addToLibrary(vn, add));
-            previewFooter.getChildren().add(add);
+            HBox.setHgrow(add, Priority.ALWAYS);
+            Button view = new Button("Ver ficha");
+            view.getStyleClass().add("preview-action");
+            view.setMinWidth(Region.USE_PREF_SIZE);
+            view.setOnAction(event -> openFicha(selected));
+            HBox row = new HBox(12, add, view);
+            row.setAlignment(Pos.CENTER_LEFT);
+            previewFooter.getChildren().add(row);
         }
     }
 

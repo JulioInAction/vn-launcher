@@ -28,7 +28,7 @@
             fitToWidth="true" styleClass="plain-scroll">
 
     <VBox fx:id="pageContent" spacing="28" styleClass="page-content">
-        <Button text="‹  Biblioteca" onAction="#onBack" styleClass="link-button"/>
+        <Button fx:id="backButton" text="‹  Biblioteca" onAction="#onBack" styleClass="link-button"/>
 
         <!-- Avisos de "Actualizar desde VNDB" (sin conexión...). Solo ocupa sitio si hay alguno. -->
         <VBox fx:id="noticeBox" maxWidth="760"/>
@@ -49,7 +49,11 @@
                 <VBox spacing="4">
                     <Label fx:id="titleLabel" styleClass="detail-title" wrapText="true"/>
                     <Label fx:id="altTitleLabel" styleClass="muted, original-text" wrapText="true"/>
-                    <Label fx:id="metaLabel" styleClass="text2"/>
+                    <!-- «Desarrollador · año» y, en la vista previa, si el juego está terminado -->
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label fx:id="metaLabel" styleClass="text2"/>
+                        <Label fx:id="devStatusPill" styleClass="pill, pill-devstatus"/>
+                    </HBox>
                 </VBox>
 
                 <!-- 2. Chips sin rótulos: el estado (StatusPicker) y las estanterías con ✕ y un «+»
@@ -64,14 +68,24 @@
                 <HBox fx:id="actionsRow" spacing="10" alignment="CENTER_LEFT">
                     <Button fx:id="playButton" text="▶  Jugar" onAction="#onPlay"
                             styleClass="primary-button, big-button" minWidth="-Infinity"/>
+                    <!-- Solo en la vista previa (ficha-vista-previa-*.png): «Añadir a la biblioteca» -->
+                    <Button fx:id="addButton" text="Añadir a la biblioteca" onAction="#onAdd"
+                            styleClass="primary-button, big-button" minWidth="-Infinity"/>
                     <Button fx:id="optionsButton" onAction="#onOptions" styleClass="square-button"/>
                     <Button fx:id="moreButton" onAction="#onMore" styleClass="square-button"/>
-                    <HBox spacing="8" alignment="CENTER_LEFT">
+                    <HBox fx:id="refreshBox" spacing="8" alignment="CENTER_LEFT">
                         <HBox.margin><Insets left="6"/></HBox.margin>
                         <ProgressIndicator fx:id="refreshSpinner" styleClass="small-spinner"/>
                         <Label fx:id="refreshStatus" styleClass="action-status"/>
                     </HBox>
                 </HBox>
+
+                <!-- Solo en la vista previa: «No está en tu biblioteca» -->
+                <Label fx:id="notInLibraryNote" text="No está en tu biblioteca" styleClass="not-in-library"/>
+
+                <!-- Solo en la vista previa, en el sitio de la línea de datos: tarjetas de Duración,
+                        Valoración e Idiomas (DetailLayout) -->
+                <FlowPane fx:id="factCardsRow" hgap="12" vgap="12"/>
 
                 <!-- 4. «37 min jugados · última partida hace 3 h · 0 de 4 rutas» + barra de las rutas.
                         FlowPane: si no cabe, salta de línea entre una parte y otra, nunca a mitad -->
@@ -96,7 +110,8 @@
             <HBox spacing="16" alignment="CENTER_LEFT">
                 <VBox spacing="2">
                     <Label text="Personajes principales" styleClass="section-title"/>
-                    <Label text="Rol «primary» en VNDB. Marca cuáles tienen ruta." styleClass="muted"/>
+                    <Label fx:id="charactersSubtitle" text="Rol «primary» en VNDB. Marca cuáles tienen ruta."
+                           styleClass="muted"/>
                 </VBox>
                 <Region HBox.hgrow="ALWAYS"/>
                 <CheckBox fx:id="showSpoilersCheck" text="Mostrar spoilers"/>

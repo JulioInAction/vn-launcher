@@ -49,6 +49,41 @@ final class Icons {
         return plus;
     }
 
+    /** «i» dentro de un círculo, de 16 px (avisos suaves como «No está en tu biblioteca»). */
+    static Node info() {
+        SVGPath info = new SVGPath();
+        info.setContent("M8 1.5A6.5 6.5 0 1 0 8.01 1.5Z M8 7V11.2 M8 4.6V4.8");
+        info.getStyleClass().add("icon-info");
+        return info;
+    }
+
+    /** Ojo abierto, de 16 px: las imágenes sensibles se ven. */
+    static Node eye() {
+        return eyePath(false);
+    }
+
+    /** Ojo tachado, de 16 px: las imágenes sensibles están difuminadas. */
+    static Node eyeOff() {
+        return eyePath(true);
+    }
+
+    private static Node eyePath(boolean crossed) {
+        SVGPath eye = new SVGPath();
+        eye.setContent("M1 8C3 4.2 5.4 2.6 8 2.6S13 4.2 15 8C13 11.8 10.6 13.4 8 13.4S3 11.8 1 8Z "
+                + "M8 5.6A2.4 2.4 0 1 0 8.01 5.6Z" + (crossed ? " M2.5 2.5L13.5 13.5" : ""));
+        eye.getStyleClass().add("icon-stroke");
+        return eye;
+    }
+
+    /** Enlace externo («abre en el navegador»), de 16 px: una caja abierta y una flecha que sale. */
+    static Node externalLink() {
+        SVGPath link = new SVGPath();
+        link.setContent("M6.5 3H4A1.5 1.5 0 0 0 2.5 4.5V12A1.5 1.5 0 0 0 4 13.5H11.5A1.5 1.5 0 0 0 13 12V9.5 "
+                + "M9.5 2.5H13.5V6.5 M13.5 2.5L7.5 8.5");
+        link.getStyleClass().add("icon-link");
+        return link;
+    }
+
     /** «⋯» (Más opciones): tres puntos. */
     static Node moreDots() {
         HBox dots = new HBox(4);

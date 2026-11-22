@@ -1,6 +1,7 @@
 package com.vnlauncher.ui;
 
 import com.vnlauncher.model.PlayStatus;
+import com.vnlauncher.model.SearchHit;
 import com.vnlauncher.model.Shelf;
 import com.vnlauncher.model.VnTag;
 
@@ -31,6 +32,21 @@ public interface Navigator {
     void showSettings();
 
     void showVnDetail(String vnId);
+
+    /**
+     * La ficha de una VN de la biblioteca abierta desde «Buscar» («Abrir ficha»). La búsqueda no se
+     * descarta: «‹ Buscar» vuelve a ella tal como estaba.
+     */
+    void showVnDetailFromSearch(String vnId);
+
+    /**
+     * La vista previa de un resultado que aún no está en la biblioteca («Ver ficha»). Igual que
+     * {@link #showVnDetailFromSearch}, la búsqueda se queda como estaba.
+     */
+    void showVnPreview(SearchHit hit);
+
+    /** Vuelve a «Buscar» con los resultados, la selección y el scroll que tenía. */
+    void backToSearch();
 
     /**
      * Avisa de que han cambiado datos que muestra la barra lateral (los contadores de cada estado):

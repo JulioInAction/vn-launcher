@@ -12,6 +12,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -32,7 +33,7 @@ import java.util.function.IntConsumer;
  *   <li>en el centro, la captura grande (sin deformar) y flechas a los lados;</li>
  *   <li>abajo, las miniaturas de todas y la ayuda de teclado.</li>
  * </ul>
- * Teclas: ← y → para pasar (dan la vuelta) y Esc para cerrar. Las sensibles se ven difuminadas con
+ * Teclas: ← y → para pasar (dan la vuelta) y Esc para cerrar; también cierra un clic fuera de la captura. Las sensibles se ven difuminadas con
  * un botón «Mostrar» hasta que se pulsa (y siguen destapadas al volver a la ficha).
  *
  * <p>Es un nodo más dentro del StackPane raíz de la ventana (main-view.fxml), por encima del resto:
@@ -134,7 +135,7 @@ final class ScreenshotViewer extends BorderPane {
         thumbsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         thumbsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         thumbsScroll.setFocusTraversable(false);
-        Label hint = new Label("← → para pasar · Esc para cerrar");
+        Label hint = new Label("← → para pasar · Esc o clic fuera para cerrar");
         hint.getStyleClass().add("viewer-hint");
         VBox bottom = new VBox(14, thumbsScroll, hint);
         bottom.setAlignment(Pos.CENTER);
@@ -146,8 +147,26 @@ final class ScreenshotViewer extends BorderPane {
         // --- Teclado: ver keyFilter. Va en la escena mientras el visor está abierto.
         scene = host.getScene();
         scene.addEventFilter(KeyEvent.ANY, keyFilter);
-        // Clics en el fondo: no hacen nada, pero no deben llegar a la ficha de debajo
-        setOnMouseClicked(event -> requestFocus());
+        // Clic en cualquier sitio que no sea la captura, un botón o una miniatura: se cierra. El clic
+        // tampoco llega a la ficha de debajo (el visor lo consume).
+        setOnMouseClicked(event -> {
+            if (event.getButton() == MouseButton.PRIMARY && !isOnContent((Node) event.getTarget())) {
+                close();
+            } else {
+                requestFocus();
+            }
+            event.consume();
+        });
+    }
+
+    /** true si el clic cayó en algo con función propia (la captura grande, un botón, una miniatura). */
+    private boolean isOnContent(Node target) {
+        for (Node node = target; node != null && node != this; node = node.getParent()) {
+            if (node == image || node instanceof Button || thumbTiles.contains(node)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

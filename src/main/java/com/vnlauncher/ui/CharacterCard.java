@@ -34,7 +34,7 @@ class CharacterCard extends VBox {
 
     /**
      * @param imageFile    imagen en disco ya resuelta (o null)
-     * @param onAddRoute   qué hacer al pulsar "Marcar con ruta"
+     * @param onAddRoute   qué hacer al pulsar "Marcar con ruta"; null = sin nada de rutas (vista previa)
      * @param onRevealSpoiler qué hacer al pulsar "Mostrar" en una tarjeta oculta
      */
     CharacterCard(VnCharacter vc, Path imageFile, Options options, Runnable onAddRoute, Runnable onRevealSpoiler) {
@@ -77,6 +77,9 @@ class CharacterCard extends VBox {
             }
         }
 
+        if (onAddRoute == null) {
+            return; // vista previa: la novela aún no está en la biblioteca, no hay rutas que marcar
+        }
         if (options.hasRoute()) {
             getChildren().add(pill("Tiene ruta", "pill-route"));
         } else {

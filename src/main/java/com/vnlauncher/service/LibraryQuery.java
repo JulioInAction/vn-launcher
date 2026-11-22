@@ -6,6 +6,7 @@ import com.vnlauncher.model.Shelf;
 import com.vnlauncher.model.VnTag;
 import com.vnlauncher.model.VisualNovel;
 
+import java.text.Normalizer;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -81,7 +82,14 @@ public record LibraryQuery(PlayStatus status, Shelf shelf, VnTag tag, String tex
         return haystack != null && normalize(haystack).contains(needle);
     }
 
-    private static String normalize(String s) {
-        return s.strip().toLowerCase(Locale.ROOT);
+    /**
+     * El texto tal como se compara: sin mayúsculas, sin tildes y con el ancho completo pasado a normal
+     * («ＦＡＴＥ» = «fate», «ｶﾅ» = «カナ»), así que «Clannad», «clánnad» y «ＣＬＡＮＮＡＤ» coinciden. Solo se
+     * quitan las marcas de las letras latinas (U+0300–U+036F): el dakuten del japonés («ド» ≠ «ト») se queda.
+     */
+    static String normalize(String s) {
+        String wide = Normalizer.normalize(s.strip(), Normalizer.Form.NFKC).toLowerCase(Locale.ROOT);
+        String decomposed = Normalizer.normalize(wide, Normalizer.Form.NFD).replaceAll("[\\u0300-\\u036f]", "");
+        return Normalizer.normalize(decomposed, Normalizer.Form.NFC);
     }
 }

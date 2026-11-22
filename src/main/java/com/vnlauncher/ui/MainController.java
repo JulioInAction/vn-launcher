@@ -2,6 +2,7 @@ package com.vnlauncher.ui;
 
 import com.vnlauncher.app.AppContext;
 import com.vnlauncher.model.PlayStatus;
+import com.vnlauncher.model.SearchHit;
 import com.vnlauncher.model.Shelf;
 import com.vnlauncher.service.LibraryQuery;
 import com.vnlauncher.model.VnTag;
@@ -39,7 +40,8 @@ public class MainController implements Navigator {
     private Object currentController;
 
     // La biblioteca se crea una sola vez y se reutiliza (así recuerda sus filtros). La búsqueda y el
-    // detalle de una VN se crean nuevos cada vez: al volver a «Buscar» se empieza de cero.
+    // detalle de una VN se crean nuevos cada vez: al volver a «Buscar» desde otra pestaña se empieza
+    // de cero. Solo se conserva si se sale de ella a una ficha (showFromSearch) y se vuelve con «‹ Buscar».
     private Parent libraryView;
     private LibraryController libraryController;
     /** Búsqueda en pantalla; null si se está en otra pestaña. */
@@ -68,6 +70,7 @@ public class MainController implements Navigator {
         sidebar.setThemeManager(themeManager);
         listenToPlaytime();
         showLibrary();
+        checkForUpdates();
     }
 
     /**
@@ -158,7 +161,11 @@ public class MainController implements Navigator {
      */
     @Override
     public void showSearch() {
-        if (searchView != null && root.getCenter() == searchView) {
+        if (searchView != null) {
+            // Ya hay una búsqueda abierta (se está en ella o en una ficha que se abrió desde ella)
+            if (root.getCenter() != searchView) {
+                backToSearch();
+            }
             return;
         }
         searchController = new SearchController(context, this);
@@ -166,6 +173,19 @@ public class MainController implements Navigator {
         root.setCenter(searchView);
         currentController = null;
         sidebar.setActive(SidebarController.Section.SEARCH);
+    }
+
+    @Override
+    public void backToSearch() {
+        if (searchView == null) {
+            showSearch();
+            return;
+        }
+        searchController.libraryChanged(); // puede haberse añadido o quitado algo desde la ficha
+        root.setCenter(searchView);
+        currentController = null;
+        sidebar.setActive(SidebarController.Section.SEARCH);
+        sidebar.refresh();
     }
 
     /**
@@ -181,8 +201,25 @@ public class MainController implements Navigator {
         searchView = null;
     }
 
+    /**
+     * Al arrancar, si está activado, mira si hay una versión nueva. Si la hay (y aún no se avisó de
+     * ella) sale un punto junto a «Ajustes». Sin red no pasa nada: ni aviso ni error.
+     */
+    private void checkForUpdates() {
+        BackgroundTasks.runAndHandle(context.background(), () -> context.updateService().checkAtStartup(),
+                release -> sidebar.setUpdateDot(release.isPresent()),
+                error -> { }); // un fallo ya queda en el registro de UpdateService/SettingsService
+    }
+
     @Override
     public void showSettings() {
+        // Entrar en Ajustes es enterarse: el punto se va y no vuelve hasta que salga otra versión
+        sidebar.setUpdateDot(false);
+        BackgroundTasks.run(context.background(), () -> {
+                    context.updateService().acknowledge();
+                    return null;
+                },
+                done -> { }, "No se ha podido guardar el aviso de versión.");
         leaveSearch();
         SettingsController settings = new SettingsController(context, themeManager, urlOpener, relauncher);
         root.setCenter(Views.load("settings-view.fxml", settings));
@@ -193,7 +230,8 @@ public class MainController implements Navigator {
     @Override
     public void showVnDetail(String vnId) {
         leaveSearch();
-        VnDetailController detail = new VnDetailController(context, this, urlOpener, vnId);
+        VnDetailController detail = VnDetailController.library(context, this, urlOpener, vnId,
+                DetailLayout.Back.LIBRARY);
         root.setCenter(Views.load("vn-detail-view.fxml", detail));
         currentController = detail;
         sidebar.setActive(SidebarController.Section.LIBRARY);
@@ -201,6 +239,27 @@ public class MainController implements Navigator {
         if (libraryController != null) {
             highlightFilter(libraryController.query());
         }
+        sidebar.refresh();
+    }
+
+    @Override
+    public void showVnDetailFromSearch(String vnId) {
+        showFromSearch(VnDetailController.library(context, this, urlOpener, vnId, DetailLayout.Back.SEARCH));
+    }
+
+    @Override
+    public void showVnPreview(SearchHit hit) {
+        showFromSearch(VnDetailController.preview(context, this, urlOpener, hit));
+    }
+
+    /**
+     * Una ficha abierta desde «Buscar». A diferencia de las demás, no descarta la búsqueda: sigue viva
+     * (con sus resultados, la selección y el scroll) para que «‹ Buscar» vuelva a ella intacta.
+     */
+    private void showFromSearch(VnDetailController detail) {
+        root.setCenter(Views.load("vn-detail-view.fxml", detail));
+        currentController = detail;
+        sidebar.setActive(SidebarController.Section.SEARCH);
         sidebar.refresh();
     }
 

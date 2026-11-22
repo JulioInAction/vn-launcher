@@ -2,6 +2,8 @@
 # Necesita WiX Toolset instalado (ver README). Cada línea es una opción; # = comentario.
 --type exe
 --icon src/packaging/windows/vn-launcher.ico
+# Pantalla de licencia (MIT) al instalar
+--license-file LICENSE
 # Se instala para el usuario actual (en su AppData), sin pedir permisos de administrador
 --win-per-user-install
 # Entrada en el menú Inicio, dentro de la carpeta "VN Launcher"
