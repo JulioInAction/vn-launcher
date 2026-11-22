@@ -178,6 +178,9 @@
                 <Text fx:id="appNameText" styleClass="text-strong"/>
                 <Text fx:id="versionText" styleClass="text-flow-normal"/>
             </TextFlow>
+            <!-- Aviso de versión nueva, o «Tienes la última versión · comprobado hoy a las 18:07» con
+                 «Comprobar ahora», y el interruptor de la comprobación al arrancar (SettingsController) -->
+            <VBox fx:id="updatesBox" spacing="12"/>
             <HBox alignment="BASELINE_LEFT">
                 <Label text="Datos de las novelas: "/>
                 <Hyperlink text="VNDB.org" onAction="#onOpenVndb"/>

@@ -2,6 +2,7 @@ package com.vnlauncher.ui;
 
 import com.vnlauncher.app.AppContext;
 import com.vnlauncher.app.AppInfo;
+import com.vnlauncher.service.UpdateService;
 import com.vnlauncher.app.SystemInfo;
 import com.vnlauncher.model.BackupInfo;
 import com.vnlauncher.model.BlurLevel;
@@ -15,6 +16,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
@@ -31,6 +33,8 @@ import javafx.util.Duration;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.ZoneId;
+import java.time.Instant;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -100,6 +104,7 @@ public class SettingsController {
     @FXML private Label cacheSizeLabel;
     @FXML private Button clearCacheButton;
     @FXML private HBox weeklyBackupsBox;
+    @FXML private VBox updatesBox;
     @FXML private VBox backupList;
     @FXML private Button exportButton;
     @FXML private Button importButton;
@@ -112,6 +117,11 @@ public class SettingsController {
             new Segmented<>(Arrays.asList(Theme.values()), Theme::label);
     private final Switch spoilers = new Switch();
     private final Switch weeklyBackups = new Switch();
+    private final Switch updatesOnStart = new Switch();
+    /** Donde va el aviso de versión nueva o la línea «Tienes la última versión…». */
+    private final HBox updateStatus = new HBox(16);
+    /** true mientras «Comprobar ahora» espera a GitHub. */
+    private boolean checkingUpdates;
     private final Segmented<BlurLevel> blur =
             new Segmented<>(Arrays.asList(BlurLevel.values()), BlurLevel::label);
 
@@ -133,6 +143,7 @@ public class SettingsController {
         dataDirLabel.setTooltip(new Tooltip(ctx.paths().root().toString()));
         // Si no se pudo preparar el registro (carpeta sin permisos...), no hay carpeta que abrir
         openLogsButton.setDisable(ErrorReporter.logFile() == null);
+        buildUpdates();
         appNameText.setText(AppInfo.NAME);
         versionText.setText(" · versión " + AppInfo.VERSION);
 
@@ -176,6 +187,99 @@ public class SettingsController {
                             save(() -> ctx.settingsService().setWeeklyBackups(now)));
                 },
                 "No se han podido cargar los ajustes.");
+    }
+
+    // =========================================================== Actualizaciones
+
+    private static final String NEW_VERSION = "Hay una versión nueva: %s";
+    private static final String CURRENT_VERSION = "Tienes la %s";
+    private static final String SEE_NEWS = "Ver novedades";
+    private static final String UP_TO_DATE = "Tienes la última versión · comprobado %s";
+    private static final String CHECK_FAILED = "No se ha podido comprobar si hay versiones nuevas";
+    private static final String NOT_CHECKED = "Todavía no se ha comprobado si hay versiones nuevas";
+    private static final String CHECK_NOW = "Comprobar ahora";
+    private static final String CHECKING = "Comprobando…";
+    private static final String CHECK_ON_START = "Buscar actualizaciones al arrancar";
+
+    /** El aviso (o la línea de estado) y, debajo, el interruptor de la comprobación al arrancar. */
+    private void buildUpdates() {
+        updateStatus.setAlignment(Pos.CENTER_LEFT);
+        Label label = new Label(CHECK_ON_START);
+        label.getStyleClass().add("settings-label");
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox switchRow = new HBox(16, label, spacer, updatesOnStart);
+        switchRow.setAlignment(Pos.CENTER_LEFT);
+        updatesBox.getChildren().setAll(updateStatus, switchRow);
+        renderUpdates();
+
+        BackgroundTasks.run(ctx.background(), () -> ctx.settingsService().checkUpdatesOnStart(),
+                enabled -> {
+                    updatesOnStart.setSelected(enabled);
+                    // Después del valor inicial, para que no cuente como un cambio
+                    updatesOnStart.selectedProperty().addListener((obs, was, now) ->
+                            save(() -> ctx.settingsService().setCheckUpdatesOnStart(now)));
+                },
+                "No se han podido cargar los ajustes.");
+    }
+
+    /** Pinta el estado según la última comprobación de esta sesión (el recuadro azul o una línea). */
+    private void renderUpdates() {
+        Optional<UpdateService.Result> last = ctx.updateService().lastResult();
+        updateStatus.getChildren().clear();
+        updateStatus.getStyleClass().remove("update-box");
+        if (last.isPresent() && last.get().status() == UpdateService.Status.AVAILABLE) {
+            UpdateService.Release release = last.get().release();
+            updateStatus.getStyleClass().add("update-box");
+            Label title = new Label(String.format(NEW_VERSION, release.version()));
+            title.getStyleClass().add("text-strong");
+            Label current = new Label(String.format(CURRENT_VERSION, AppInfo.VERSION));
+            current.getStyleClass().add("update-box-sub");
+            VBox texts = new VBox(2, title, current);
+            HBox.setHgrow(texts, Priority.ALWAYS);
+            // Abre la página de la release en el navegador; no descarga nada
+            Button news = new Button(SEE_NEWS, Icons.externalLink());
+            news.setContentDisplay(ContentDisplay.RIGHT);
+            news.setGraphicTextGap(8);
+            news.getStyleClass().addAll("primary-button", "update-button");
+            news.setMinWidth(Region.USE_PREF_SIZE);
+            news.setOnAction(event -> urlOpener.accept(release.url()));
+            updateStatus.getChildren().addAll(texts, news);
+            return;
+        }
+        String line;
+        if (last.isEmpty()) {
+            line = NOT_CHECKED;
+        } else if (last.get().status() == UpdateService.Status.FAILED) {
+            line = CHECK_FAILED; // sin color de error: no es grave
+        } else {
+            line = String.format(UP_TO_DATE, Formats.todayOrDateAt(last.get().checkedAt(), Instant.now(),
+                    ZoneId.systemDefault()));
+        }
+        Label text = new Label(line);
+        text.getStyleClass().add("muted");
+        text.setWrapText(true);
+        HBox.setHgrow(text, Priority.ALWAYS);
+        Button check = new Button(checkingUpdates ? CHECKING : CHECK_NOW);
+        check.setDisable(checkingUpdates);
+        check.setMinWidth(Region.USE_PREF_SIZE);
+        check.setOnAction(event -> onCheckUpdates());
+        updateStatus.getChildren().addAll(text, check);
+    }
+
+    private void onCheckUpdates() {
+        checkingUpdates = true;
+        renderUpdates();
+        BackgroundTasks.run(ctx.background(), () -> {
+                    UpdateService.Result result = ctx.updateService().check();
+                    ctx.updateService().acknowledge(); // ya se está en Ajustes: el punto no hace falta
+                    return result;
+                },
+                result -> {
+                    checkingUpdates = false;
+                    renderUpdates();
+                },
+                "No se ha podido comprobar si hay versiones nuevas.");
     }
 
     // =========================================================== Locale Emulator

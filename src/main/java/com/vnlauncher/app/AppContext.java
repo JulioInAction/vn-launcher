@@ -31,11 +31,13 @@ import com.vnlauncher.service.RouteService;
 import com.vnlauncher.service.ScreenshotService;
 import com.vnlauncher.service.SettingsService;
 import com.vnlauncher.service.ShelfService;
+import com.vnlauncher.service.UpdateService;
 import com.vnlauncher.service.VnDetailsService;
 import com.vnlauncher.util.AppPaths;
 import com.vnlauncher.util.Sleeper;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.http.HttpClient;
 import java.sql.SQLException;
 import java.time.Clock;
@@ -87,6 +89,7 @@ public final class AppContext {
     private final ShelfService shelfService;
     private final PreviewService previewService;
     private final CacheCleanupService cacheCleanupService;
+    private final UpdateService updateService;
     /** Si falló la copia de antes de actualizar (se avisa al abrir la ventana); si no, null. */
     private final Exception preMigrationBackupError;
 
@@ -101,6 +104,7 @@ public final class AppContext {
                        VnDetailsService vnDetailsService, BackupService backupService,
                        ProfileService profileService, ShelfService shelfService,
                        PreviewService previewService, CacheCleanupService cacheCleanupService,
+                       UpdateService updateService,
                        Exception preMigrationBackupError) {
         this.paths = paths;
         this.database = database;
@@ -127,6 +131,7 @@ public final class AppContext {
         this.shelfService = shelfService;
         this.previewService = previewService;
         this.cacheCleanupService = cacheCleanupService;
+        this.updateService = updateService;
         this.preMigrationBackupError = preMigrationBackupError;
         // Solo necesita la caché de imágenes: se crea aquí, como RefreshService
         this.screenshotService = new ScreenshotService(imageCache);
@@ -209,7 +214,9 @@ public final class AppContext {
                 backupService, new ProfileService(database, paths, backupService, clock, AppInfo.VERSION),
                 new ShelfService(new ShelfRepository(database), clock),
                 new PreviewService(vnRepository, new VnDetailsRepository(database), clock),
-                new CacheCleanupService(database, imageCache, clock), backupError);
+                new CacheCleanupService(database, imageCache, clock),
+                new UpdateService(httpClient, updatesEndpoint(), AppInfo.VERSION, settingsService, clock),
+                backupError);
     }
 
     /**
@@ -229,6 +236,12 @@ public final class AppContext {
                 LOG.log(System.Logger.Level.WARNING, "No se pudo limpiar la caché", e);
             }
         });
+    }
+
+    /** -Dvnlauncher.updates.url=http://localhost:8000/ apunta la comprobación a otro sitio: solo para probar el aviso. */
+    private static URI updatesEndpoint() {
+        String override = System.getProperty("vnlauncher.updates.url");
+        return override == null ? UpdateService.LATEST_RELEASE : URI.create(override);
     }
 
     /** Se llama al cerrar la ventana: corta las tareas y conexiones pendientes. */
@@ -306,6 +319,11 @@ public final class AppContext {
     /** Guardar lo visto en la búsqueda al abrir la vista previa o al añadir. */
     public PreviewService previewService() {
         return previewService;
+    }
+
+    /** Aviso de versiones nuevas (GitHub). */
+    public UpdateService updateService() {
+        return updateService;
     }
 
     /** «Mis estanterías». */

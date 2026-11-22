@@ -70,6 +70,7 @@ public class MainController implements Navigator {
         sidebar.setThemeManager(themeManager);
         listenToPlaytime();
         showLibrary();
+        checkForUpdates();
     }
 
     /**
@@ -200,8 +201,25 @@ public class MainController implements Navigator {
         searchView = null;
     }
 
+    /**
+     * Al arrancar, si está activado, mira si hay una versión nueva. Si la hay (y aún no se avisó de
+     * ella) sale un punto junto a «Ajustes». Sin red no pasa nada: ni aviso ni error.
+     */
+    private void checkForUpdates() {
+        BackgroundTasks.runAndHandle(context.background(), () -> context.updateService().checkAtStartup(),
+                release -> sidebar.setUpdateDot(release.isPresent()),
+                error -> { }); // un fallo ya queda en el registro de UpdateService/SettingsService
+    }
+
     @Override
     public void showSettings() {
+        // Entrar en Ajustes es enterarse: el punto se va y no vuelve hasta que salga otra versión
+        sidebar.setUpdateDot(false);
+        BackgroundTasks.run(context.background(), () -> {
+                    context.updateService().acknowledge();
+                    return null;
+                },
+                done -> { }, "No se ha podido guardar el aviso de versión.");
         leaveSearch();
         SettingsController settings = new SettingsController(context, themeManager, urlOpener, relauncher);
         root.setCenter(Views.load("settings-view.fxml", settings));

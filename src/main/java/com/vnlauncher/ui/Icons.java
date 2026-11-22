@@ -75,6 +75,15 @@ final class Icons {
         return eye;
     }
 
+    /** Enlace externo («abre en el navegador»), de 16 px: una caja abierta y una flecha que sale. */
+    static Node externalLink() {
+        SVGPath link = new SVGPath();
+        link.setContent("M6.5 3H4A1.5 1.5 0 0 0 2.5 4.5V12A1.5 1.5 0 0 0 4 13.5H11.5A1.5 1.5 0 0 0 13 12V9.5 "
+                + "M9.5 2.5H13.5V6.5 M13.5 2.5L7.5 8.5");
+        link.getStyleClass().add("icon-link");
+        return link;
+    }
+
     /** «⋯» (Más opciones): tres puntos. */
     static Node moreDots() {
         HBox dots = new HBox(4);

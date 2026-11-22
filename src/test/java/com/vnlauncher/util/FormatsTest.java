@@ -24,4 +24,15 @@ class FormatsTest {
         assertEquals("2,4 MB", Formats.fileSize(2_516_582));
         assertEquals("142,0 MB", Formats.fileSize(148_897_792));
     }
+
+    @Test
+    void todayOrDateAtSaysTodayOrGivesTheDate() {
+        java.time.ZoneId zone = java.time.ZoneOffset.UTC;
+        java.time.Instant now = java.time.Instant.parse("2026-11-22T20:00:00Z");
+
+        assertEquals("hoy a las 18:07",
+                Formats.todayOrDateAt(java.time.Instant.parse("2026-11-22T18:07:00Z"), now, zone));
+        assertEquals("el 21/11/2026 a las 23:59",
+                Formats.todayOrDateAt(java.time.Instant.parse("2026-11-21T23:59:00Z"), now, zone));
+    }
 }

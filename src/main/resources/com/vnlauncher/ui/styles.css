@@ -780,6 +780,51 @@
     -fx-stroke: -vn-on-accent-dim;
 }
 
+/* Punto de «hay versión nueva» junto a «Ajustes» en la barra lateral */
+.update-dot {
+    -fx-background-color: -vn-accent;
+    -fx-background-radius: 999;
+    -fx-min-width: 8;
+    -fx-pref-width: 8;
+    -fx-max-width: 8;
+    -fx-min-height: 8;
+    -fx-pref-height: 8;
+    -fx-max-height: 8;
+}
+
+/* Ajustes → Acerca de → actualizaciones */
+.update-box {
+    -fx-background-color: -vn-blue-bg;
+    -fx-background-radius: 12;
+    -fx-border-color: -vn-blue;
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+    -fx-padding: 14 18 14 18;
+}
+
+.update-box-sub {
+    -fx-font-size: 13px;
+    -fx-text-fill: -vn-muted;
+}
+
+.button.update-button {
+    -fx-min-height: 44;
+    -fx-pref-height: 44;
+    -fx-max-height: 44;
+}
+
+.icon-link {
+    -fx-fill: transparent;
+    -fx-stroke: -vn-text;
+    -fx-stroke-width: 1.5;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+}
+
+.primary-button .icon-link {
+    -fx-stroke: -vn-on-accent;
+}
+
 /* ---- Fila de acciones de la ficha: «Jugar» + dos botones cuadrados de 52 px */
 .button.square-button {
     -fx-padding: 0;

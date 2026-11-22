@@ -23,6 +23,8 @@ public class SettingsService {
     static final String WINDOW = "window";   // "x;y;ancho;alto;maximizada"
     static final String WEEKLY_BACKUPS = "backup.weekly";
     static final String LIBRARY_SORT = "library.sort";
+    static final String UPDATES_ON_START = "updates.on_start";
+    static final String UPDATES_NOTIFIED = "updates.notified";
 
 
     private final SettingsRepository repository;
@@ -113,6 +115,24 @@ public class SettingsService {
 
     public void setWeeklyBackups(boolean enabled) throws SQLException {
         repository.put(WEEKLY_BACKUPS, String.valueOf(enabled));
+    }
+
+    /** Buscar versiones nuevas al arrancar (por defecto, sí). «Comprobar ahora» funciona igualmente. */
+    public boolean checkUpdatesOnStart() throws SQLException {
+        return repository.get(UPDATES_ON_START).map(Boolean::parseBoolean).orElse(true);
+    }
+
+    public void setCheckUpdatesOnStart(boolean enabled) throws SQLException {
+        repository.put(UPDATES_ON_START, String.valueOf(enabled));
+    }
+
+    /** La última versión nueva de la que ya se avisó (el punto de la barra lateral); vacío si ninguna. */
+    public Optional<String> lastNotifiedUpdate() throws SQLException {
+        return repository.get(UPDATES_NOTIFIED);
+    }
+
+    public void setLastNotifiedUpdate(String version) throws SQLException {
+        repository.put(UPDATES_NOTIFIED, version);
     }
 
     /**
