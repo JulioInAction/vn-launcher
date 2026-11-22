@@ -1,6 +1,6 @@
 # Traspaso: VN Launcher camino de la 1.0 y la 1.1
 
-Estado a 22/11/2026. Rama `claude/sharp-goodall-doj9gv` (fase 10 sin fusionar en `main`). 266 tests en verde
+Estado a 22/11/2026. Rama `claude/sharp-goodall-doj9gv` (fase 10 sin fusionar en `main`). 270 tests en verde
 (`mvn -q -B test`; en el entorno de pruebas Linux: `JAVA_HOME=…java-25… -Dmaven.compiler.release=25`).
 
 ## 1. Hecho y verificado
@@ -106,8 +106,8 @@ Todo probado con tests y en la app real (Linux, Xvfb). **Falta una pasada en Win
    - reinicio con el `.exe` instalado (restaurar e importar);
    - instancia única;
    - exportar/importar;
-   - «Abrir carpeta»;
-   - aspecto de menús y diálogos (aquí salen esquinas negras y borde blanco por Xvfb).
+   - «Abrir carpeta» (arreglado tras probar el instalado: abría el navegador; ahora `ExternalOpener` usa `explorer.exe`; volver a comprobarlo con el nuevo `.exe`);
+   - aspecto de menús y diálogos: **comprobado en Windows, se ve bien** (las esquinas negras y el borde blanco son solo de Xvfb).
 6. **Fase 13 · Publicar la 1.0.0.** Versión 1.0.0 (ahora 0.1.0), licencia MIT, `CHANGELOG.md`, README, prueba instalando encima de la 0.1.0 y release a mano (`v1.0.0`).
 7. **Después de la 1.0:**
    - GitHub Action que construya el instalador al subir la etiqueta y publique junto a él su SHA-256 (p. ej. `VN-Launcher-1.0.1.exe.sha256`).
