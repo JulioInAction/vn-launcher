@@ -1,13 +1,15 @@
 package com.vnlauncher.ui;
 
 import javafx.scene.Node;
+import javafx.scene.layout.Region;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Texto con trozos en negrita para un TextFlow, a partir de plantillas completas con marcas
+ * Texto con trozos en negrita (en TextFlow), a partir de plantillas completas con marcas
  * {@code <b>…</b>}: «<b>37 min</b> jugados». Así cada frase sigue siendo UNA plantilla (traducible
  * entera) y no un pegado de trozos sueltos.
  */
@@ -45,16 +47,26 @@ final class RichText {
         return parts;
     }
 
-    /** Varias frases en una línea, separadas por «·» en -vn-faint (clase {@code rich-separator}). */
-    static List<Node> line(List<String> sentences) {
-        List<Node> nodes = new ArrayList<>();
+    /**
+     * Varias frases para una fila, separadas por «·» en -vn-faint (clase {@code rich-separator}):
+     * un bloque por frase, con su separador al final. Puestos en un FlowPane, si no caben saltan de
+     * línea entre una frase y otra, nunca a mitad de frase.
+     *
+     * @return una lista que se puede modificar (p. ej. para añadir algo pegado a la última frase)
+     */
+    static List<Node> blocks(List<String> sentences) {
+        List<Node> blocks = new ArrayList<>();
         for (int i = 0; i < sentences.size(); i++) {
-            if (i > 0) {
-                nodes.add(text(SEPARATOR, "rich-separator"));
+            TextFlow block = new TextFlow();
+            block.getChildren().addAll(parse(sentences.get(i)));
+            if (i < sentences.size() - 1) {
+                block.getChildren().add(text(SEPARATOR, "rich-separator"));
             }
-            nodes.addAll(parse(sentences.get(i)));
+            // Que el FlowPane no la estreche: así nunca se parte por dentro
+            block.setMinWidth(Region.USE_PREF_SIZE);
+            blocks.add(block);
         }
-        return nodes;
+        return blocks;
     }
 
     private static Text text(String content, String styleClass) {

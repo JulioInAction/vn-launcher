@@ -48,7 +48,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.SVGPath;
 import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -137,8 +136,7 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
     @FXML private Button moreButton;
     @FXML private ProgressIndicator refreshSpinner;
     @FXML private Label refreshStatus;
-    @FXML private TextFlow statsText;
-    @FXML private ProgressBar routesBar;
+    @FXML private FlowPane statsRow;
     @FXML private VBox tagsContainer;
     @FXML private Label descriptionLabel;
     @FXML private Hyperlink readMoreLink;
@@ -609,10 +607,20 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
                         ZoneId.systemDefault()));
         String routeText = progress.total() == 0 ? NO_ROUTES
                 : String.format(ROUTES, progress.completed(), progress.total());
-        statsText.getChildren().setAll(RichText.line(List.of(
-                String.format(PLAYED, PlayTime.format(playSeconds)), lastPlayed, routeText)));
-        routesBar.setProgress(progress.fraction());
-        show(routesBar, progress.total() > 0);
+        List<Node> parts = RichText.blocks(List.of(
+                String.format(PLAYED, PlayTime.format(playSeconds)), lastPlayed, routeText));
+        if (progress.total() > 0) {
+            // La barra va pegada a «0 de 4 rutas»: si salta de línea, salta con ella
+            ProgressBar bar = new ProgressBar(progress.fraction());
+            bar.getStyleClass().addAll("thin-bar", "routes-mini-bar");
+            bar.setMinWidth(80);
+            bar.setPrefWidth(80);
+            bar.setMaxWidth(80);
+            HBox routesPart = new HBox(12, parts.getLast(), bar);
+            routesPart.setAlignment(Pos.CENTER_LEFT);
+            parts.set(parts.size() - 1, routesPart);
+        }
+        statsRow.getChildren().setAll(parts);
     }
 
     private void renderDescription(String description) {

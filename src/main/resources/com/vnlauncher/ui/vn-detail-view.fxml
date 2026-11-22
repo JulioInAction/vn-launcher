@@ -13,7 +13,6 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.TextFlow?>
 
 <!-- Ficha de una VN (ficha-simplificada-*.png):
        · cabecera: portada + título, chips de estado y estanterías, acciones (Jugar, Opciones del
@@ -74,12 +73,9 @@
                     </HBox>
                 </HBox>
 
-                <!-- 4. «37 min jugados · última partida hace 3 h · 0 de 4 rutas» + barra de las rutas -->
-                <HBox spacing="12" alignment="CENTER_LEFT">
-                    <TextFlow fx:id="statsText" styleClass="stats-line"/>
-                    <ProgressBar fx:id="routesBar" progress="0" styleClass="thin-bar, routes-mini-bar"
-                                 minWidth="80" prefWidth="80" maxWidth="80"/>
-                </HBox>
+                <!-- 4. «37 min jugados · última partida hace 3 h · 0 de 4 rutas» + barra de las rutas.
+                        FlowPane: si no cabe, salta de línea entre una parte y otra, nunca a mitad -->
+                <FlowPane fx:id="statsRow" vgap="4" rowValignment="CENTER"/>
 
                 <!-- 5. Etiquetas en una línea + «+N más» (TagChips, en código). Se oculta si no hay -->
                 <VBox fx:id="tagsContainer"/>
