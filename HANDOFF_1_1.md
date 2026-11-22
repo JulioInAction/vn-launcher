@@ -1,6 +1,6 @@
 # Traspaso: VN Launcher camino de la 1.0 y la 1.1
 
-Estado a 22/11/2026. Rama `claude/sharp-goodall-doj9gv` (fase 10 sin fusionar en `main`). 253 tests en verde
+Estado a 22/11/2026. Rama `claude/sharp-goodall-doj9gv` (fase 10 sin fusionar en `main`). 255 tests en verde
 (`mvn -q -B test`; en el entorno de pruebas Linux: `JAVA_HOME=…java-25… -Dmaven.compiler.release=25`).
 
 ## 1. Hecho y verificado
@@ -20,6 +20,7 @@ Todo probado con tests y en la app real (Linux, Xvfb). **Falta una pasada en Win
 | 8 | Quitar una VN borra su portada propia de `covers/` |
 | 9 | Menú de clic derecho en las portadas (Jugar, Abrir configuración, Abrir carpeta, Estantería, Estado, Quitar) |
 | 10 | Vista previa de la ficha (migración 008): «Ver ficha» / doble clic en Buscar, tarjetas, «Añadir» en el sitio, limpieza de la caché a los 30 días |
+| 11 | Buscador en la biblioteca (título, original, desarrollador; sin mayúsculas, tildes ni ancho completo; Ctrl+F y Esc), botón del ojo de 44 px (solo la sesión) y «Ordenar por» recordado (`library.sort`, viaja con el perfil; si no se reconoce, «Último jugado») |
 | — | Retoques: filas de rutas (centrado, píldora única, lápiz), línea de datos sin cortes, «+» centrado |
 
 ## 2. Archivos relevantes (`src/main/java/com/vnlauncher/`)
@@ -95,10 +96,7 @@ Todo probado con tests y en la app real (Linux, Xvfb). **Falta una pasada en Win
    - Etiquetas y capturas se guardan **enteras** (con spoilers y todas las capturas) desde `CatalogService.cachedDetails`, sin otra petición, al «Ver ficha» o al añadir (`PreviewService.remember`). Mientras se navega por los resultados no se escribe nada.
    - Migración 008: `vn.last_viewed_at` (rellenada con `fetched_at`). `CacheCleanupService` corre al arrancar (`startBackgroundMaintenance`): borra VNs fuera de la biblioteca con 30 días sin verse, sus personajes y desarrolladores huérfanos y sus imágenes; nunca un personaje con ruta. Quitar una VN de la biblioteca cuenta como «vista».
    - Diferencia con la imagen del diseño: «Ver en VNDB» va solo en el «⋯» (como pide este traspaso), no también como enlace junto al año.
-2. **Recordar «Ordenar por»** en `setting`. Viaja con el perfil; si el valor no se reconoce, «Último jugado». Hacerlo junto a la fase 11.
-3. **Fase 11 · Buscador en la biblioteca y botón del ojo.**
-   - Buscador: título, título original japonés y desarrollador. Ignora mayúsculas, tildes y ancho completo. Ctrl+F lo enfoca y Esc lo vacía.
-   - Ojo: `ToggleButton` de 44 px que sustituye a la casilla «Mostrar imágenes sensibles». Solo dura la sesión y no toca el ajuste.
+2. ~~Recordar «Ordenar por»~~ y 3. ~~**Fase 11**~~ — hechos (ver tabla). El texto del buscador es parte de `LibraryQuery`; «Biblioteca» y pulsar una etiqueta lo vacían, y un estado o estantería lo conservan.
 4. **Fase 12 · Aviso de actualizaciones.** Última release de GitHub, comparación numérica por partes (1.0.10 > 1.0.9), ignora la «v». Falla en silencio sin red; aviso e interruptor en Ajustes.
 5. **Pasada en Windows:**
    - reinicio con el `.exe` instalado (restaurar e importar);

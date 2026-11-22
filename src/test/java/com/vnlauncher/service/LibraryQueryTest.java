@@ -79,4 +79,21 @@ class LibraryQueryTest {
         assertEquals(List.of("v17"), ids(LibraryQuery.ALL.withText("ever").withStatus(PlayStatus.PLAYING)),
                 "Se combina con los demás");
     }
+
+    @Test
+    void theTextIgnoresAccentsAndFullWidthLetters() {
+        LibraryItem accented = item("v1", "Café Ñoño", null, "Désarrollador", PlayStatus.PENDING);
+        LibraryItem wide = item("v2", "ＦＡＴＥ／ｈｏｌｌｏｗ", "ｸﾗﾅﾄﾞ", "X", PlayStatus.PENDING);
+        List<LibraryItem> items = List.of(accented, wide, CLANNAD);
+        java.util.function.Function<String, List<String>> search = text -> LibraryQuery.ALL.withText(text)
+                .apply(items, Set.of(), Set.of()).stream().map(i -> i.entry().vn().id()).toList();
+
+        assertEquals(List.of("v1"), search.apply("cafe nono"));
+        assertEquals(List.of("v1"), search.apply("DESARROLLADOR"));
+        assertEquals(List.of("v1"), search.apply("café"), "Con tilde también");
+        assertEquals(List.of("v2"), search.apply("fate/hollow"), "Ancho completo en el título");
+        assertEquals(List.of("v2", "v4"), search.apply("クラナド"), "Y el katakana de ancho medio es el mismo");
+        assertEquals(List.of("v2"), search.apply("ｆａｔｅ"), "Escribir en ancho completo");
+        assertEquals(List.of(), search.apply("クラナト"), "Sin dakuten es otra palabra");
+    }
 }

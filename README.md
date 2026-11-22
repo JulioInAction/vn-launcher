@@ -100,7 +100,7 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
 - [ ] Versión 1.0 (en curso): registro de errores ✓, copias de seguridad automáticas ✓, restaurar
   una copia ✓, exportar e importar el perfil ✓, estado manual ✓, estanterías ✓, ejecutables perdidos ✓,
   limpieza al quitar una VN ✓, menú de clic derecho en las portadas ✓, vista previa de la ficha ✓,
-  búsqueda en la biblioteca, aviso de actualizaciones
+  búsqueda en la biblioteca ✓, orden recordado ✓, botón del ojo ✓, aviso de actualizaciones
 - Después de la 1.0: GitHub Action que construya el instalador al subir una etiqueta; en la 1.1,
   traducción completa al inglés (ResourceBundle, selector de idioma, plurales con MessageFormat y
   fechas según el idioma). Por eso el código nuevo escribe cada frase como una plantilla completa

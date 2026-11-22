@@ -22,6 +22,7 @@ public class SettingsService {
     static final String BLUR = "content.blur";
     static final String WINDOW = "window";   // "x;y;ancho;alto;maximizada"
     static final String WEEKLY_BACKUPS = "backup.weekly";
+    static final String LIBRARY_SORT = "library.sort";
 
 
     private final SettingsRepository repository;
@@ -112,6 +113,18 @@ public class SettingsService {
 
     public void setWeeklyBackups(boolean enabled) throws SQLException {
         repository.put(WEEKLY_BACKUPS, String.valueOf(enabled));
+    }
+
+    /**
+     * El «Ordenar por» de la biblioteca. Se guarda con el nombre del valor ({@code TITLE}); si falta o
+     * ya no se reconoce (un perfil de otra versión), «Último jugado».
+     */
+    public LibrarySort librarySort() throws SQLException {
+        return repository.get(LIBRARY_SORT).map(LibrarySort::fromSetting).orElse(LibrarySort.LAST_PLAYED);
+    }
+
+    public void setLibrarySort(LibrarySort sort) throws SQLException {
+        repository.put(LIBRARY_SORT, sort.name());
     }
 
     public BlurLevel blurLevel() throws SQLException {

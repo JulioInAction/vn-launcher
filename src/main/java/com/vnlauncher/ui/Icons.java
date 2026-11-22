@@ -57,6 +57,24 @@ final class Icons {
         return info;
     }
 
+    /** Ojo abierto, de 16 px: las imágenes sensibles se ven. */
+    static Node eye() {
+        return eyePath(false);
+    }
+
+    /** Ojo tachado, de 16 px: las imágenes sensibles están difuminadas. */
+    static Node eyeOff() {
+        return eyePath(true);
+    }
+
+    private static Node eyePath(boolean crossed) {
+        SVGPath eye = new SVGPath();
+        eye.setContent("M1 8C3 4.2 5.4 2.6 8 2.6S13 4.2 15 8C13 11.8 10.6 13.4 8 13.4S3 11.8 1 8Z "
+                + "M8 5.6A2.4 2.4 0 1 0 8.01 5.6Z" + (crossed ? " M2.5 2.5L13.5 13.5" : ""));
+        eye.getStyleClass().add("icon-stroke");
+        return eye;
+    }
+
     /** «⋯» (Más opciones): tres puntos. */
     static Node moreDots() {
         HBox dots = new HBox(4);

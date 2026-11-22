@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
@@ -30,7 +31,8 @@
                 <Region HBox.hgrow="ALWAYS"/>
                 <!-- "Descargando portadas · 3 de 8": solo mientras se descargan -->
                 <Label fx:id="coversLabel" styleClass="meta"/>
-                <CheckBox fx:id="showSensitiveCheck" text="Mostrar imágenes sensibles"/>
+                <!-- El ojo: muestra u oculta las imágenes sensibles mientras dure la sesión (no cambia el ajuste) -->
+                <ToggleButton fx:id="revealToggle" styleClass="eye-button"/>
                 <Region minWidth="12"/>
                 <Button fx:id="addButton" text="+  Añadir VN" onAction="#onAddVn"/>
             </HBox>
@@ -46,6 +48,9 @@
              cada uno con su ✕, y a la derecha el orden. Debajo, un aviso si hace falta. -->
         <VBox spacing="10">
             <HBox fx:id="filtersRow" spacing="8" alignment="CENTER_LEFT">
+                <!-- Título, título original y desarrollador. Ctrl+F lo enfoca; Esc lo vacía -->
+                <TextField fx:id="searchField" promptText="Buscar en tu biblioteca" prefWidth="280"
+                           minWidth="-Infinity"/>
                 <!-- FlowPane: si los chips no caben en una línea (ventana estrecha), pasan a la de
                      abajo en vez de empujar y cortar el desplegable de orden -->
                 <FlowPane fx:id="activeFiltersBox" hgap="8" vgap="8" HBox.hgrow="ALWAYS" alignment="CENTER_LEFT"/>

@@ -112,4 +112,21 @@ class SettingsServiceTest {
         assertFalse(settings.weeklyBackups());
         assertEquals("false", new SettingsRepository(db).get("backup.weekly").orElseThrow());
     }
+
+    @Test
+    void librarySortIsRememberedAndAnUnknownValueFallsBackToLastPlayed() throws Exception {
+        Database db = new Database(tempDir.resolve("test.db"));
+        db.migrate();
+        SettingsRepository repository = new SettingsRepository(db);
+        SettingsService settings = new SettingsService(repository, ContentFilter.withDefaults());
+
+        assertEquals(LibrarySort.LAST_PLAYED, settings.librarySort(), "Por defecto");
+
+        settings.setLibrarySort(LibrarySort.PLAY_TIME);
+        assertEquals(LibrarySort.PLAY_TIME, settings.librarySort());
+        assertEquals("PLAY_TIME", repository.get("library.sort").orElseThrow());
+
+        repository.put("library.sort", "ORDEN_DE_UNA_VERSION_FUTURA");
+        assertEquals(LibrarySort.LAST_PLAYED, settings.librarySort());
+    }
 }

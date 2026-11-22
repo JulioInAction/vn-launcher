@@ -797,6 +797,30 @@
     -fx-background-color: -vn-sel;
 }
 
+/* El ojo de la biblioteca (44 × 44): encendido = imágenes sensibles a la vista */
+.toggle-button.eye-button {
+    -fx-padding: 0;
+    -fx-min-width: 44;
+    -fx-pref-width: 44;
+    -fx-max-width: 44;
+    -fx-min-height: 44;
+    -fx-pref-height: 44;
+    -fx-max-height: 44;
+    -fx-background-color: transparent;
+    -fx-background-radius: 12;
+    -fx-border-color: -vn-border;
+    -fx-border-radius: 12;
+}
+
+.toggle-button.eye-button:hover {
+    -fx-background-color: -vn-sel;
+}
+
+.toggle-button.eye-button:selected {
+    -fx-background-color: -vn-surface;
+    -fx-border-color: -vn-accent;
+}
+
 /* Iconos de Icons: con trazo (engranaje) o rellenos (los tres puntos), del color del texto */
 .icon-stroke {
     -fx-fill: transparent;
