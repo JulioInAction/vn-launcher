@@ -8,6 +8,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -17,6 +18,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.SVGPath;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -81,19 +84,33 @@ final class StatusPicker extends Button {
     }
 
     private void openMenu() {
-        menu.getItems().setAll(item(automaticIcon(), AUTOMATIC, String.format(AUTOMATIC_HINT, automatic.label()),
-                override == null, null));
-        menu.getItems().add(new SeparatorMenuItem());
-        for (PlayStatus status : PlayStatus.values()) {
-            // En pausa y Abandonada nunca salen solos: siempre son «Fijado a mano»
-            menu.getItems().add(item(StatusVisuals.dot(status), status.label(),
-                    status.manualOnly() ? MANUAL_HINT : null, override == status, status));
-        }
+        menu.getItems().setAll(menuItems(override, automatic, onChoose));
         menu.show(this, Side.BOTTOM, 0, 6);
     }
 
+    /**
+     * Las filas de la lista: «Automático (ahora: Jugando)», un separador y los cinco estados. Las
+     * usa también el menú de clic derecho de las portadas (LibraryTileMenu), como submenú.
+     *
+     * @param onChoose recibe lo elegido (un estado, o null para «Automático»); no se llama si se
+     *                 elige lo que ya estaba
+     */
+    static List<MenuItem> menuItems(PlayStatus override, PlayStatus automatic, Consumer<PlayStatus> onChoose) {
+        List<MenuItem> items = new ArrayList<>();
+        items.add(item(automaticIcon(), AUTOMATIC, String.format(AUTOMATIC_HINT, automatic.label()),
+                override == null, null, override, onChoose));
+        items.add(new SeparatorMenuItem());
+        for (PlayStatus status : PlayStatus.values()) {
+            // En pausa y Abandonada nunca salen solos: siempre son «Fijado a mano»
+            items.add(item(StatusVisuals.dot(status), status.label(),
+                    status.manualOnly() ? MANUAL_HINT : null, override == status, status, override, onChoose));
+        }
+        return items;
+    }
+
     /** Una fila: icono, nombre, explicación debajo (si hay) y ✓ si es el elegido. */
-    private CustomMenuItem item(Node icon, String title, String hint, boolean selected, PlayStatus value) {
+    private static CustomMenuItem item(Node icon, String title, String hint, boolean selected, PlayStatus value,
+                                       PlayStatus override, Consumer<PlayStatus> onChoose) {
         Label name = new Label(title);
         name.getStyleClass().add("status-menu-title");
         VBox texts = new VBox(1, name);

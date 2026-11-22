@@ -693,6 +693,31 @@
     -fx-border-color: -vn-border;
 }
 
+/* Flecha de los submenús («Añadir a estantería ›») */
+.context-menu .menu > .right-container > .arrow {
+    -fx-background-color: -vn-muted;
+}
+
+.context-menu .menu-item:disabled .label {
+    -fx-text-fill: -vn-faint;
+}
+
+/* Menú de clic derecho de una portada (LibraryTileMenu): un poco más de aire que los de serie */
+.context-menu.tile-menu {
+    -fx-padding: 6;
+}
+
+.tile-menu .menu-item {
+    -fx-background-radius: 8;
+    -fx-padding: 8 12 8 12;
+}
+
+/* La opción elegida de una lista (el estado de ahora), también cuando la lista es un submenú */
+.context-menu .menu-item.selected {
+    -fx-background-color: -vn-sel;
+    -fx-background-radius: 8;
+}
+
 /* ---- Estanterías de la ficha (ShelfChips, ficha-estado-*.png) */
 .shelf-chip {
     -fx-background-color: -vn-surface2;

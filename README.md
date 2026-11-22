@@ -99,7 +99,7 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
 - [ ] Fase 8: Discord Rich Presence
 - [ ] Versión 1.0 (en curso): registro de errores ✓, copias de seguridad automáticas ✓, restaurar
   una copia ✓, exportar e importar el perfil ✓, estado manual ✓, estanterías ✓, ejecutables perdidos ✓,
-  limpieza al quitar una VN ✓,
+  limpieza al quitar una VN ✓, menú de clic derecho en las portadas ✓,
   vista previa de la ficha, búsqueda en la biblioteca, aviso de actualizaciones
 - Después de la 1.0: GitHub Action que construya el instalador al subir una etiqueta; en la 1.1,
   traducción completa al inglés (ResourceBundle, selector de idioma, plurales con MessageFormat y
@@ -235,6 +235,13 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
   índice `UNIQUE ... COLLATE NOCASE` lo respalda). En la ficha, en la fila de chips, detrás del
   estado (`ShelfChips`), con un «+» redondo para añadir. Al quitar una VN de la biblioteca sale sola de sus
   estanterías (`ON DELETE CASCADE`).
+- **Clic derecho en una portada** (`LibraryTileMenu`): Jugar (o «Elegir ejecutable…» si aún no
+  tiene; «Jugando…» desactivado si está abierto); justo debajo «Abrir configuración del juego», solo
+  si tiene programa de configuración; «Abrir carpeta del juego»; «Añadir a estantería» y «Cambiar
+  estado» como submenús, con las mismas listas que la ficha (`ShelfChips.menuItems`,
+  `StatusPicker.menuItems`); y «Quitar de la biblioteca» en rojo, con la misma confirmación que el
+  «⋯» de la ficha (`LibraryRemoval`). Jugar, la configuración y la carpeta se desactivan si su
+  archivo ya no está. Las estanterías se leen al abrir el menú (pueden haber cambiado).
 - **Filtros** (`LibraryQuery`, sin nada de interfaz y con tests): un estado **o** una estantería
   (elegir uno quita el otro), más la etiqueta y un texto de búsqueda (título, título original o
   desarrollador; la caja de búsqueda llega en la fase 11), que se combinan con cualquiera.

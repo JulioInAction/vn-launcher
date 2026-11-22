@@ -130,7 +130,7 @@ public class MainController implements Navigator {
     /** La vista de la biblioteca se crea una vez y se reutiliza (así recuerda sus filtros). */
     private LibraryController library() {
         if (libraryView == null) {
-            libraryController = new LibraryController(context, this);
+            libraryController = new LibraryController(context, this, urlOpener);
             libraryView = Views.load("library-view.fxml", libraryController);
             // Al cambiar los filtros (también al quitar uno con su ✕), que la barra resalte lo que toca
             libraryController.setOnQueryChanged(this::highlightFilter);

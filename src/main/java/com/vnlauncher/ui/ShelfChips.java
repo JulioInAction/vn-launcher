@@ -14,6 +14,7 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -85,7 +86,17 @@ final class ShelfChips {
     }
 
     private void openMenu(Button anchor, List<Shelf> mine, List<Shelf> all) {
-        menu.getItems().clear();
+        menu.getItems().setAll(menuItems(mine, all, onAdd, onRemove, onNewShelf));
+        menu.show(anchor, Side.BOTTOM, 0, 6);
+    }
+
+    /**
+     * Las filas de la lista: cada estantería con una casilla (marcada si la VN ya está) y, al final,
+     * «+ Nueva estantería…». Las usa también el menú de clic derecho de las portadas.
+     */
+    static List<MenuItem> menuItems(List<Shelf> mine, List<Shelf> all, Consumer<Shelf> onAdd,
+                                    Consumer<Shelf> onRemove, Runnable onNewShelf) {
+        List<MenuItem> items = new ArrayList<>();
         for (Shelf shelf : all) {
             boolean in = mine.stream().anyMatch(s -> s.id() == shelf.id());
             // La casilla solo enseña el estado: el clic lo recibe la fila entera
@@ -100,15 +111,15 @@ final class ShelfChips {
             row.setMinWidth(260);
             CustomMenuItem item = new CustomMenuItem(row);
             item.setOnAction(event -> (in ? onRemove : onAdd).accept(shelf));
-            menu.getItems().add(item);
+            items.add(item);
         }
         if (!all.isEmpty()) {
-            menu.getItems().add(new SeparatorMenuItem());
+            items.add(new SeparatorMenuItem());
         }
         MenuItem create = new MenuItem(NEW_SHELF);
         create.getStyleClass().add("accent-item");
         create.setOnAction(event -> onNewShelf.run());
-        menu.getItems().add(create);
-        menu.show(anchor, Side.BOTTOM, 0, 6);
+        items.add(create);
+        return items;
     }
 }

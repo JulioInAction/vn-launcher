@@ -7,9 +7,10 @@ package com.vnlauncher.model;
  * @param automaticStatus el estado calculado con sus rutas y partidas (ver {@link PlayStatus#of})
  * @param playSeconds     suma de las sesiones de juego terminadas
  * @param exeMissing      true si tiene ejecutable pero el archivo ya no está («No encontrado»)
+ * @param configMissing   lo mismo para el programa de configuración
  */
 public record LibraryItem(LibraryEntry entry, PlayStatus automaticStatus, RouteSummary routes, long playSeconds,
-                          boolean exeMissing) {
+                          boolean exeMissing, boolean configMissing) {
 
     /** El estado que se ve: el fijado a mano en la ficha, o si no hay, el calculado. */
     public PlayStatus status() {

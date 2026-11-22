@@ -26,6 +26,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Tooltip;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -83,6 +84,7 @@ public class LibraryController implements PlaytimeAware, ShelvesAware {
 
     private final AppContext ctx;
     private final Navigator navigator;
+    private final Consumer<String> urlOpener;
 
     @FXML private Label countLabel;
     @FXML private Label coversLabel;
@@ -106,9 +108,11 @@ public class LibraryController implements PlaytimeAware, ShelvesAware {
     /** Las portadas que hay en pantalla, para (des)difuminarlas al marcar la casilla. */
     private final List<CoverView> covers = new ArrayList<>();
 
-    public LibraryController(AppContext ctx, Navigator navigator) {
+    /** @param urlOpener abre una URL o una carpeta (file:/...) con el programa del sistema */
+    public LibraryController(AppContext ctx, Navigator navigator, Consumer<String> urlOpener) {
         this.ctx = ctx;
         this.navigator = navigator;
+        this.urlOpener = urlOpener;
     }
 
     @FXML
@@ -518,7 +522,19 @@ public class LibraryController implements PlaytimeAware, ShelvesAware {
         VBox tile = new VBox(4, cover, title, developer, statusRow);
         VBox.setMargin(title, new Insets(8, 0, 0, 0));
         tile.getStyleClass().add("tile");
-        tile.setOnMouseClicked(event -> navigator.showVnDetail(vn.id()));
+        // Clic (con el botón principal) = abrir la ficha; clic derecho = el menú de la portada
+        tile.setOnMouseClicked(event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                navigator.showVnDetail(vn.id());
+            }
+        });
+        tile.setOnContextMenuRequested(event -> {
+            new LibraryTileMenu(ctx, navigator, urlOpener, item, () -> {
+                load(false);
+                navigator.refreshSidebar(); // contadores de estado y de estanterías
+            }).show(tile, event.getScreenX(), event.getScreenY());
+            event.consume();
+        });
         return tile;
     }
 
