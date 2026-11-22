@@ -22,10 +22,23 @@ mvn clean package -P instalador     # crear el instalador (ver abajo)
 Los datos se guardan en `%LOCALAPPDATA%\VNLauncher` (`library.db` + carpeta `images`). Desinstalar la
 aplicación no los borra.
 
+## Licencia
+
+VN Launcher es software libre con licencia [MIT](LICENSE). Los cambios de cada versión están en el
+[`CHANGELOG.md`](CHANGELOG.md).
+
+Licencias de lo que lleva dentro o usa:
+- Fuentes Inter y Zen Kaku Gothic New: SIL Open Font License 1.1 (`src/main/resources/fonts/`).
+- JavaFX (GPL v2 con Classpath Exception), SQLite JDBC y Jackson (Apache 2.0), y el Java reducido que
+  lleva el instalador (OpenJDK, GPL v2 con Classpath Exception).
+- [Locale Emulator](https://github.com/xupefei/Locale-Emulator) (LGPL-3.0): no se incluye; lo instala el
+  usuario y la app solo lo ejecuta.
+- Los datos de las novelas y sus imágenes vienen de [VNDB](https://vndb.org); consulta sus condiciones de uso.
+
 ## Instalador para Windows
 
 `mvn clean package -P instalador` deja en `target/instalador` un instalador
-`VN Launcher-0.1.0.exe`. Lleva su propio Java reducido, así que en el PC donde se instale no hace
+`VN Launcher-1.0.0.exe`. Lleva su propio Java reducido, así que en el PC donde se instale no hace
 falta tener Java. Lo que hace el perfil (comentado en el `pom.xml`):
 
 1. Copia el `.jar` de la aplicación y sus dependencias a `target/jpackage/mods`.
@@ -49,7 +62,7 @@ mvn clean package -P instalador -Djpackage.options=src/packaging/windows/portabl
 
 Notas:
 - Antes de crear un instalador nuevo, sube la `<version>` del `pom.xml` (solo números, p. ej.
-  `0.2.0`): Windows solo sustituye una instalación por otra de versión mayor. La misma versión sale
+  `1.0.1`): Windows solo sustituye una instalación por otra de versión mayor. La misma versión sale
   en Ajustes → Acerca de.
 - El instalador no está firmado, así que Windows SmartScreen avisará la primera vez
   («Más información» → «Ejecutar de todas formas»).
@@ -97,7 +110,7 @@ La guía visual está en [`docs/DISEÑO.md`](docs/DISE%C3%91O.md) y las capturas
   de carga y de error, tema «Según el sistema»
 - [x] Fase 7: pulido («Actualizar desde VNDB», programa de configuración, instalador)
 - [ ] Fase 8: Discord Rich Presence
-- [ ] Versión 1.0 (en curso): registro de errores ✓, copias de seguridad automáticas ✓, restaurar
+- [x] Versión 1.0: registro de errores ✓, copias de seguridad automáticas ✓, restaurar
   una copia ✓, exportar e importar el perfil ✓, estado manual ✓, estanterías ✓, ejecutables perdidos ✓,
   limpieza al quitar una VN ✓, menú de clic derecho en las portadas ✓, vista previa de la ficha ✓,
   búsqueda en la biblioteca ✓, orden recordado ✓, botón del ojo ✓, aviso de actualizaciones ✓

@@ -108,7 +108,10 @@ Todo probado con tests y en la app real (Linux, Xvfb). **Falta una pasada en Win
    - exportar/importar;
    - «Abrir carpeta» (arreglado tras probar el instalado: abría el navegador; ahora `ExternalOpener` usa `explorer.exe`; volver a comprobarlo con el nuevo `.exe`);
    - aspecto de menús y diálogos: **comprobado en Windows, se ve bien** (las esquinas negras y el borde blanco son solo de Xvfb).
-6. **Fase 13 · Publicar la 1.0.0.** Versión 1.0.0 (ahora 0.1.0), licencia MIT, `CHANGELOG.md`, README, prueba instalando encima de la 0.1.0 y release a mano (`v1.0.0`).
+6. **Fase 13 · Publicar la 1.0.0.** Hecho en el código: versión 1.0.0 en el `pom.xml` (con su licencia), `LICENSE` (MIT, Julio Morales Rodriguez), `CHANGELOG.md`, README (licencias de terceros) y pantalla de licencia en el instalador. **Falta a mano, en Windows:**
+   - `mvn clean package -P instalador` y probar el `VN Launcher-1.0.0.exe` instalándolo encima de la 0.1.0 (debe sustituirla y conservar los datos);
+   - repasar lo que queda de la pasada de Windows (reinicio al restaurar/importar, instancia única, exportar/importar, tema claro del aviso de actualizaciones);
+   - fusionar la rama en `main`, crear la etiqueta `v1.0.0` y la release en GitHub con el `.exe` y el texto del `CHANGELOG`.
 7. **Después de la 1.0:**
    - GitHub Action que construya el instalador al subir la etiqueta y publique junto a él su SHA-256 (p. ej. `VN-Launcher-1.0.1.exe.sha256`).
    - **Botón «Descargar e instalar»** (en el recuadro azul de Ajustes → Acerca de, una vez exista la Action): baja el `.exe` de la release a una carpeta temporal con barra de progreso, comprueba su SHA-256 contra el publicado por la Action, lo lanza y cierra la app. Si el hash no coincide, borrar el archivo y avisar sin ejecutar nada. `UpdateService` ya devuelve la release; habrá que leer también sus `assets` (URL del `.exe` y del `.sha256`). Hasta entonces «Ver novedades» solo abre la página.

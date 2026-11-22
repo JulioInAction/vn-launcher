@@ -9,8 +9,14 @@
     <!-- Versión de la aplicación: sale en Ajustes → Acerca de y en el instalador. Solo números
          (jpackage no admite "-SNAPSHOT"). Súbela antes de generar un instalador nuevo: Windows
          solo sustituye una instalación por otra de versión MAYOR. -->
-    <version>0.1.0</version>
+    <version>1.0.0</version>
     <name>VN Launcher</name>
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+        </license>
+    </licenses>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
