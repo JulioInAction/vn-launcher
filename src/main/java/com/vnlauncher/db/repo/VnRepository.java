@@ -36,8 +36,9 @@ public class VnRepository {
         db.inTransaction(conn -> {
             try (PreparedStatement ps = conn.prepareStatement("""
                     INSERT INTO vn (id, title, alt_title, description, released,
-                                    image_url, image_sexual, image_violence, fetched_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                    image_url, image_sexual, image_violence, fetched_at,
+                                    last_viewed_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(id) DO UPDATE SET
                         title          = excluded.title,
                         alt_title      = excluded.alt_title,
@@ -48,7 +49,8 @@ public class VnRepository {
                         image_url      = excluded.image_url,
                         image_sexual   = excluded.image_sexual,
                         image_violence = excluded.image_violence,
-                        fetched_at     = excluded.fetched_at
+                        fetched_at     = excluded.fetched_at,
+                        last_viewed_at = excluded.last_viewed_at
                     """)) {
                 // "IS" en vez de "=" en el CASE: en SQL, NULL = NULL no es verdadero, pero NULL IS NULL sí.
                 ps.setString(1, vn.id());
@@ -60,6 +62,7 @@ public class VnRepository {
                 VnRows.setNullableDouble(ps, 7, vn.imageSexual());
                 VnRows.setNullableDouble(ps, 8, vn.imageViolence());
                 ps.setLong(9, fetchedAt.getEpochSecond());
+                ps.setLong(10, fetchedAt.getEpochSecond()); // guardarla es verla: empieza la cuenta de 30 días
                 ps.executeUpdate();
             }
             saveDevelopers(conn, vn);
@@ -115,6 +118,31 @@ public class VnRepository {
             ps.setString(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? Optional.of(Instant.ofEpochSecond(rs.getLong(1))) : Optional.empty();
+            }
+        }
+    }
+
+    /** Apunta que la VN se ha visto ahora (vista previa, o quitada de la biblioteca): la limpieza de la caché cuenta desde aquí. */
+    public void markViewed(String id, Instant viewedAt) throws SQLException {
+        try (Connection conn = db.getConnection();
+             PreparedStatement ps = conn.prepareStatement("UPDATE vn SET last_viewed_at = ? WHERE id = ?")) {
+            ps.setLong(1, viewedAt.getEpochSecond());
+            ps.setString(2, id);
+            ps.executeUpdate();
+        }
+    }
+
+    /** Cuándo se vio por última vez (vacío si no está en la caché). */
+    public Optional<Instant> lastViewedAt(String id) throws SQLException {
+        try (Connection conn = db.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT last_viewed_at FROM vn WHERE id = ?")) {
+            ps.setString(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return Optional.empty();
+                }
+                long seconds = rs.getLong(1);
+                return rs.wasNull() ? Optional.empty() : Optional.of(Instant.ofEpochSecond(seconds));
             }
         }
     }

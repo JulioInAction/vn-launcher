@@ -8,12 +8,14 @@ import com.vnlauncher.model.PlayStatus;
 import com.vnlauncher.model.Route;
 import com.vnlauncher.model.RouteProgress;
 import com.vnlauncher.model.RouteSummary;
+import com.vnlauncher.model.SearchHit;
 import com.vnlauncher.model.Shelf;
 import com.vnlauncher.model.VisualNovel;
 import com.vnlauncher.model.VnCharacter;
 import com.vnlauncher.model.VnDetails;
 import com.vnlauncher.model.VnTag;
 import com.vnlauncher.service.GameFiles;
+import com.vnlauncher.util.VnFacts;
 import com.vnlauncher.util.PlayTime;
 import com.vnlauncher.util.RelativeTime;
 import javafx.animation.KeyFrame;
@@ -62,7 +64,15 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- * Ficha de una VN de la biblioteca (ficha-simplificada-*.png): cabecera con la portada, el título,
+ * Ficha de una VN. Dos modos (ver {@link DetailLayout}):
+ * <ul>
+ *   <li>{@code LIBRARY}: una VN de la biblioteca (ficha-simplificada-*.png), descrita abajo;</li>
+ *   <li>{@code PREVIEW}: un resultado de la búsqueda que aún no está en la biblioteca
+ *       (ficha-vista-previa-*.png). Sin estado, estanterías, rutas ni ejecutable; con «Añadir a la
+ *       biblioteca», que la convierte en la ficha de la biblioteca sin salir de la pantalla.</li>
+ * </ul>
+ *
+ * <p>Ficha de una VN de la biblioteca (ficha-simplificada-*.png): cabecera con la portada, el título,
  * los chips de estado y estanterías, «Jugar» con «Opciones del juego» y «⋯», los datos en una línea,
  * las etiquetas, la descripción y la galería; debajo, las rutas y los personajes principales.
  *
@@ -79,6 +89,12 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
     private static final double GALLERY_MAX = ScreenshotGallery.MAX_WIDTH;
     /** Ancho de página a partir del cual caben las tres columnas: 220 + 28 + 400 + 28 + 520. */
     static final double THREE_COLUMNS_MIN = COVER_COLUMN + COLUMN_GAP + INFO_MIN + COLUMN_GAP + GALLERY_MIN;
+
+    // --- Vista previa
+    private static final String ADD = "Añadir a la biblioteca";
+    private static final String ADDING = "Añadiendo…";
+    private static final String CHARACTERS_SUBTITLE_PREVIEW = "Rol «primary» en VNDB.";
+    private static final String NO_CHARACTERS_PREVIEW = "VNDB no tiene personajes principales para esta novela";
 
     private static final String CHARACTERS_ERROR = "No se pudieron cargar los personajes: %s";
 
@@ -119,21 +135,33 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
     private final Navigator navigator;
     private final Consumer<String> urlOpener;
     private final String vnId;
+    /** De dónde se viene: a dónde lleva «‹» de arriba. */
+    private final DetailLayout.Back back;
+    /** El resultado de la búsqueda que se está viendo; null con una VN de la biblioteca. */
+    private final SearchHit previewHit;
+    /** PREVIEW hasta que se añade la VN; entonces pasa a LIBRARY sin cambiar de pantalla. */
+    private DetailLayout.Mode mode;
 
     // --- cabecera
     @FXML private ScrollPane scroll;
     @FXML private VBox pageContent;
     @FXML private HBox headerRow;
     @FXML private VBox noticeBox;
+    @FXML private Button backButton;
     @FXML private StackPane coverBox;
     @FXML private Label titleLabel;
     @FXML private Label altTitleLabel;
     @FXML private Label metaLabel;
+    @FXML private Label devStatusPill;
     @FXML private FlowPane chipsRow;
     @FXML private VBox exeNoticeBox;
     @FXML private Button playButton;
     @FXML private Button optionsButton;
     @FXML private Button moreButton;
+    @FXML private Button addButton;
+    @FXML private Label notInLibraryNote;
+    @FXML private FlowPane factCardsRow;
+    @FXML private HBox refreshBox;
     @FXML private ProgressIndicator refreshSpinner;
     @FXML private Label refreshStatus;
     @FXML private FlowPane statsRow;
@@ -144,6 +172,7 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
     @FXML private VBox routesContainer;
     @FXML private CheckBox showSpoilersCheck;
     @FXML private CheckBox showSensitiveCheck;
+    @FXML private Label charactersSubtitle;
     @FXML private Label charactersStatus;
     @FXML private FlowPane charactersPane;
 
@@ -188,11 +217,27 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
     /** Personajes spoiler que el usuario ha destapado uno a uno con "Mostrar". */
     private final Set<String> revealedSpoilers = new HashSet<>();
 
-    public VnDetailController(AppContext ctx, Navigator navigator, Consumer<String> urlOpener, String vnId) {
+    private VnDetailController(AppContext ctx, Navigator navigator, Consumer<String> urlOpener, String vnId,
+                               DetailLayout.Back back, SearchHit previewHit) {
         this.ctx = ctx;
         this.navigator = navigator;
         this.urlOpener = urlOpener;
         this.vnId = vnId;
+        this.back = back;
+        this.previewHit = previewHit;
+        this.mode = previewHit == null ? DetailLayout.Mode.LIBRARY : DetailLayout.Mode.PREVIEW;
+    }
+
+    /** La ficha de una VN de la biblioteca; «‹» vuelve a {@code back}. */
+    static VnDetailController library(AppContext ctx, Navigator navigator, Consumer<String> urlOpener,
+                                      String vnId, DetailLayout.Back back) {
+        return new VnDetailController(ctx, navigator, urlOpener, vnId, back, null);
+    }
+
+    /** La vista previa de un resultado de la búsqueda; «‹ Buscar» vuelve a ella tal como estaba. */
+    static VnDetailController preview(AppContext ctx, Navigator navigator, Consumer<String> urlOpener,
+                                      SearchHit hit) {
+        return new VnDetailController(ctx, navigator, urlOpener, hit.vn().id(), DetailLayout.Back.SEARCH, hit);
     }
 
     @FXML
@@ -203,7 +248,6 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
         statusPicker.setDisable(true); // hasta que se cargue la VN
         chipsRow.getChildren().add(statusPicker);
         shelfChips = new ShelfChips(chipsRow, this::addToShelf, this::removeFromShelf, this::createShelfAndAdd);
-        loadShelves();
         // Botones cuadrados con icono: engranaje (Opciones del juego) y «⋯» (Más opciones)
         optionsButton.setGraphic(Icons.gear());
         optionsButton.setTooltip(new Tooltip(OPTIONS_TOOLTIP));
@@ -212,10 +256,11 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
         for (Button button : List.of(playButton, optionsButton, moreButton)) {
             button.setDisable(true); // hasta que se cargue la VN
         }
+        addButton.setGraphic(Icons.plus());
+        addButton.setGraphicTextGap(10);
+        backButton.setText(back.label());
         refreshSpinner.setVisible(false);
         refreshDoneHide.setOnFinished(event -> clearRefreshStatus());
-        loadHeader();
-        reloadPlayData(); // tiempo jugado (suma de sesiones)
 
         // La zona de avisos, solo cuando tiene alguno
         noticeBox.managedProperty().bind(Bindings.isNotEmpty(noticeBox.getChildren()));
@@ -233,7 +278,6 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
             renderCharacters(); // actualizar "Tiene ruta" / "Marcar con ruta"
         });
         routesContainer.getChildren().add(routesPane);
-        routesPane.reload();
 
         // Ancho de la página para colocar la galería. Se mide el "viewport" del ScrollPane (la
         // parte visible), que depende solo de la ventana: el ancho del contenido no sirve, porque
@@ -246,7 +290,6 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
         tagChips = new TagChips(navigator::showLibraryWithTag);
         tagsContainer.getChildren().add(tagChips);
         show(tagsContainer, false); // hasta que se carguen (sin ellas no deja hueco)
-        loadDetails();
 
         // Personajes: se cargan a la vez, en otra tarea (la primera vez tardan: VNDB + imágenes).
         // «Mostrar spoilers» vale también para las etiquetas.
@@ -258,7 +301,130 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
         BackgroundTasks.run(ctx.background(), () -> ctx.settingsService().showSpoilers(),
                 showSpoilersCheck::setSelected, error -> { });
         showSensitiveCheck.selectedProperty().addListener((obs, oldValue, selected) -> renderCharacters());
-        loadCharacters();
+
+        applyMode();
+        if (mode == DetailLayout.Mode.PREVIEW) {
+            startPreview();
+        } else {
+            startLibrary();
+            loadDetails();
+            loadCharacters();
+        }
+    }
+
+    // =========================================================== vista previa y biblioteca
+
+    /** Enseña u oculta cada parte de la ficha según el modo (lo decide {@link DetailLayout}). */
+    private void applyMode() {
+        DetailLayout.Sections sections = DetailLayout.sections(mode);
+        show(chipsRow, sections.statusAndShelves());
+        show(playButton, sections.playActions());
+        show(optionsButton, sections.playActions());
+        show(refreshBox, sections.playActions());
+        show(addButton, sections.addAction());
+        show(notInLibraryNote, sections.addAction());
+        show(statsRow, sections.dataLine());
+        show(factCardsRow, sections.factCards() && !factCardsRow.getChildren().isEmpty());
+        show(exeNoticeBox, sections.exeNotice() && files.exeMissing());
+        show(routesContainer, sections.routes());
+        show(devStatusPill, sections.factCards() && !devStatusPill.getText().isEmpty());
+        // 330 de portada y, en la biblioteca, 50 más reservados para «Cambiar portada»
+        coverBox.setMinHeight(sections.changeCover() ? 380 : 330);
+        tagChips.setClickable(sections.tagsClickable());
+        charactersSubtitle.setText(sections.characterRoutes()
+                ? "Rol «primary» en VNDB. Marca cuáles tienen ruta." : CHARACTERS_SUBTITLE_PREVIEW);
+    }
+
+    /** Lo que solo tiene la ficha de la biblioteca: estanterías, la VN guardada, partidas y rutas. */
+    private void startLibrary() {
+        loadShelves();
+        loadHeader();
+        reloadPlayData(); // tiempo jugado (suma de sesiones)
+        routesPane.reload();
+    }
+
+    /**
+     * La vista previa: los datos del resultado se pintan ya (ya los tenemos de la búsqueda) y, a la
+     * vez, se guardan la VN y lo que se vio de ella. Etiquetas, capturas y personajes se leen de la
+     * base de datos y necesitan la VN guardada, así que se cargan cuando está.
+     */
+    private void startPreview() {
+        VisualNovel vn = previewHit.vn();
+        renderPreviewVn(vn);
+        moreButton.setDisable(false);
+        BackgroundTasks.run(ctx.background(),
+                () -> {
+                    ctx.previewService().remember(vn, ctx.catalogService().cachedDetails(vnId).orElse(null));
+                    return null;
+                },
+                saved -> {
+                    if (mode == DetailLayout.Mode.PREVIEW) { // por si se añadió mientras tanto
+                        loadDetails();
+                        loadCharacters();
+                    }
+                },
+                "No se ha podido guardar la ficha.");
+    }
+
+    /** Título, desarrollador, estado de desarrollo, tarjetas, portada y descripción del resultado. */
+    private void renderPreviewVn(VisualNovel vn) {
+        boolean sensitive = ctx.contentFilter().isSensitive(vn.imageSexual(), vn.imageViolence());
+        coverBox.getChildren().setAll(
+                new CoverView(vn.imageUrl(), sensitive, 220, 330, vn.title()).revealOnClick());
+        titleLabel.setText(vn.title());
+        altTitleLabel.setText(vn.altTitle() == null ? "" : vn.altTitle());
+        altTitleLabel.setManaged(vn.altTitle() != null);
+        metaLabel.setText(SearchController.meta(vn));
+        String devStatus = VnFacts.devStatus(previewHit.stats().devStatus());
+        devStatusPill.setText(devStatus == null ? "" : devStatus);
+        renderDescription(vn.description());
+
+        factCardsRow.getChildren().clear();
+        for (DetailLayout.FactCard card : DetailLayout.factCards(previewHit.stats())) {
+            Label label = new Label(card.label());
+            label.getStyleClass().add("fact-label");
+            Label value = new Label(card.value());
+            value.getStyleClass().add("fact-value");
+            value.setWrapText(true);
+            value.setMaxWidth(380);
+            VBox box = new VBox(4, label, value);
+            box.getStyleClass().add("fact-card");
+            factCardsRow.getChildren().add(box);
+        }
+        applyMode(); // las tarjetas y la etiqueta de estado ya existen: mostrarlas
+    }
+
+    /** «Añadir a la biblioteca»: se guarda la VN y la misma ficha pasa a ser la de la biblioteca. */
+    @FXML
+    private void onAdd() {
+        VisualNovel vn = previewHit.vn();
+        addButton.setDisable(true);
+        addButton.setText(ADDING);
+        BackgroundTasks.run(ctx.background(),
+                () -> {
+                    ctx.previewService().remember(vn, ctx.catalogService().cachedDetails(vnId).orElse(null));
+                    ctx.libraryService().addToLibrary(vn);
+                    return null;
+                },
+                added -> switchToLibrary(),
+                error -> {
+                    addButton.setDisable(false);
+                    addButton.setText(ADD);
+                    ErrorReporter.report("No se ha podido añadir la novela a la biblioteca.", error);
+                });
+    }
+
+    /**
+     * La VN acaba de entrar en la biblioteca: la ficha pasa a ser la de la biblioteca, en el sitio.
+     * Las tarjetas dejan su lugar a la línea de datos («sin partidas todavía · sin rutas»).
+     */
+    private void switchToLibrary() {
+        mode = DetailLayout.Mode.LIBRARY;
+        applyMode();
+        navigator.refreshSidebar(); // cambia el número de «Pendientes»
+        startLibrary();
+        renderTags();       // ahora se pueden pulsar
+        renderCharacters(); // y con «Marcar con ruta»
     }
 
     /** Personajes: la primera vez tardan (VNDB + imágenes); después salen de la base de datos. */
@@ -508,7 +674,9 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
     /** Se ha cambiado alguna estantería desde la barra lateral (nombre, color, borrada...). */
     @Override
     public void shelvesChanged() {
-        loadShelves();
+        if (mode == DetailLayout.Mode.LIBRARY) { // la vista previa no tiene estanterías
+            loadShelves();
+        }
     }
 
     private void addToShelf(Shelf shelf) {
@@ -676,15 +844,36 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
     private void onMore() {
         ContextMenu menu = new ContextMenu();
         menu.getStyleClass().add("more-menu");
-        if (entry != null && entry.hasConfigExecutable()) {
-            menu.getItems().addAll(menuItem(OPEN_CONFIG, this::onOpenConfig), new SeparatorMenuItem());
+        List<DetailLayout.MenuEntry> entries = DetailLayout.menu(mode, entry != null && entry.hasConfigExecutable());
+        for (int i = 0; i < entries.size(); i++) {
+            DetailLayout.MenuEntry which = entries.get(i);
+            // Raya tras el programa de configuración y antes de «Quitar» (que además va en rojo)
+            if (which == DetailLayout.MenuEntry.REMOVE && i > 0) {
+                menu.getItems().add(new SeparatorMenuItem());
+            }
+            menu.getItems().add(menuItemFor(which));
+            if (which == DetailLayout.MenuEntry.OPEN_CONFIG && i < entries.size() - 1) {
+                menu.getItems().add(new SeparatorMenuItem());
+            }
         }
-        MenuItem refresh = menuItem(REFRESH, this::onRefresh);
-        refresh.setDisable(refreshing);
-        MenuItem remove = menuItem(REMOVE, this::onRemove);
-        remove.getStyleClass().add("danger-item");
-        menu.getItems().addAll(menuItem(OPEN_VNDB, this::onOpenVndb), refresh, new SeparatorMenuItem(), remove);
         menu.show(moreButton, Side.BOTTOM, 0, 6);
+    }
+
+    private MenuItem menuItemFor(DetailLayout.MenuEntry which) {
+        return switch (which) {
+            case OPEN_CONFIG -> menuItem(OPEN_CONFIG, this::onOpenConfig);
+            case OPEN_VNDB -> menuItem(OPEN_VNDB, this::onOpenVndb);
+            case REFRESH -> {
+                MenuItem refresh = menuItem(REFRESH, this::onRefresh);
+                refresh.setDisable(refreshing);
+                yield refresh;
+            }
+            case REMOVE -> {
+                MenuItem remove = menuItem(REMOVE, this::onRemove);
+                remove.getStyleClass().add("danger-item");
+                yield remove;
+            }
+        };
     }
 
     private static MenuItem menuItem(String text, Runnable action) {
@@ -804,7 +993,7 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
     /** Un juego se ha abierto o cerrado (aviso de MainController). */
     @Override
     public void playtimeChanged(String changedVnId) {
-        if (vnId.equals(changedVnId)) {
+        if (mode == DetailLayout.Mode.LIBRARY && vnId.equals(changedVnId)) {
             reloadPlayData();
         }
     }
@@ -905,6 +1094,7 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
         }
         boolean showSpoilers = showSpoilersCheck.isSelected();
         boolean showSensitive = showSensitiveCheck.isSelected();
+        boolean routeActions = DetailLayout.sections(mode).characterRoutes();
         // Ids de los personajes que ya tienen alguna ruta (un Set para buscar rápido)
         Set<String> withRoute = routes.stream()
                 .map(Route::characterId)
@@ -920,14 +1110,16 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
                     ctx.contentFilter().isSensitive(c.imageSexual(), c.imageViolence()),
                     showSensitive, withRoute.contains(c.id()));
             charactersPane.getChildren().add(new CharacterCard(vc, file, options,
-                    () -> routesPane.addRouteFor(vc),
+                    routeActions ? () -> routesPane.addRouteFor(vc) : null,
                     () -> {
                         revealedSpoilers.add(c.id());
                         renderCharacters();
                     }));
         }
         // El diálogo de rutas solo ofrece personajes spoiler si se están mostrando
-        routesPane.setCharacters(characters, showSpoilers);
+        if (routeActions) {
+            routesPane.setCharacters(characters, showSpoilers);
+        }
 
         long spoilerCount = characters.stream().filter(VnCharacter::isSpoiler).count();
         showSpoilersCheck.setVisible(spoilerCount > 0);
@@ -939,13 +1131,15 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
         charactersStatus.setText("");
         charactersStatus.setManaged(false);
         if (characters.isEmpty()) {
-            // Estado vacío (vacio-personajes.png): las rutas se pueden crear igualmente
+            // Estado vacío (vacio-personajes.png): las rutas se pueden crear igualmente. En la vista
+            // previa no hay rutas: solo se dice que no hay personajes.
             Button addRoute = new Button("+  Añadir ruta");
             addRoute.setOnAction(event -> routesPane.openCreateDialog());
-            VBox empty = EmptyState.create(null, "VNDB no tiene personajes principales para esta novela",
-                    addRoute,
-                    "Puedes crear las rutas igualmente y escribir el nombre de la heroína a mano. Si "
-                            + "alguien los añade en VNDB, aparecerán al pulsar «Actualizar desde VNDB».");
+            VBox empty = routeActions
+                    ? EmptyState.create(null, NO_CHARACTERS_PREVIEW, addRoute,
+                            "Puedes crear las rutas igualmente y escribir el nombre de la heroína a mano. Si "
+                                    + "alguien los añade en VNDB, aparecerán al pulsar «Actualizar desde VNDB».")
+                    : EmptyState.create(null, NO_CHARACTERS_PREVIEW, null);
             empty.getStyleClass().add("empty-dashed");
             // Que ocupe todo el ancho de la sección
             empty.prefWidthProperty().bind(charactersPane.widthProperty());
@@ -955,10 +1149,17 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
 
     // =========================================================== otras acciones
 
-    /** «‹ Biblioteca»: vuelve a la biblioteca como estaba (con su filtro de estado o de etiqueta). */
+    /**
+     * «‹ Biblioteca»: vuelve a la biblioteca como estaba (con su filtro de estado o de etiqueta). Si se
+     * vino de la búsqueda, «‹ Buscar»: vuelve a ella intacta, con sus resultados y su selección.
+     */
     @FXML
     private void onBack() {
-        navigator.backToLibrary();
+        if (back == DetailLayout.Back.SEARCH) {
+            navigator.backToSearch();
+        } else {
+            navigator.backToLibrary();
+        }
     }
 
     /** «Quitar de la biblioteca» en el «⋯». */

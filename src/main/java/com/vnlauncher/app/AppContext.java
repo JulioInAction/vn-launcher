@@ -12,6 +12,7 @@ import com.vnlauncher.db.repo.ShelfRepository;
 import com.vnlauncher.db.repo.VnDetailsRepository;
 import com.vnlauncher.db.repo.VnRepository;
 import com.vnlauncher.service.BackupService;
+import com.vnlauncher.service.CacheCleanupService;
 import com.vnlauncher.service.CatalogService;
 import com.vnlauncher.service.CharacterService;
 import com.vnlauncher.service.ContentFilter;
@@ -20,6 +21,7 @@ import com.vnlauncher.service.ImageCacheService;
 import com.vnlauncher.service.LaunchService;
 import com.vnlauncher.service.LibraryService;
 import com.vnlauncher.service.PlaytimeTracker;
+import com.vnlauncher.service.PreviewService;
 import com.vnlauncher.service.ProfileService;
 import com.vnlauncher.service.ProcessScanner;
 import com.vnlauncher.service.ProcessStarter;
@@ -83,6 +85,8 @@ public final class AppContext {
     private final RestoreService restoreService;
     private final ProfileService profileService;
     private final ShelfService shelfService;
+    private final PreviewService previewService;
+    private final CacheCleanupService cacheCleanupService;
     /** Si falló la copia de antes de actualizar (se avisa al abrir la ventana); si no, null. */
     private final Exception preMigrationBackupError;
 
@@ -96,6 +100,7 @@ public final class AppContext {
                        PlaytimeTracker playtimeTracker, CoverService coverService,
                        VnDetailsService vnDetailsService, BackupService backupService,
                        ProfileService profileService, ShelfService shelfService,
+                       PreviewService previewService, CacheCleanupService cacheCleanupService,
                        Exception preMigrationBackupError) {
         this.paths = paths;
         this.database = database;
@@ -120,6 +125,8 @@ public final class AppContext {
         this.restoreService = new RestoreService(paths, backupService);
         this.profileService = profileService;
         this.shelfService = shelfService;
+        this.previewService = previewService;
+        this.cacheCleanupService = cacheCleanupService;
         this.preMigrationBackupError = preMigrationBackupError;
         // Solo necesita la caché de imágenes: se crea aquí, como RefreshService
         this.screenshotService = new ScreenshotService(imageCache);
@@ -200,7 +207,9 @@ public final class AppContext {
                 characterService, new RouteService(routeRepository, clock),
                 settingsService, launchService, rateLimiter, playtimeTracker, coverService, vnDetailsService,
                 backupService, new ProfileService(database, paths, backupService, clock, AppInfo.VERSION),
-                new ShelfService(new ShelfRepository(database), clock), backupError);
+                new ShelfService(new ShelfRepository(database), clock),
+                new PreviewService(vnRepository, new VnDetailsRepository(database), clock),
+                new CacheCleanupService(database, imageCache, clock), backupError);
     }
 
     /**
@@ -213,6 +222,11 @@ public final class AppContext {
                 backupService.weeklyIfDue(settingsService.weeklyBackups());
             } catch (IOException | SQLException e) {
                 LOG.log(System.Logger.Level.WARNING, "No se pudo hacer la copia semanal", e);
+            }
+            try {
+                cacheCleanupService.cleanUp(); // VNs vistas en la búsqueda y no añadidas, tras 30 días
+            } catch (SQLException e) {
+                LOG.log(System.Logger.Level.WARNING, "No se pudo limpiar la caché", e);
             }
         });
     }
@@ -287,6 +301,11 @@ public final class AppContext {
     /** Restaurar una copia de seguridad (se termina al reiniciar). */
     public RestoreService restoreService() {
         return restoreService;
+    }
+
+    /** Guardar lo visto en la búsqueda al abrir la vista previa o al añadir. */
+    public PreviewService previewService() {
+        return previewService;
     }
 
     /** «Mis estanterías». */

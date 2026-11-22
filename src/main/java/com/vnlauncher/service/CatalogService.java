@@ -11,6 +11,7 @@ import com.vnlauncher.api.dto.VnDto;
 import com.vnlauncher.model.Developer;
 import com.vnlauncher.model.SearchHit;
 import com.vnlauncher.model.VisualNovel;
+import com.vnlauncher.model.VnDetails;
 import com.vnlauncher.model.VnExtras;
 import com.vnlauncher.model.VnStats;
 import com.vnlauncher.util.VndbMarkup;
@@ -55,6 +56,11 @@ public class CatalogService {
      * la app abierta (no se guarda en disco: son datos que cambian y solo sirven para curiosear).
      */
     private final Map<String, VnExtras> extrasCache = new ConcurrentHashMap<>();
+    /**
+     * Lo mismo que extrasCache pero entero (todas las etiquetas, también spoiler, y todas las capturas),
+     * tal como lo guarda la ficha. Así «Ver ficha» y «Añadir» lo guardan sin otra petición.
+     */
+    private final Map<String, VnDetails> detailsCache = new ConcurrentHashMap<>();
 
     public CatalogService(VndbClient vndb) {
         this.vndb = vndb;
@@ -82,8 +88,9 @@ public class CatalogService {
         if (cached != null) {
             return cached;
         }
-        VnExtras extras = vndb.vnDetails(vnId).map(CatalogService::toExtras)
-                .orElse(new VnExtras(List.of(), List.of(), null));
+        Optional<VnDetailsDto> dto = vndb.vnDetails(vnId);
+        dto.ifPresent(found -> detailsCache.put(vnId, VnDetailsService.toModel(found)));
+        VnExtras extras = dto.map(CatalogService::toExtras).orElse(new VnExtras(List.of(), List.of(), null));
         extrasCache.put(vnId, extras);
         return extras;
     }
@@ -91,6 +98,14 @@ public class CatalogService {
     /** Si los datos del panel ya están en la caché (para no mostrar "Cargando..." un instante). */
     public Optional<VnExtras> cachedExtras(String vnId) {
         return Optional.ofNullable(extrasCache.get(vnId));
+    }
+
+    /**
+     * Etiquetas y capturas completas de un resultado, si ya se pidieron (están en memoria). Vacío si
+     * aún no, o si VNDB no tiene la VN.
+     */
+    public Optional<VnDetails> cachedDetails(String vnId) {
+        return Optional.ofNullable(detailsCache.get(vnId));
     }
 
     static VnStats toStats(VnDto dto) {

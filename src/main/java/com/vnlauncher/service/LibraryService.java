@@ -96,6 +96,8 @@ public class LibraryService {
     public void remove(String vnId) throws SQLException {
         Optional<String> customCover = libraryRepository.findByVnId(vnId).map(LibraryEntry::coverOverride);
         libraryRepository.remove(vnId);
+        // Sus datos de VNDB se quedan en la caché; la limpieza de los 30 días cuenta desde ahora
+        vnRepository.markViewed(vnId, clock.instant());
         customCover.flatMap(relative -> CoverService.customCoverFile(imageCache::resolve, relative))
                 .ifPresent(LibraryService::deleteQuietly);
     }

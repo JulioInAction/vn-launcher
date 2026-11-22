@@ -771,6 +771,15 @@
     -fx-stroke-line-cap: round;
 }
 
+/* El «+» dentro de un botón principal (Añadir a la biblioteca): del color del texto del botón */
+.primary-button .icon-plus {
+    -fx-stroke: -vn-on-accent;
+}
+
+.primary-button:disabled .icon-plus {
+    -fx-stroke: -vn-on-accent-dim;
+}
+
 /* ---- Fila de acciones de la ficha: «Jugar» + dos botones cuadrados de 52 px */
 .button.square-button {
     -fx-padding: 0;
@@ -1176,6 +1185,36 @@
     -fx-text-fill: -vn-text;
 }
 
+/* Vista previa de la ficha: duración, valoración e idiomas, en el sitio de la línea de datos */
+.fact-card {
+    -fx-background-color: -vn-surface;
+    -fx-background-radius: 12;
+    -fx-border-color: -vn-border;
+    -fx-border-radius: 12;
+    -fx-padding: 12 18 12 18;
+}
+
+.fact-card .fact-label {
+    -fx-font-size: 14px;
+}
+
+.fact-card .fact-value {
+    -fx-font-size: 18px;
+}
+
+/* «No está en tu biblioteca» bajo «Añadir a la biblioteca» */
+.not-in-library {
+    -fx-text-fill: -vn-muted;
+    -fx-font-size: 15px;
+}
+
+.icon-info {
+    -fx-fill: transparent;
+    -fx-stroke: -vn-muted;
+    -fx-stroke-width: 1.4;
+    -fx-stroke-line-cap: round;
+}
+
 /* Etiquetas de VNDB ("Drama", "Romance"...) */
 .tag-chip {
     -fx-background-color: -vn-surface2;
@@ -1185,6 +1224,11 @@
     -fx-padding: 4 12 4 12;
     -fx-font-size: 16px;
     -fx-text-fill: -vn-text2;
+}
+
+.button.tag-chip-static:hover, .button.tag-chip-static:pressed, .button.tag-chip-static:focused {
+    -fx-background-color: -vn-surface2;
+    -fx-cursor: default;
 }
 
 .preview-action {

@@ -49,6 +49,14 @@ final class Icons {
         return plus;
     }
 
+    /** «i» dentro de un círculo, de 16 px (avisos suaves como «No está en tu biblioteca»). */
+    static Node info() {
+        SVGPath info = new SVGPath();
+        info.setContent("M8 1.5A6.5 6.5 0 1 0 8.01 1.5Z M8 7V11.2 M8 4.6V4.8");
+        info.getStyleClass().add("icon-info");
+        return info;
+    }
+
     /** «⋯» (Más opciones): tres puntos. */
     static Node moreDots() {
         HBox dots = new HBox(4);

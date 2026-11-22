@@ -1,6 +1,6 @@
 # Traspaso: VN Launcher camino de la 1.0 y la 1.1
 
-Estado a 22/11/2026. Rama `main`. 236 tests en verde
+Estado a 22/11/2026. Rama `claude/sharp-goodall-doj9gv` (fase 10 sin fusionar en `main`). 253 tests en verde
 (`mvn -q -B test`; en el entorno de pruebas Linux: `JAVA_HOME=…java-25… -Dmaven.compiler.release=25`).
 
 ## 1. Hecho y verificado
@@ -19,6 +19,7 @@ Todo probado con tests y en la app real (Linux, Xvfb). **Falta una pasada en Win
 | 7 | Ejecutables perdidos: insignia «No encontrado», aviso rojo en la ficha, campo marcado en Opciones |
 | 8 | Quitar una VN borra su portada propia de `covers/` |
 | 9 | Menú de clic derecho en las portadas (Jugar, Abrir configuración, Abrir carpeta, Estantería, Estado, Quitar) |
+| 10 | Vista previa de la ficha (migración 008): «Ver ficha» / doble clic en Buscar, tarjetas, «Añadir» en el sitio, limpieza de la caché a los 30 días |
 | — | Retoques: filas de rutas (centrado, píldora única, lápiz), línea de datos sin cortes, «+» centrado |
 
 ## 2. Archivos relevantes (`src/main/java/com/vnlauncher/`)
@@ -26,12 +27,12 @@ Todo probado con tests y en la app real (Linux, Xvfb). **Falta una pasada en Win
 - **app/** `Main` (orden de arranque), `AppContext`, `SingleInstance`, `Relauncher`, `LogSetup`, `SystemInfo`
 - **db/** `Database` (`inspect`, `backupTo`, lista `MIGRATIONS`), `repo/LibraryRepository`, `repo/ShelfRepository`;
   `resources/.../db/migration/006_library_status_override.sql`, `007_shelves.sql`
-- **service/** `BackupService`, `RestoreService`, `PendingOperation(s)`, `ProfileService`, `ShelfService`,
+- **service/** `PreviewService`, `CacheCleanupService`, `BackupService`, `RestoreService`, `PendingOperation(s)`, `ProfileService`, `ShelfService`,
   `LibraryQuery`, `GameFiles`, `LibraryService`, `CoverService`
 - **model/** `PlayStatus`, `LibraryEntry`, `LibraryItem`, `Shelf`, `ShelfColor`, `ProfileManifest`, `BackupKind`
 - **ui/** `ErrorReporter`, `ErrorDialog`, `StartupNotices`, `SettingsController`, `ImportProfileDialog`,
   `SidebarController`, `LibraryController`, `LibraryTileMenu`, `LibraryRemoval`, `VnDetailController`,
-  `GameOptionsDialog`, `StatusPicker`, `StatusVisuals`, `ShelfChips`, `ShelfDialog`, `TagChips`, `RichText`,
+  `GameOptionsDialog`, `DetailLayout`, `StatusPicker`, `StatusVisuals`, `ShelfChips`, `ShelfDialog`, `TagChips`, `RichText`,
   `Icons`, `RoutesPane`, `CoverView`, `ModalDialog`
 - **util/** `AppPaths`, `Formats`, `DisplayPaths`, `ErrorDetails`
 - **recursos:** `styles.css`, `vn-detail-view.fxml`, `sidebar.fxml`, `library-view.fxml`, `settings-view.fxml`
@@ -88,16 +89,12 @@ Todo probado con tests y en la app real (Linux, Xvfb). **Falta una pasada en Win
 
 ## 4. Siguientes pasos (en orden)
 
-1. **Fase 10 · Vista previa de la ficha (migración 008).** Diseño: `ficha-vista-previa-*.png`.
-   - **Buscar:** «Añadir a la biblioteca» + «Ver ficha», y doble clic en un resultado. «‹ Buscar» vuelve a la búsqueda intacta.
-   - **Etiquetas y capturas de la búsqueda:** se quedan en memoria y solo se guardan al «Ver ficha» o al añadir.
-   - **Lo que no sale en la vista previa:** chips de estado y estanterías, engranaje, rutas, cambiar portada y «Actualizar desde VNDB». El «⋯» solo tiene «Ver en VNDB».
-   - **Tarjetas Duración, Valoración e Idiomas:** solo en la vista previa, en el sitio de la línea de datos.
-     - Una fila compacta: etiqueta en `-vn-muted` arriba, valor debajo, fondo `-vn-surface`, sin iconos.
-     - Si falta un dato, su tarjeta no sale; sin ninguno, no hay fila.
-     - Al añadir la novela, las tarjetas pasan a la línea normal, en el sitio.
-   - **Migración 008:** `vn.last_viewed_at` y limpieza a los 30 días de las VNs que no están en la biblioteca. Nunca borra personajes con ruta.
-   - **Clases nuevas:** `ui.DetailLayout` (sin interfaz, con tests) y `service.CacheCleanupService`.
+1. ~~**Fase 10 · Vista previa de la ficha**~~ — hecha. Notas para quien siga:
+   - `VnDetailController` tiene dos modos (`DetailLayout.Mode`): `PREVIEW` y `LIBRARY`. Lo que se ve en cada uno lo decide `DetailLayout` (con tests); al «Añadir» la misma ficha pasa a `LIBRARY` en el sitio.
+   - La búsqueda **no se descarta** al abrir una ficha desde ella (`Navigator.showVnPreview` / `showVnDetailFromSearch`); «‹ Buscar» (`backToSearch`) vuelve intacta y `SearchController.libraryChanged()` refresca «✓ En tu biblioteca».
+   - Etiquetas y capturas se guardan **enteras** (con spoilers y todas las capturas) desde `CatalogService.cachedDetails`, sin otra petición, al «Ver ficha» o al añadir (`PreviewService.remember`). Mientras se navega por los resultados no se escribe nada.
+   - Migración 008: `vn.last_viewed_at` (rellenada con `fetched_at`). `CacheCleanupService` corre al arrancar (`startBackgroundMaintenance`): borra VNs fuera de la biblioteca con 30 días sin verse, sus personajes y desarrolladores huérfanos y sus imágenes; nunca un personaje con ruta. Quitar una VN de la biblioteca cuenta como «vista».
+   - Diferencia con la imagen del diseño: «Ver en VNDB» va solo en el «⋯» (como pide este traspaso), no también como enlace junto al año.
 2. **Recordar «Ordenar por»** en `setting`. Viaja con el perfil; si el valor no se reconoce, «Último jugado». Hacerlo junto a la fase 11.
 3. **Fase 11 · Buscador en la biblioteca y botón del ojo.**
    - Buscador: título, título original japonés y desarrollador. Ignora mayúsculas, tildes y ancho completo. Ctrl+F lo enfoca y Esc lo vacía.

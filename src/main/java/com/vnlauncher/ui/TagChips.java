@@ -31,6 +31,9 @@ final class TagChips extends FlowPane {
     private final Button toggle = new Button();
     private final Consumer<VnTag> onTagClicked;
     private List<Button> chips = List.of();
+    private List<VnTag> tags = List.of();
+    /** false en la vista previa: la novela no está en la biblioteca, no hay nada que filtrar. */
+    private boolean clickable = true;
     private boolean expanded;
 
     /** @param onTagClicked qué hacer al pulsar una etiqueta (ir a la biblioteca filtrada) */
@@ -52,6 +55,7 @@ final class TagChips extends FlowPane {
      * mayor a menor puntuación. Sin ninguna, se oculta.
      */
     void setTags(List<VnTag> tags) {
+        this.tags = tags;
         chips = tags.stream().map(this::chip).toList();
         expanded = false;
         getChildren().setAll(chips);
@@ -61,6 +65,14 @@ final class TagChips extends FlowPane {
         fit();
         // Los chips recién creados aún no tienen su CSS (ni su ancho de verdad): otra vez al pintarlos
         Platform.runLater(this::fit);
+    }
+
+    /** Si pulsar una etiqueta abre la biblioteca filtrada. Las vuelve a crear (con el mismo desplegado). */
+    void setClickable(boolean clickable) {
+        if (this.clickable != clickable) {
+            this.clickable = clickable;
+            setTags(tags);
+        }
     }
 
     /** Enseña las que quepan en la línea (o todas, desplegado) y pone el texto de «+N más». */
@@ -110,8 +122,13 @@ final class TagChips extends FlowPane {
         Button chip = new Button(tag.name());
         chip.getStyleClass().add("tag-chip");
         chip.setMinWidth(Region.USE_PREF_SIZE); // nunca "Bucle tem..."
-        chip.setTooltip(new Tooltip("Ver las novelas de tu biblioteca con esta etiqueta"));
-        chip.setOnAction(event -> onTagClicked.accept(tag));
+        if (clickable) {
+            chip.setTooltip(new Tooltip("Ver las novelas de tu biblioteca con esta etiqueta"));
+            chip.setOnAction(event -> onTagClicked.accept(tag));
+        } else {
+            chip.getStyleClass().add("tag-chip-static");
+            chip.setFocusTraversable(false);
+        }
         return chip;
     }
 }

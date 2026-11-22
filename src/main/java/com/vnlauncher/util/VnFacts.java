@@ -56,12 +56,22 @@ public final class VnFacts {
     private VnFacts() {
     }
 
+    /** Si hay una duración que enseñar (si no, {@link #length} dice «Sin datos»). */
+    public static boolean hasLength(Integer minutes, Integer votes) {
+        return minutes != null && minutes > 0 && (votes == null || votes != 0);
+    }
+
+    /** Si hay una valoración que enseñar (si no, {@link #rating} dice «Sin votos»). */
+    public static boolean hasRating(Double rating, Integer votes) {
+        return rating != null && votes != null && votes != 0;
+    }
+
     /**
      * Duración media: "unas 51 h", "unos 45 min" o "Sin datos" si no hay votos suficientes.
      * Menos de hora y media se dice en minutos (redondeados a 5); más, en horas.
      */
     public static String length(Integer minutes, Integer votes) {
-        if (minutes == null || minutes <= 0 || (votes != null && votes == 0)) {
+        if (!hasLength(minutes, votes)) {
             return "Sin datos";
         }
         if (minutes < 90) {
@@ -75,7 +85,7 @@ public final class VnFacts {
      * "Sin votos" si no hay.
      */
     public static String rating(Double rating, Integer votes) {
-        if (rating == null || votes == null || votes == 0) {
+        if (!hasRating(rating, votes)) {
             return "Sin votos";
         }
         String score = String.format(Locale.ROOT, "%.1f", rating / 10.0).replace('.', ',');
