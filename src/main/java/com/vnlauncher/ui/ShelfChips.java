@@ -66,7 +66,7 @@ final class ShelfChips {
             row.getChildren().add(chip(shelf));
         }
         // «+» redondo de 34 px con borde discontinuo
-        Button add = new Button("+");
+        Button add = new Button(null, Icons.plus());
         add.getStyleClass().add("add-shelf-round");
         add.setTooltip(new Tooltip(ADD_TOOLTIP));
         add.setOnAction(event -> openMenu(add, mine, all));

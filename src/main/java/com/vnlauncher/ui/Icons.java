@@ -38,6 +38,17 @@ final class Icons {
         return pencil;
     }
 
+    /**
+     * «+» de 12 px dibujado con dos trazos. Un «+» de texto no sirve en un botón redondo: la fuente
+     * lo coloca según la línea base del texto y queda más bajo que el centro.
+     */
+    static Node plus() {
+        SVGPath plus = new SVGPath();
+        plus.setContent("M6 0V12 M0 6H12");
+        plus.getStyleClass().add("icon-plus");
+        return plus;
+    }
+
     /** «⋯» (Más opciones): tres puntos. */
     static Node moreDots() {
         HBox dots = new HBox(4);

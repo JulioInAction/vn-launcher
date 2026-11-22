@@ -764,6 +764,13 @@
     -fx-background-color: -vn-sel;
 }
 
+/* El «+» de dentro (Icons.plus): trazo rosa con los extremos redondeados */
+.icon-plus {
+    -fx-stroke: -vn-accent-ink;
+    -fx-stroke-width: 1.8;
+    -fx-stroke-line-cap: round;
+}
+
 /* ---- Fila de acciones de la ficha: «Jugar» + dos botones cuadrados de 52 px */
 .button.square-button {
     -fx-padding: 0;
