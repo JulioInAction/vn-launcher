@@ -86,8 +86,14 @@ Todo probado con tests y en la app real (Linux, Xvfb). **Falta una pasada en Win
 - Búsqueda: se descarta al cambiar de pestaña; si vienes de Buscar, vuelves a Buscar.
 - Commits:
   - uno por tarea, con push;
+  - Conventional Commits, en inglés: `tipo: descripción`, con el tipo en minúscula (`feat`, `fix`, `docs`,
+    `refactor`, `test`, `chore`), la descripción en minúscula, en imperativo, sin punto final y con 72
+    caracteres como máximo en la primera línea;
+  - si hace falta explicar algo más, va en el cuerpo, separado del asunto por una línea en blanco;
+  - los commits anteriores no se reescriben;
   - terminan con las líneas `Co-Authored-By` y `Claude-Session`;
-  - sin identificadores de modelo.
+  - sin identificadores de modelo en el asunto ni en el cuerpo; las líneas de atribución del final
+    (`Co-Authored-By`, `Claude-Session`) sí llevan el nombre del modelo y se mantienen visibles.
 
 ## 4. Siguientes pasos (en orden)
 
