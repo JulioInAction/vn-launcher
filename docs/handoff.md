@@ -92,7 +92,8 @@ Todo probado con tests y en la app real (Linux, Xvfb). **Falta una pasada en Win
   - si hace falta explicar algo más, va en el cuerpo, separado del asunto por una línea en blanco;
   - los commits anteriores no se reescriben;
   - terminan con las líneas `Co-Authored-By` y `Claude-Session`;
-  - sin identificadores de modelo.
+  - sin identificadores de modelo en el asunto ni en el cuerpo; las líneas de atribución del final
+    (`Co-Authored-By`, `Claude-Session`) sí llevan el nombre del modelo y se mantienen visibles.
 
 ## 4. Siguientes pasos (en orden)
 
