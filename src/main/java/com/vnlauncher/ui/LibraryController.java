@@ -59,7 +59,7 @@ public class LibraryController implements PlaytimeAware, ShelvesAware {
 
     private static final System.Logger LOG = System.getLogger(LibraryController.class.getName());
 
-    /** Portadas en proporción 2:3 (DISEÑO.md, "Medidas"). */
+    /** Portadas en proporción 2:3 (design.md, "Medidas"). */
     private static final double COVER_WIDTH = 176;
     private static final double COVER_HEIGHT = 264;
 

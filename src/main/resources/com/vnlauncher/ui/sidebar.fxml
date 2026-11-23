@@ -14,7 +14,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.SVGPath?>
 
-<!-- Barra lateral común a todas las pantallas (docs/DISEÑO.md, "Barra lateral").
+<!-- Barra lateral común a todas las pantallas (docs/design.md, "Barra lateral").
      StackPane: abajo la marca de agua japonesa, encima el contenido.
      Las entradas de navegación, estados y estanterías las crea SidebarController en código. -->
 <StackPane fx:id="sidebarRoot"
@@ -24,7 +24,7 @@
            styleClass="sidebar">
 
     <!-- 1. Marca de agua: ビジュアルノベル ("novela visual") en vertical, puramente decorativa.
-         Es una imagen (docs/diseño/marca-agua/); SidebarController elige la del tema actual.
+         Es una imagen (docs/design/watermark/); SidebarController elige la del tema actual.
          · Primer hijo del StackPane = se dibuja la primera, DETRÁS del resto.
          · fitHeight 496 + preserveRatio: 58 × 496 (los PNG son de 116 × 993, el doble).
          · mouseTransparent: los clics la atraviesan y llegan a los botones de encima.
@@ -34,7 +34,7 @@
                opacity="0.07" mouseTransparent="true" managed="false" layoutY="96"/>
 
     <VBox styleClass="sidebar-content" spacing="0">
-        <!-- 2. Logo: icono vectorial (4 formas de vn-launcher-icono.svg, caja de 64x64 a escala 0.5) -->
+        <!-- 2. Logo: icono vectorial (4 formas de vn-launcher-icon.svg, caja de 64x64 a escala 0.5) -->
         <HBox spacing="10" alignment="CENTER_LEFT" styleClass="sidebar-block">
             <!-- Group dentro de Group: el exterior mide al interior YA escalado; si no, el HBox
                  reservaría los 64 px originales aunque se vea a 32 -->

@@ -105,7 +105,7 @@ public class Main extends Application {
             scene.getStylesheets().add(MainController.class.getResource("styles.css").toExternalForm());
 
             stage.setTitle("VN Launcher");
-            // Icono de la ventana y de la barra de tareas (docs/diseño/logo/vn-launcher-app.png)
+            // Icono de la ventana y de la barra de tareas (docs/design/logo/vn-launcher-app.png)
             stage.getIcons().add(new Image(
                     MainController.class.getResource("images/vn-launcher-app.png").toExternalForm()));
             stage.setMinWidth(minWidth());

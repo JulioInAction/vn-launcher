@@ -30,7 +30,7 @@ import java.time.Duration;
 import java.util.List;
 
 /**
- * Galería «Cambiar portada» (docs/diseño/capturas/portada-galeria.png): la portada principal de
+ * Galería «Cambiar portada» (docs/design/mockups/cover-gallery-dark.png): la portada principal de
  * VNDB, las imágenes de cada edición y una tarjeta «Elegir archivo…».
  *
  * <p>Al abrirla se hace 1 petición a VNDB (/release) y se descargan las miniaturas, una a una, en

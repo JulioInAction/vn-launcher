@@ -1,6 +1,6 @@
 # Fuentes
 
-Tipografías de Google Fonts incluidas en la aplicación (ver `docs/DISEÑO.md`):
+Tipografías de Google Fonts incluidas en la aplicación (ver `docs/design.md`):
 
 | Archivo | Familia en JavaFX | Uso |
 |---|---|---|

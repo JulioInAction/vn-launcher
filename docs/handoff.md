@@ -15,7 +15,7 @@ Todo probado con tests y en la app real (Linux, Xvfb). **Falta una pasada en Win
 | 4 | Exportar/importar perfil (`.zip`: `manifest.json` + `library.db` + `covers/`), diálogo «Importar perfil» |
 | 5 | Estado manual (migración 006): 5 estados, bloque «Estado» en la barra, filtros activos con ✕, selector en la ficha |
 | 6 | Estanterías (migración 007): barra «Mis estanterías» (arrastrar, clic derecho → Editar), diálogo, chips en la ficha; navegación sin números |
-| — | Ficha simplificada (`ficha-simplificada-*`) + diálogo «Opciones del juego» (`opciones-juego-*`) |
+| — | Ficha simplificada (`vn-detail-*`) + diálogo «Opciones del juego» (`game-options-*`) |
 | 7 | Ejecutables perdidos: insignia «No encontrado», aviso rojo en la ficha, campo marcado en Opciones |
 | 8 | Quitar una VN borra su portada propia de `covers/` |
 | 9 | Menú de clic derecho en las portadas (Jugar, Abrir configuración, Abrir carpeta, Estantería, Estado, Quitar) |
@@ -38,7 +38,7 @@ Todo probado con tests y en la app real (Linux, Xvfb). **Falta una pasada en Win
   `Icons`, `RoutesPane`, `CoverView`, `ModalDialog`
 - **util/** `AppPaths`, `Formats`, `DisplayPaths`, `ErrorDetails`
 - **recursos:** `styles.css`, `vn-detail-view.fxml`, `sidebar.fxml`, `library-view.fxml`, `settings-view.fxml`
-- **docs:** `README.md`, `docs/DISEÑO.md`
+- **docs:** `README.md`, `docs/design.md`
 
 ## 3. Decisiones cerradas (no romper)
 

@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Crear o editar una estantería (docs/diseño/capturas/estanteria-dialogo-*.png): nombre, uno de
+ * Crear o editar una estantería (docs/design/mockups/shelf-dialog-*.png): nombre, uno de
  * los 8 colores y cómo se verá en la barra lateral. Al editar, además, «Subir» y «Bajar» para
  * cambiarla de sitio sin arrastrar, y «Eliminar estantería» abajo a la izquierda.
  *

@@ -24,8 +24,8 @@ import java.util.function.Consumer;
 
 /**
  * Estado de la VN en la ficha: una pastilla al principio de la fila de chips
- * (ficha-simplificada-*.png) que dice el estado que se ve y si es automático o fijado a mano
- * («● Jugando · automático ⌄»). Al pulsarla se abre la lista (ficha-estado-*.png): «Automático
+ * (vn-detail-*.png) que dice el estado que se ve y si es automático o fijado a mano
+ * («● Jugando · automático ⌄»). Al pulsarla se abre la lista (vn-detail-status-*.png): «Automático
  * (ahora: Jugando)» y los cinco estados.
  *
  * <p>La lista es un ContextMenu: trae de serie el moverse con las flechas, Enter, Esc y cerrarse

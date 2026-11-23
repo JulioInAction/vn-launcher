@@ -1,23 +1,23 @@
 # Diseño de la interfaz — VN Launcher
 
-Guía visual para la interfaz JavaFX. Las capturas de `docs/diseno/capturas/` son la referencia de cómo debe quedar cada pantalla; este documento da los valores exactos.
+Guía visual para la interfaz JavaFX. Las capturas de `docs/design/mockups/` son la referencia de cómo debe quedar cada pantalla; este documento da los valores exactos.
 
 ## Pantallas
 
 | Captura | Pantalla | Fase |
 |---|---|---|
-| `biblioteca-oscuro.png` / `biblioteca-claro.png` | Biblioteca: franja «Continuar», filtros por estado, cuadrícula de portadas | 2 |
-| `ficha-oscuro.png` / `ficha-claro.png` | Ficha de la VN: datos, Jugar, rutas en orden, personajes «primary» | 2, 3 y 4 |
-| `ficha-capturas-derecha-oscuro.png` / `-claro.png` | Ficha con etiquetas (chips, «+N más») y capturas a la derecha | Ficha: etiquetas y galería de capturas (hecho) |
-| `ficha-capturas-estrecha-oscuro.png` | Ficha con la ventana estrecha: la galería baja debajo de la cabecera | Hecho |
-| `visor-capturas.png` | Visor de capturas a pantalla completa | Hecho |
-| `buscar-oscuro.png` / `buscar-claro.png` | Búsqueda en VNDB con vista previa del resultado | 1 (rehacer al aplicar el diseño) |
-| `ajustes.png` | Ajustes: Locale Emulator, tema, contenido, datos, cuenta de VNDB, acerca de | 5 |
-| `dialogo-ruta.png` | Diálogo para crear o editar una ruta | 4 |
-| `vacio-biblioteca.png`, `vacio-busqueda.png`, `vacio-personajes.png` | Estados vacíos | 2, 1 y 3 |
-| `cargando-portadas.png` | Carga de portadas con marcadores de posición | 2 |
-| `error-sin-conexion.png`, `error-limite.png` | Avisos de la búsqueda: sin conexión y límite de 200 peticiones | 1 |
-| `error-ejecutable.png`, `error-locale-emulator.png` | Diálogos al lanzar: falta el .exe o falta LEProc.exe | 5 |
+| `library-dark.png` / `library-light.png` | Biblioteca: franja «Continuar», filtros por estado, cuadrícula de portadas | 2 |
+| `vn-detail-dark.png` / `vn-detail-light.png` | Ficha de la VN: datos, Jugar, rutas en orden, personajes «primary» | 2, 3 y 4 |
+| `vn-detail-status-dark.png` / `vn-detail-status-light.png` | Ficha con el selector de estado abierto | Hecho |
+| `vn-preview-dark.png` / `vn-preview-light.png` | Vista previa de un resultado de la búsqueda | Hecho |
+| `screenshot-viewer-dark.png` | Visor de capturas a pantalla completa | Hecho |
+| `search-dark.png` / `search-light.png` | Búsqueda en VNDB con vista previa del resultado | 1 (rehacer al aplicar el diseño) |
+| `settings-dark.png` / `settings-light.png` | Ajustes: Locale Emulator, tema, contenido, datos, cuenta de VNDB, acerca de | 5 |
+| `route-dialog-dark.png` | Diálogo para crear o editar una ruta | 4 |
+| `empty-library-dark.png`, `empty-search-dark.png`, `empty-characters-dark.png` | Estados vacíos | 2, 1 y 3 |
+| `loading-covers-dark.png` | Carga de portadas con marcadores de posición | 2 |
+| `error-no-connection-dark.png`, `error-rate-limit-dark.png` | Avisos de la búsqueda: sin conexión y límite de 200 peticiones | 1 |
+| `error-missing-exe-dark.png`, `error-locale-emulator-dark.png` | Diálogos al lanzar: falta el .exe o falta LEProc.exe | 5 |
 
 ## Temas y colores
 
@@ -95,7 +95,7 @@ Tamaños: título de pantalla 32 px (ficha: 40 px), títulos de sección 24 px, 
 De arriba abajo:
 1. Logo (icono de los dos libros + «VN Launcher»).
 2. Navegación: `Biblioteca`, `Buscar`, `Ajustes`, sin números y con el texto alineado a la izquierda, a la misma altura que «ESTADO» y el logo (26 px). La sección activa lleva el texto en color normal y un **marcapáginas** rosa pegado al borde izquierdo (8 × 40 px, con muesca en V abajo). Las inactivas, en `-vn-muted`.
-3. **Estado** (`biblioteca-1-0-*.png`): Jugando, Pendientes, Completadas, En pausa y Abandonadas, con un punto del color del estado (un aro en En pausa) y el número de VNs. Al pulsar, abren la biblioteca filtrada (se combina con el filtro de etiqueta); el que se está filtrando sale resaltado.
+3. **Estado** (`library-*.png`): Jugando, Pendientes, Completadas, En pausa y Abandonadas, con un punto del color del estado (un aro en En pausa) y el número de VNs. Al pulsar, abren la biblioteca filtrada (se combina con el filtro de etiqueta); el que se está filtrando sale resaltado.
 4. **Mis estanterías:** «MIS ESTANTERÍAS» con un «+» a la derecha; cada estantería con un cuadradito de su color (8 × 8, radio 2) y su contador; al final, «+ Nueva estantería» en `-vn-accent-ink`. Se reordenan arrastrando (una línea rosa marca dónde caerá) y con clic derecho → «Editar…». Estado y estanterías van en una zona con scroll, para que muchas estanterías no empujen el contador de VNDB.
 5. Abajo del todo: contador de peticiones a VNDB («14/200», barra fina). El tema se cambia en Ajustes → Apariencia.
 6. De fondo, «ビジュアルノベル» en vertical, 58 px, color `-vn-watermark`. Puramente decorativo.
@@ -114,19 +114,19 @@ De arriba abajo:
 
 ## Logo
 
-Archivos en `docs/diseno/logo/`:
+Archivos en `docs/design/logo/`:
 - `vn-launcher-app.png` (512 px): icono de la ventana → `stage.getIcons().add(...)`.
 - `vn-launcher.ico` (de 16 a 256 px): icono del instalador y del acceso directo → opción `--icon` de `jpackage`.
-- `vn-launcher-logo-oscuro.svg` / `-claro.svg`: logo completo para el README.
-- Dentro de la interfaz, el icono se dibuja como vector con `SVGPath`. Son cuatro formas (libro delantero, lomo, libro trasero y marcapáginas) definidas en `vn-launcher-icono.svg`, en una caja de 64 × 64. Las tres primeras van con trazo (`stroke`) y el marcapáginas, relleno, todo en `-vn-accent-ink`.
+- `vn-launcher-logo-dark.svg` / `-light.svg`: logo completo para el README.
+- Dentro de la interfaz, el icono se dibuja como vector con `SVGPath`. Son cuatro formas (libro delantero, lomo, libro trasero y marcapáginas) definidas en `vn-launcher-icon.svg`, en una caja de 64 × 64. Las tres primeras van con trazo (`stroke`) y el marcapáginas, relleno, todo en `-vn-accent-ink`.
 
 ## Detalles de comportamiento que se ven en el diseño
 
 - **Biblioteca:** encima de la cuadrícula, los filtros activos como chips oscuros con ✕ («Estado: Jugando ✕» o «Estantería: Favoritas ✕», y «Etiqueta: Drama ✕») y a la derecha «Ordenar por». Los contadores de cada estado están en la barra lateral. La franja «Continuar» muestra la última VN jugada y su ruta en curso.
-- **Ficha simplificada** (`ficha-simplificada-*.png`): título, título original y «Desarrollador · año» (sin enlaces); fila de chips de 34 px sin rótulos: el estado como pastilla con su punto, «· automático» o «· fijado» y una flecha; las estanterías (cuadradito de color, nombre y ×, fondo `-vn-surface2`) y un «+» redondo de 34 px con borde discontinuo («Añadir a estantería»), que abre la lista de todas con casilla y «+ Nueva estantería…». Debajo, «Jugar» y dos botones cuadrados de 52 px: engranaje («Opciones del juego») y «⋯» («Más opciones»: abrir el programa de configuración si hay, Ver en VNDB, Actualizar desde VNDB y, tras un separador, Quitar de la biblioteca en `-vn-danger`). A la derecha del «⋯», en `-vn-muted` y 14 px, lo que pasa al actualizar («✓ Actualizado» en `-vn-blue`, 3 s). Los datos en una línea de texto con los valores en negrita, los «·» en `-vn-faint` y una barra de 80 × 5 px para las rutas; las etiquetas que quepan en una línea (máximo 5) y «+N más» como enlace; la descripción a 3 líneas con «Leer más».
+- **Ficha simplificada** (`vn-detail-*.png`): título, título original y «Desarrollador · año» (sin enlaces); fila de chips de 34 px sin rótulos: el estado como pastilla con su punto, «· automático» o «· fijado» y una flecha; las estanterías (cuadradito de color, nombre y ×, fondo `-vn-surface2`) y un «+» redondo de 34 px con borde discontinuo («Añadir a estantería»), que abre la lista de todas con casilla y «+ Nueva estantería…». Debajo, «Jugar» y dos botones cuadrados de 52 px: engranaje («Opciones del juego») y «⋯» («Más opciones»: abrir el programa de configuración si hay, Ver en VNDB, Actualizar desde VNDB y, tras un separador, Quitar de la biblioteca en `-vn-danger`). A la derecha del «⋯», en `-vn-muted` y 14 px, lo que pasa al actualizar («✓ Actualizado» en `-vn-blue`, 3 s). Los datos en una línea de texto con los valores en negrita, los «·» en `-vn-faint` y una barra de 80 × 5 px para las rutas; las etiquetas que quepan en una línea (máximo 5) y «+N más» como enlace; la descripción a 3 líneas con «Leer más».
 - **Ejecutable perdido:** en la portada de la biblioteca, una insignia «ⓘ No encontrado» arriba a la derecha (fondo `-vn-danger`, texto `-vn-on-danger`). En la ficha, entre los chips y las acciones, un aviso con fondo `-vn-danger-bg` y borde `-vn-danger`: icono, «No se encuentra el ejecutable», la ruta en monoespaciada y «Buscar el .exe»; «Jugar» desactivado. Sin ejecutable elegido, el botón principal dice «Elegir ejecutable». En «Opciones del juego», el campo del archivo que falta lleva borde `-vn-danger` y «No se encuentra este archivo» debajo (el programa de configuración que falta solo se marca ahí).
-- **Opciones del juego** (`opciones-juego-*.png`): título con el nombre de la VN debajo y ×. «Ejecutable»: la ruta en un campo de solo lectura (fondo `-vn-bg`, letra monoespaciada, recortada por el principio) y «Cambiar…». «Programa de configuración»: caja de borde discontinuo «Sin configurar» con «Elegir…» en rosa, o la ruta con «Cambiar…» y «Quitar»; ayuda debajo. «Lanzar con Locale Emulator» con su ayuda y un interruptor. «Listo» abajo a la derecha. Los cambios se guardan al momento.
-- **Diálogo de estantería** (`estanteria-dialogo-*.png`): «Nombre» (máximo 40 caracteres, sin repetir), «Color» (8 muestras de 36 px; la elegida con un aro del color del texto) y «Así se verá en la barra lateral». Al editar: «Posición 2 de 3» con «Subir» y «Bajar», y «Eliminar estantería» abajo a la izquierda (pide confirmación; las novelas no se borran).
-- **Estado de una VN** (`ficha-estado-*.png`): la pastilla de estado de la ficha abre una lista que ofrece «Automático — Según tus rutas y partidas (ahora: Jugando)» y los cinco estados; En pausa y Abandonada llevan «Fijado a mano» debajo (nunca salen solos) y el elegido, fondo `-vn-sel` y ✓ en `-vn-accent-ink`. Lo fijado a mano se queda aunque se juegue, hasta volver a «Automático».
+- **Opciones del juego** (`game-options-*.png`): título con el nombre de la VN debajo y ×. «Ejecutable»: la ruta en un campo de solo lectura (fondo `-vn-bg`, letra monoespaciada, recortada por el principio) y «Cambiar…». «Programa de configuración»: caja de borde discontinuo «Sin configurar» con «Elegir…» en rosa, o la ruta con «Cambiar…» y «Quitar»; ayuda debajo. «Lanzar con Locale Emulator» con su ayuda y un interruptor. «Listo» abajo a la derecha. Los cambios se guardan al momento.
+- **Diálogo de estantería** (`shelf-dialog-*.png`): «Nombre» (máximo 40 caracteres, sin repetir), «Color» (8 muestras de 36 px; la elegida con un aro del color del texto) y «Así se verá en la barra lateral». Al editar: «Posición 2 de 3» con «Subir» y «Bajar», y «Eliminar estantería» abajo a la izquierda (pide confirmación; las novelas no se borran).
+- **Estado de una VN** (`vn-detail-status-*.png`): la pastilla de estado de la ficha abre una lista que ofrece «Automático — Según tus rutas y partidas (ahora: Jugando)» y los cinco estados; En pausa y Abandonada llevan «Fijado a mano» debajo (nunca salen solos) y el elegido, fondo `-vn-sel` y ✓ en `-vn-accent-ink`. Lo fijado a mano se queda aunque se juegue, hasta volver a «Automático».
 - **Ficha:** las rutas se ordenan arrastrando (asa de seis puntos a la izquierda). Los personajes con spoiler salen difuminados con un botón «Mostrar». Los que no tienen ruta llevan un botón «Marcar con ruta».
 - **Búsqueda:** se busca al pulsar Enter. «N resultados» va encima de la lista y del panel, y el panel empieza a la altura de la primera tarjeta. A la derecha, un panel fijo de 540 px (no hace scroll con la lista): portada de 180 × 270 con título, título original, «Desarrollador · año» y el estado de desarrollo; seis datos en dos columnas; 5 etiquetas sin spoilers; 3 capturas en 16:9; descripción a 6 líneas con «Leer más»; y abajo «Añadir a la biblioteca» o «✓ En tu biblioteca» + «Abrir ficha».

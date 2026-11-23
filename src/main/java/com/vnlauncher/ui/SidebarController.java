@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Barra lateral común a todas las pantallas (docs/diseño/capturas/biblioteca-1-0-*.png): logo,
+ * Barra lateral común a todas las pantallas (docs/design/mockups/library-*.png): logo,
  * navegación con marcapáginas, el bloque «Estado» (los cinco estados con su contador), «Mis
  * estanterías» y el contador de peticiones a VNDB.
  *
@@ -92,8 +92,8 @@ public class SidebarController {
     private Long activeShelfId;
 
     // Marca de agua de cada tema (se cargan una vez y se cambian al cambiar de tema)
-    private final Image watermarkDark = loadImage("images/marca-agua-rosa.png");
-    private final Image watermarkLight = loadImage("images/marca-agua-rosa-claro.png");
+    private final Image watermarkDark = loadImage("images/watermark-pink.png");
+    private final Image watermarkLight = loadImage("images/watermark-pink-light.png");
 
     public SidebarController(AppContext ctx, Navigator navigator) {
         this.ctx = ctx;

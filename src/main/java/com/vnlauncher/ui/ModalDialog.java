@@ -26,7 +26,7 @@ import javafx.stage.Screen;
 import javafx.stage.Window;
 
 /**
- * Ventana modal con el aspecto de DISEÑO.md ("Diálogos"): tarjeta con esquinas de 16 px y sombra,
+ * Ventana modal con el aspecto de design.md ("Diálogos"): tarjeta con esquinas de 16 px y sombra,
  * título (con icono opcional), contenido y botones abajo; la acción principal en rosa a la derecha
  * del todo y la destructiva ("Eliminar ruta") abajo a la izquierda. Detrás, la ventana principal
  * queda tapada con -vn-backdrop.
@@ -136,7 +136,7 @@ class ModalDialog {
         return this;
     }
 
-    /** Título con botón × para cerrar (estanteria-dialogo-*.png). */
+    /** Título con botón × para cerrar (shelf-dialog-*.png). */
     ModalDialog titleWithClose(String text) {
         return titleWithSubtitle(text, null);
     }

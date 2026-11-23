@@ -5,7 +5,7 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.Region;
 
 /**
- * Interruptor de sí/no con forma de pastilla (DISEÑO.md): un ToggleButton sin texto cuyo
+ * Interruptor de sí/no con forma de pastilla (design.md): un ToggleButton sin texto cuyo
  * "botoncito" (thumb) se va a la derecha al activarlo. Los colores están en styles.css (.switch).
  */
 class Switch extends ToggleButton {

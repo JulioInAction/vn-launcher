@@ -5,7 +5,7 @@ import javafx.scene.shape.Circle;
 
 /**
  * Cómo se pinta cada estado, igual en la barra lateral, las tarjetas y la ficha
- * (docs/diseño/capturas/biblioteca-1-0-*.png y ficha-estado-*.png):
+ * (docs/design/mockups/library-*.png y vn-detail-status-*.png):
  * naranja Jugando, gris Pendiente, azul Completada, un aro sin relleno En pausa y rojo Abandonada.
  */
 final class StatusVisuals {

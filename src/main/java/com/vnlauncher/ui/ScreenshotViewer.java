@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.function.IntConsumer;
 
 /**
- * Visor de capturas a pantalla completa (visor-capturas.png): una capa encima de toda la ventana,
+ * Visor de capturas a pantalla completa (screenshot-viewer-dark.png): una capa encima de toda la ventana,
  * con fondo casi negro en los dos temas.
  * <ul>
  *   <li>arriba, el título de la VN, «Captura 4 de 12» y el botón de cerrar;</li>

@@ -66,13 +66,13 @@ import java.util.stream.Collectors;
 /**
  * Ficha de una VN. Dos modos (ver {@link DetailLayout}):
  * <ul>
- *   <li>{@code LIBRARY}: una VN de la biblioteca (ficha-simplificada-*.png), descrita abajo;</li>
+ *   <li>{@code LIBRARY}: una VN de la biblioteca (vn-detail-*.png), descrita abajo;</li>
  *   <li>{@code PREVIEW}: un resultado de la búsqueda que aún no está en la biblioteca
- *       (ficha-vista-previa-*.png). Sin estado, estanterías, rutas ni ejecutable; con «Añadir a la
+ *       (vn-preview-*.png). Sin estado, estanterías, rutas ni ejecutable; con «Añadir a la
  *       biblioteca», que la convierte en la ficha de la biblioteca sin salir de la pantalla.</li>
  * </ul>
  *
- * <p>Ficha de una VN de la biblioteca (ficha-simplificada-*.png): cabecera con la portada, el título,
+ * <p>Ficha de una VN de la biblioteca (vn-detail-*.png): cabecera con la portada, el título,
  * los chips de estado y estanterías, «Jugar» con «Opciones del juego» y «⋯», los datos en una línea,
  * las etiquetas, la descripción y la galería; debajo, las rutas y los personajes principales.
  *
@@ -81,7 +81,7 @@ import java.util.stream.Collectors;
  */
 public class VnDetailController implements PlaytimeAware, ShelvesAware {
 
-    // --- Columnas de la cabecera (ficha-capturas-derecha-*.png)
+    // --- Columnas de la cabecera (vn-detail-*.png)
     private static final double COVER_COLUMN = 220;
     private static final double COLUMN_GAP = 28;
     private static final double INFO_MIN = 400;
@@ -1149,7 +1149,7 @@ public class VnDetailController implements PlaytimeAware, ShelvesAware {
         charactersStatus.setText("");
         charactersStatus.setManaged(false);
         if (characters.isEmpty()) {
-            // Estado vacío (vacio-personajes.png): las rutas se pueden crear igualmente. En la vista
+            // Estado vacío (empty-characters-dark.png): las rutas se pueden crear igualmente. En la vista
             // previa no hay rutas: solo se dice que no hay personajes.
             Button addRoute = new Button("+  Añadir ruta");
             addRoute.setOnAction(event -> routesPane.openCreateDialog());

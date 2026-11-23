@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
  * Qué lleva la ficha según se abra desde la biblioteca o como vista previa de un resultado de la
- * búsqueda (ficha-vista-previa-*.png). Sin interfaz, para poder probarlo: {@link VnDetailController}
+ * búsqueda (vn-preview-*.png). Sin interfaz, para poder probarlo: {@link VnDetailController}
  * solo enseña u oculta lo que aquí se decide.
  *
  * <p>La vista previa es la ficha de una novela que aún no está en la biblioteca: no tiene estado,

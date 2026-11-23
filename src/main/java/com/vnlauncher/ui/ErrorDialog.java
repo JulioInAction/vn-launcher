@@ -15,7 +15,7 @@ import javafx.util.Duration;
 import java.nio.file.Path;
 
 /**
- * Diálogo «Algo ha fallado» (error-general-*.png): qué ha pasado, qué hacer, «Detalles técnicos»
+ * Diálogo «Algo ha fallado» (error-dialog-*.png): qué ha pasado, qué hacer, «Detalles técnicos»
  * desplegables y los botones «Abrir carpeta de registros», «Copiar detalles» y «Cerrar».
  *
  * <p>Los detalles empiezan plegados: a quien no le interesan no le asusta una traza; quien informa

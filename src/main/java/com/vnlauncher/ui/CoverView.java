@@ -103,7 +103,7 @@ public class CoverView extends StackPane {
     }
 
     /**
-     * Marca la portada con «ⓘ No encontrado» arriba a la derecha (biblioteca-1-0-*.png): el
+     * Marca la portada con «ⓘ No encontrado» arriba a la derecha (library-*.png): el
      * ejecutable del juego ya no está. Si también lleva «Sensible», esta baja un poco.
      */
     public CoverView markMissing() {

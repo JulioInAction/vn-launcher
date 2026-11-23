@@ -15,7 +15,7 @@ import java.util.function.Function;
 
 /**
  * Botones segmentados ("Oscuro | Claro | Según el sistema"): un grupo de ToggleButton del que
- * siempre hay exactamente uno pulsado. DISEÑO.md, "Ajustes, diálogos y estados".
+ * siempre hay exactamente uno pulsado. design.md, "Ajustes, diálogos y estados".
  *
  * <p>Genérico: {@code Segmented<Theme>}, {@code Segmented<RouteStatus>}... El valor elegido está
  * en {@link #valueProperty()}, que se puede escuchar.

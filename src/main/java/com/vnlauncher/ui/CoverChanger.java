@@ -21,7 +21,7 @@ import javafx.scene.shape.SVGPath;
 import javafx.util.Duration;
 
 /**
- * Control de "Cambiar portada" bajo la portada de la ficha (docs/diseño/capturas/portada-estados.png).
+ * Control de "Cambiar portada" bajo la portada de la ficha (docs/design/mockups/cover-states-dark.png).
  *
  * <ul>
  *   <li><b>En reposo:</b> una franja rosa de 8 px (radio 4) con una lengüeta central de 40 × 15 px

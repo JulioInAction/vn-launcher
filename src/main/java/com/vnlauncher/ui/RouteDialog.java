@@ -29,7 +29,7 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 
 /**
- * Diálogo para crear o editar una ruta (docs/diseño/capturas/dialogo-ruta.png): nombre, heroína
+ * Diálogo para crear o editar una ruta (docs/design/mockups/route-dialog-dark.png): nombre, heroína
  * (tarjetas de radio con avatar, más "Sin heroína"), estado, orden recomendado y notas. Al editar,
  * "Eliminar ruta" abajo a la izquierda.
  */

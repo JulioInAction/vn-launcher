@@ -12,7 +12,7 @@ import java.util.function.Consumer;
 
 /**
  * Punto único para los errores INESPERADOS: los guarda en el registro y enseña el diálogo «Algo ha
- * fallado» (docs/diseño/capturas/error-general-*.png).
+ * fallado» (docs/design/mockups/error-dialog-*.png).
  *
  * <p>Los errores esperados no pasan por aquí: sin conexión o el límite de VNDB tienen sus avisos
  * dentro de cada pantalla ({@link #isExpected}). Lo que llega aquí es lo que no debería pasar: un

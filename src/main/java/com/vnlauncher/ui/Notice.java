@@ -12,8 +12,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.shape.SVGPath;
 
 /**
- * Aviso dentro de una pantalla (docs/diseño/capturas/error-sin-conexion.png y error-limite.png).
- * DISEÑO.md: naranja si es un problema (WARNING), azul si solo hay que esperar (WAIT).
+ * Aviso dentro de una pantalla (docs/design/mockups/error-no-connection-dark.png y error-rate-limit-dark.png).
+ * design.md: naranja si es un problema (WARNING), azul si solo hay que esperar (WAIT).
  */
 class Notice extends HBox {
 

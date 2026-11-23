@@ -1,5 +1,5 @@
 /* =====================================================================
-   VN Launcher — hoja de estilos (ver docs/DISEÑO.md)
+   VN Launcher — hoja de estilos (ver docs/design.md)
 
    CÓMO FUNCIONAN LOS TEMAS
    Todos los colores se definen UNA vez como "looked-up colors" (variables -vn-...) en .root.
@@ -38,8 +38,8 @@
     -vn-chip-on-bg: #ECEDF2;
     -vn-chip-on-text: #121318;
     -vn-track: #30333E;
-    /* -vn-watermark ya no se usa: la marca de agua es una imagen (images/marca-agua-rosa*.png) con
-       opacidad 0.07, que da este mismo color. Se mantiene porque figura en DISEÑO.md. */
+    /* -vn-watermark ya no se usa: la marca de agua es una imagen (images/watermark-pink*.png) con
+       opacidad 0.07, que da este mismo color. Se mantiene porque figura en design.md. */
     -vn-watermark: rgba(242, 160, 181, 0.07);
     -vn-overlay: rgba(18, 19, 24, 0.55);
     -vn-danger: #FF8F85;                        /* errores y acciones destructivas */
@@ -51,7 +51,7 @@
        dependen del tema. Pastilla «1 / 12» de la galería de capturas. */
     -vn-scrim: rgba(10, 11, 14, 0.72);
     -vn-on-scrim: #F2F2F5;
-    /* Visor de capturas (visor-capturas.png): fondo casi negro en los dos temas */
+    /* Visor de capturas (screenshot-viewer-dark.png): fondo casi negro en los dos temas */
     -vn-viewer-bg: #08090C;
     -vn-viewer-text: #ECEDF2;
     -vn-viewer-muted: #8E91A0;
@@ -60,7 +60,7 @@
     -vn-viewer-control-hover: rgba(255, 255, 255, 0.14);
     -vn-viewer-control-border: rgba(255, 255, 255, 0.18);
 
-    /* Variables propias, no están en DISEÑO.md: sombra de los diálogos y fondos de las
+    /* Variables propias, no están en design.md: sombra de los diálogos y fondos de las
        iniciales cuando no hay imagen */
     -vn-shadow: rgba(0, 0, 0, 0.55);
     /* Botón principal deshabilitado: el rosa mezclado al 50 % con el fondo (antes se hacía con
@@ -75,7 +75,7 @@
     -vn-avatar-5: #2F3E52;
     -vn-avatar-6: #533C47;
 
-    /* Colores de las estanterías (ShelfColor; estanteria-dialogo-*.png): los mismos en los dos
+    /* Colores de las estanterías (ShelfColor; shelf-dialog-*.png): los mismos en los dos
        temas, así que el tema claro no los redefine */
     -vn-shelf-rosa: #F2A0B5;
     -vn-shelf-azul: #8CC8FF;
@@ -718,7 +718,7 @@
     -fx-background-radius: 8;
 }
 
-/* ---- Estanterías de la ficha (ShelfChips, ficha-estado-*.png) */
+/* ---- Estanterías de la ficha (ShelfChips, vn-detail-status-*.png) */
 .shelf-chip {
     -fx-background-color: -vn-surface2;
     -fx-background-radius: 999;
@@ -960,7 +960,7 @@
     -fx-min-height: 5;
 }
 
-/* ---- «Opciones del juego» (GameOptionsDialog, opciones-juego-*.png) */
+/* ---- «Opciones del juego» (GameOptionsDialog, game-options-*.png) */
 .path-field {
     -fx-background-color: -vn-bg;
     -fx-background-radius: 10;
@@ -1000,7 +1000,7 @@
     -fx-text-fill: -vn-accent-ink;
 }
 
-/* ---- Diálogo de estantería (ShelfDialog, estanteria-dialogo-*.png) */
+/* ---- Diálogo de estantería (ShelfDialog, shelf-dialog-*.png) */
 .shelf-swatch {
     -fx-background-color: transparent;
     -fx-background-radius: 11;
@@ -1043,8 +1043,8 @@
     -fx-text-fill: -vn-danger;
 }
 
-/* ---- Selector «Estado» de la ficha (StatusPicker, ficha-estado-*.png) */
-/* El estado es una pastilla de 34 px al principio de la fila de chips (ficha-simplificada-*.png) */
+/* ---- Selector «Estado» de la ficha (StatusPicker, vn-detail-status-*.png) */
+/* El estado es una pastilla de 34 px al principio de la fila de chips (vn-detail-*.png) */
 .button.status-picker {
     -fx-background-color: transparent;
     -fx-border-color: -vn-border2;
@@ -1220,7 +1220,7 @@
     -fx-border-color: -vn-accent-ink;
 }
 
-/* Panel de detalles (buscar-oscuro.png): sin margen propio. El scroll de dentro lleva el margen de
+/* Panel de detalles (search-dark.png): sin margen propio. El scroll de dentro lleva el margen de
    arriba y de la izquierda; el de la derecha sale del ancho fijo de cada bloque, y ahí cabe la barra
    de scroll cuando aparece. El pie (el botón) queda fuera del scroll. */
 .preview-card {
@@ -1430,7 +1430,7 @@
 }
 
 /* ===================================================================== Capturas de pantalla
-   Galería de la ficha (ScreenshotGallery), ficha-capturas-derecha-*.png */
+   Galería de la ficha (ScreenshotGallery), vn-detail-*.png */
 
 /* Fondo del hueco: se ve en las franjas si la imagen no es 16:9, y mientras se descarga */
 .shot {
@@ -1491,7 +1491,7 @@
     -fx-stroke-line-join: round;
 }
 
-/* Visor a pantalla completa (ScreenshotViewer), visor-capturas.png */
+/* Visor a pantalla completa (ScreenshotViewer), screenshot-viewer-dark.png */
 .screenshot-viewer {
     -fx-background-color: -vn-viewer-bg;
 }
@@ -1579,7 +1579,7 @@
 
 /* ===================================================================== Cambiar portada
    Control bajo la portada de la ficha (CoverChanger) y galería (CoverGallery).
-   portada-estados.png y portada-galeria.png */
+   cover-states-dark.png y cover-gallery-dark.png */
 
 .cover-changer-bar {
     -fx-fill: -vn-accent;
@@ -1856,7 +1856,7 @@
 }
 
 /* ===================================================================== Diálogo «Algo ha fallado»
-   ErrorDialog, error-general-*.png */
+   ErrorDialog, error-dialog-*.png */
 
 /* «› Detalles técnicos»: enlace rosa con un chevron que gira al desplegar */
 .button.details-toggle {
@@ -2157,7 +2157,7 @@
     -fx-border-color: -vn-blue;
 }
 
-/* Dentro de un diálogo (importar-perfil-*.png): más apretado */
+/* Dentro de un diálogo (import-profile-*.png): más apretado */
 .notice.compact {
     -fx-background-radius: 10;
     -fx-border-radius: 10;
@@ -2226,7 +2226,7 @@
     -fx-padding: 4 18 4 18;
 }
 
-/* Resumen del perfil en «Importar perfil» (importar-perfil-*.png): como la lista de copias */
+/* Resumen del perfil en «Importar perfil» (import-profile-*.png): como la lista de copias */
 .profile-summary {
     -fx-background-color: -vn-bg;
     -fx-background-radius: 10;
