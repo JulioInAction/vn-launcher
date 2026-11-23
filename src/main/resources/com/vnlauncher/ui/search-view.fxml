@@ -9,7 +9,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<!-- Buscar (docs/diseño/capturas/buscar-oscuro.png y buscar-claro.png):
+<!-- Buscar (docs/design/mockups/search-dark.png y search-light.png):
        · título y campo de búsqueda con su botón
        · «N resultados» encima de la lista y del panel
        · a la izquierda, los resultados como tarjetas (las crea SearchController)

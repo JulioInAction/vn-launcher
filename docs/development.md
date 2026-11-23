@@ -11,7 +11,7 @@ falta tener Java. Lo que hace el perfil (comentado en el `pom.xml`):
 1. Copia el `.jar` de la aplicación y sus dependencias a `target/jpackage/mods`.
 2. `jlink` crea un Java con solo los módulos del JDK que se usan (`target/jpackage/runtime`).
 3. `jpackage` junta las dos cosas y crea el instalador con las opciones de
-   `src/packaging/windows/instalador.txt`: menú Inicio, acceso directo en el escritorio (pregunta
+   `src/packaging/windows/installer.txt`: menú Inicio, acceso directo en el escritorio (pregunta
    antes), elegir carpeta, instalación solo para tu usuario (sin permisos de administrador).
 
 Necesita **WiX Toolset 3**, que es lo que usa `jpackage` para crear instaladores en Windows:
@@ -38,8 +38,8 @@ Notas:
 
 ## Diseño
 
-La guía visual está en [`DISEÑO.md`](DISE%C3%91O.md) y las capturas de referencia en
-`docs/diseño/capturas/` ([ver](dise%C3%B1o/capturas)). En el código:
+La guía visual está en [`design.md`](design.md) y las capturas de referencia en
+`docs/design/mockups/` ([ver](design/mockups)). En el código:
 
 - `src/main/resources/com/vnlauncher/ui/styles.css`: todos los colores son variables `-vn-*`
   en `.root` (tema oscuro) y `.root.tema-claro` (tema claro). El tema elegido se guarda en la
@@ -96,7 +96,7 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
 
 ## Ficha de una VN
 
-- **Cabecera simplificada** (`ficha-simplificada-*.png`). En la columna central, de arriba abajo:
+- **Cabecera simplificada** (`vn-detail-*.png`). En la columna central, de arriba abajo:
   título, título original y «Desarrollador · año»; una fila de chips sin rótulos (el estado como
   pastilla «● Jugando · automático ⌄», las estanterías con ✕ y un «+» redondo); «Jugar» con dos
   botones cuadrados de 52 px, el engranaje («Opciones del juego») y «⋯» («Más opciones»: abrir el
@@ -116,7 +116,7 @@ o que pase por Locale Emulator). La sesión se guarda en `play_session`:
   elegido, el botón principal es «Elegir ejecutable». En «Opciones del juego», el campo de un
   archivo perdido va con borde rojo y «No se encuentra este archivo»; si el que falta es el
   programa de configuración, solo se marca ahí.
-- **Opciones del juego** (`GameOptionsDialog`, `opciones-juego-*.png`): el ejecutable (ruta de solo
+- **Opciones del juego** (`GameOptionsDialog`, `game-options-*.png`): el ejecutable (ruta de solo
   lectura recortada por el principio, entera en el tooltip, y «Cambiar…»), el programa de
   configuración («Sin configurar» + «Elegir…», o la ruta con «Cambiar…» y «Quitar») y el interruptor
   de Locale Emulator. Cada cambio se guarda al momento; «Listo» solo cierra.

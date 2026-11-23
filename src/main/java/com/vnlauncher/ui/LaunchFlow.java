@@ -14,7 +14,7 @@ import java.nio.file.Path;
 /**
  * Todo lo que pasa al pulsar "Jugar" (en la ficha o en la franja "Continuar" de la biblioteca)
  * o "Configuración": lanzar el programa y, si algo falla, explicarlo con un diálogo que ofrece el
- * remedio (docs/diseño/capturas/error-ejecutable.png y error-locale-emulator.png).
+ * remedio (docs/design/mockups/error-missing-exe-dark.png y error-locale-emulator-dark.png).
  */
 final class LaunchFlow {
 

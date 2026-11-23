@@ -13,7 +13,7 @@ import javafx.scene.layout.VBox;
 import java.text.MessageFormat;
 
 /**
- * «Importar perfil» (docs/diseño/capturas/importar-perfil-*.png): el resumen del perfil abierto y
+ * «Importar perfil» (docs/design/mockups/import-profile-*.png): el resumen del perfil abierto y
  * el aviso de que sustituye al actual. Solo pregunta; importar lo hace SettingsController.
  */
 final class ImportProfileDialog {

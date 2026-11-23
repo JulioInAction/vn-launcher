@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.function.IntConsumer;
 
 /**
- * Galería de capturas de la cabecera de la ficha (ficha-capturas-derecha-*.png):
+ * Galería de capturas de la cabecera de la ficha (vn-detail-*.png):
  * <ul>
  *   <li>arriba, la captura principal en 16:9 con un contador «1 / 12» y flechas a los lados (al
  *       llegar al final vuelve a la primera);</li>

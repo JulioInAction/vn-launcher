@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.Optional;
 
 /**
- * Los 8 colores que puede tener una estantería (docs/diseño/capturas/estanteria-dialogo-*.png).
+ * Los 8 colores que puede tener una estantería (docs/design/mockups/shelf-dialog-*.png).
  * En la base de datos se guarda la clave («rosa»); en la interfaz se pinta con la clase CSS
  * {@code shelf-rosa}, que usa el color -vn-shelf-rosa del tema.
  */

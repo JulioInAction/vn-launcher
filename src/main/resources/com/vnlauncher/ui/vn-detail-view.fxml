@@ -14,7 +14,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<!-- Ficha de una VN (ficha-simplificada-*.png):
+<!-- Ficha de una VN (vn-detail-*.png):
        · cabecera: portada + título, chips de estado y estanterías, acciones (Jugar, Opciones del
          juego, ⋯), datos en una línea, etiquetas y descripción, y la galería de capturas (a la
          derecha o debajo, según el ancho)
@@ -43,7 +43,7 @@
             <!-- 330 de portada + 50 reservados debajo para el control «Cambiar portada» -->
             <StackPane fx:id="coverBox" alignment="TOP_CENTER" minWidth="220" minHeight="380"/>
 
-            <!-- Columna central (ficha-simplificada-*.png), de arriba abajo -->
+            <!-- Columna central (vn-detail-*.png), de arriba abajo -->
             <VBox fx:id="infoColumn" spacing="16" HBox.hgrow="ALWAYS" minWidth="400">
                 <!-- 1. Título, título original y «Desarrollador · año» -->
                 <VBox spacing="4">
@@ -68,7 +68,7 @@
                 <HBox fx:id="actionsRow" spacing="10" alignment="CENTER_LEFT">
                     <Button fx:id="playButton" text="▶  Jugar" onAction="#onPlay"
                             styleClass="primary-button, big-button" minWidth="-Infinity"/>
-                    <!-- Solo en la vista previa (ficha-vista-previa-*.png): «Añadir a la biblioteca» -->
+                    <!-- Solo en la vista previa (vn-preview-*.png): «Añadir a la biblioteca» -->
                     <Button fx:id="addButton" text="Añadir a la biblioteca" onAction="#onAdd"
                             styleClass="primary-button, big-button" minWidth="-Infinity"/>
                     <Button fx:id="optionsButton" onAction="#onOptions" styleClass="square-button"/>

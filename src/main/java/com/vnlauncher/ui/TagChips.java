@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Etiquetas de la ficha (ficha-simplificada-*.png), sin rótulo: solo las que quepan en UNA línea
+ * Etiquetas de la ficha (vn-detail-*.png), sin rótulo: solo las que quepan en UNA línea
  * (como mucho {@link #COLLAPSED_MAX}) y, si quedan más, el enlace «+N más», que despliega el resto
  * y pasa a «Mostrar menos». Pulsar una etiqueta abre la biblioteca filtrada por ella.
  *

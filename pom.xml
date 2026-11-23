@@ -277,7 +277,7 @@
             </activation>
             <properties>
                 <exe.suffix>.exe</exe.suffix>
-                <jpackage.options>src/packaging/windows/instalador.txt</jpackage.options>
+                <jpackage.options>src/packaging/windows/installer.txt</jpackage.options>
             </properties>
         </profile>
         <profile>

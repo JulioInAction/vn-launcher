@@ -11,7 +11,7 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
 
-<!-- Ajustes (docs/diseño/capturas/ajustes.png). Cada bloque es una tarjeta con filas de
+<!-- Ajustes (docs/design/mockups/settings-*.png). Cada bloque es una tarjeta con filas de
      "etiqueta + explicación" a la izquierda y el control a la derecha.
      Los HBox vacíos con fx:id (themeBox, spoilersBox, blurBox) los rellena SettingsController con
      controles propios (Segmented, Switch).

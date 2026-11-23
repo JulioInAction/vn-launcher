@@ -14,7 +14,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 /**
- * «Opciones del juego» (docs/diseño/capturas/opciones-juego-*.png), con el engranaje de la ficha:
+ * «Opciones del juego» (docs/design/mockups/game-options-*.png), con el engranaje de la ficha:
  * el ejecutable, el programa de configuración y Locale Emulator. Cada cambio se guarda al momento
  * (lo hace la ficha a través de {@link Actions}); «Listo» solo cierra.
  *

@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Las estanterías de una VN en su ficha (ficha-simplificada-*.png): un chip por estantería con su
+ * Las estanterías de una VN en su ficha (vn-detail-*.png): un chip por estantería con su
  * color y una × para sacarla, y un «+» redondo que abre la lista de todas con una casilla (marcada
  * si ya está) y «+ Nueva estantería…» al final.
  *

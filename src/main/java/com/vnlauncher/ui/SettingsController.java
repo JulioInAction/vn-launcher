@@ -45,7 +45,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 /**
- * Pantalla de Ajustes (docs/diseño/capturas/ajustes.png). Cada cambio se guarda al momento en la
+ * Pantalla de Ajustes (docs/design/mockups/settings-*.png). Cada cambio se guarda al momento en la
  * tabla setting (no hay botón "Guardar").
  */
 public class SettingsController {

@@ -10,8 +10,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.shape.SVGPath;
 
 /**
- * Estado vacío (docs/diseño/capturas/vacio-*.png): icono, título, explicación y, si tiene sentido,
- * un botón para hacer algo. DISEÑO.md: "siempre explican qué ha pasado y qué hacer".
+ * Estado vacío (docs/design/mockups/empty-*-dark.png): icono, título, explicación y, si tiene sentido,
+ * un botón para hacer algo. design.md: "siempre explican qué ha pasado y qué hacer".
  */
 final class EmptyState {
 

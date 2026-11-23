@@ -1,7 +1,7 @@
 <h1 align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/dise%C3%B1o/logo/vn-launcher-logo-oscuro.svg">
-    <img alt="VN Launcher" src="docs/dise%C3%B1o/logo/vn-launcher-logo-claro.svg" height="96">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/design/logo/vn-launcher-logo-dark.svg">
+    <img alt="VN Launcher" src="docs/design/logo/vn-launcher-logo-light.svg" height="96">
   </picture>
 </h1>
 
@@ -24,9 +24,9 @@
   <a href="https://vndb.org">VNDB</a>. Hecho con Java y JavaFX.
 </p>
 
-![La biblioteca de VN Launcher](docs/capturas/biblioteca.png)
+![La biblioteca de VN Launcher](docs/screenshots/library.png)
 
-![La ficha de una novela, con sus capturas y sus rutas](docs/capturas/ficha.png)
+![La ficha de una novela, con sus capturas y sus rutas](docs/screenshots/vn-detail.png)
 
 ## Qué es
 
@@ -142,8 +142,8 @@ Desinstalar la app no borra esta carpeta.
 ## Documentación
 
 - [`CHANGELOG.md`](CHANGELOG.md): los cambios de cada versión
-- [`docs/DESARROLLO.md`](docs/DESARROLLO.md): cómo funciona por dentro (tiempo de juego, copias de seguridad, perfiles, búsqueda…)
-- [`docs/DISEÑO.md`](docs/DISE%C3%91O.md): la guía visual, con colores, tipografía y componentes
+- [`docs/development.md`](docs/development.md): cómo funciona por dentro (tiempo de juego, copias de seguridad, perfiles, búsqueda…)
+- [`docs/design.md`](docs/design.md): la guía visual, con colores, tipografía y componentes
 
 ## Licencia
 
@@ -153,4 +153,4 @@ Los datos y las imágenes de las novelas vienen de [VNDB](https://vndb.org) y si
 de uso; este proyecto no tiene relación oficial con VNDB. Locale Emulator (LGPL-3.0) no va incluido:
 lo instalas tú y la app solo lo ejecuta. Las fuentes Inter y Zen Kaku Gothic New tienen licencia
 SIL Open Font License 1.1. El resto de licencias de lo que lleva dentro está en
-[`docs/DESARROLLO.md`](docs/DESARROLLO.md#licencias).
+[`docs/development.md`](docs/development.md#licencias).

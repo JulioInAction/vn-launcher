@@ -46,7 +46,7 @@ class SettingsServiceTest {
 
         settings.setTheme(Theme.LIGHT);
         assertEquals(Theme.LIGHT, settings.theme());
-        assertEquals("claro", repo.get("theme").orElseThrow(), "Clave y valor tal como pide DISEÑO.md");
+        assertEquals("claro", repo.get("theme").orElseThrow(), "Clave y valor tal como pide design.md");
 
         repo.put("theme", "valor-raro");
         assertEquals(Theme.DARK, settings.theme(), "Un valor desconocido no rompe nada");
